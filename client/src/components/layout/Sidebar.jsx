@@ -53,6 +53,7 @@ const Sidebar = ({ activeItem, onItemClick, userRole = "manager" }) => {
             label: "Report",
             icon: <FaFileAlt />,
             hasSubmenu: true,
+            path: "/report",
           },
           {
             id: "profile",
@@ -86,6 +87,7 @@ const Sidebar = ({ activeItem, onItemClick, userRole = "manager" }) => {
             label: "Report",
             icon: <FaFileAlt />,
             hasSubmenu: true,
+            path: "/report",
           },
           {
             id: "profile",
@@ -113,6 +115,7 @@ const Sidebar = ({ activeItem, onItemClick, userRole = "manager" }) => {
             label: "Report",
             icon: <FaFileAlt />,
             hasSubmenu: true,
+            path: "/report",
           },
           {
             id: "profile",
@@ -146,6 +149,7 @@ const Sidebar = ({ activeItem, onItemClick, userRole = "manager" }) => {
             label: "Report",
             icon: <FaFileAlt />,
             hasSubmenu: true,
+            path: "/report",
           },
           {
             id: "profile",
@@ -186,6 +190,7 @@ const Sidebar = ({ activeItem, onItemClick, userRole = "manager" }) => {
             label: "Report",
             icon: <FaFileAlt />,
             hasSubmenu: true,
+            path: "/report",
           },
           {
             id: "instruction",
@@ -236,6 +241,8 @@ const Sidebar = ({ activeItem, onItemClick, userRole = "manager" }) => {
 
   const handleItemClick = (item) => {
     if (item.id === "report") {
+      // Navigate to report page instead of just toggling submenu
+      onItemClick?.(item);
       setIsReportExpanded(!isReportExpanded);
     } else if (item.action === "signout") {
       // Handle sign out action

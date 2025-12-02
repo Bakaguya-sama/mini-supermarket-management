@@ -48,8 +48,6 @@ const Layout = ({ children }) => {
 
     // Handle report sub-routes
     if (path.startsWith("/report")) {
-      if (path.includes("/sales")) return "sales-report";
-      if (path.includes("/staff")) return "staff-report";
       return "report";
     }
 

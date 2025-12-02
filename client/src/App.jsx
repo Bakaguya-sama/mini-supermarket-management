@@ -49,6 +49,60 @@ function App() {
 
           {/* Protected Routes with Layout */}
           <Route
+            path="/help"
+            element={
+              <Layout>
+                <h1>Help center</h1>
+              </Layout>
+            }
+          />
+
+          <Route
+            path="/settings"
+            element={
+              <Layout>
+                <h1>Settings</h1>
+              </Layout>
+            }
+          />
+
+          <Route
+            path="/promotion"
+            element={
+              <Layout>
+                <h1>Promotion</h1>
+              </Layout>
+            }
+          />
+
+          <Route
+            path="/profile"
+            element={
+              <Layout>
+                <h1>Profile</h1>
+              </Layout>
+            }
+          />
+
+          <Route
+            path="/report"
+            element={
+              <Layout>
+                <h1>Report</h1>
+              </Layout>
+            }
+          />
+
+          <Route
+            path="/instruction"
+            element={
+              <Layout>
+                <h1>Instruction</h1>
+              </Layout>
+            }
+          />
+
+          <Route
             path="/dashboard"
             element={
               <Layout>

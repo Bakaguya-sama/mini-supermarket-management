@@ -52,6 +52,47 @@ const AddStaffView = () => {
           <form id="staff-form" onSubmit={handleSubmit}>
             {/* Basic Information Section */}
             <div className="form-section">
+              {/* Account Section */}
+              <div className="form-section">
+                <h2 className="section-title">Initial Account Information</h2>
+
+                <div className="form-row">
+                  <div className="form-group full-width">
+                    <label htmlFor="userName" className="form-label">
+                      Username
+                    </label>
+                    <input
+                      type="text"
+                      id="userName"
+                      name="userName"
+                      value={formData.userName}
+                      onChange={handleInputChange}
+                      placeholder="Enter initial username"
+                      className="form-input"
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div className="form-row">
+                  <div className="form-group full-width">
+                    <label htmlFor="password" className="form-label">
+                      Password
+                    </label>
+                    <input
+                      type="password"
+                      id="password"
+                      name="password"
+                      value={formData.Password}
+                      onChange={handleInputChange}
+                      placeholder="Enter initial password"
+                      className="form-input"
+                      required
+                    />
+                  </div>
+                </div>
+              </div>
+
               <h2 className="section-title">Basic Information</h2>
 
               <div className="form-row">

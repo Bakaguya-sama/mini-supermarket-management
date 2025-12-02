@@ -72,7 +72,8 @@ const EditStaffView = () => {
                     onChange={handleInputChange}
                     placeholder="Enter staff name"
                     className="form-input"
-                    required
+                    readOnly
+                    disabled
                   />
                 </div>
               </div>
@@ -90,7 +91,8 @@ const EditStaffView = () => {
                     onChange={handleInputChange}
                     placeholder="staff@gmail.com"
                     className="form-input"
-                    required
+                    readOnly
+                    disabled
                   />
                 </div>
                 <div className="form-group">
@@ -105,7 +107,8 @@ const EditStaffView = () => {
                     onChange={handleInputChange}
                     placeholder="+1234567890"
                     className="form-input"
-                    required
+                    readOnly
+                    disabled
                   />
                 </div>
               </div>
@@ -123,6 +126,8 @@ const EditStaffView = () => {
                     onChange={handleInputChange}
                     placeholder="dd/mm/yyyy"
                     className="form-input"
+                    readOnly
+                    disabled
                   />
                 </div>
               </div>
@@ -140,6 +145,8 @@ const EditStaffView = () => {
                     placeholder="Enter complete address"
                     className="form-textarea"
                     rows="4"
+                    readOnly
+                    disabled
                   />
                 </div>
               </div>
