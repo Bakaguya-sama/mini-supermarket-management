@@ -7,11 +7,13 @@ import {
   FaExclamationTriangle,
   FaEdit,
 } from "react-icons/fa";
+import ResolvedConfirmationModal from "../../../components/DamagedProduct/ResolvedConfirmationModal";
 import "./EditDamagedProduct.css";
 
 const EditDamagedProduct = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const [showResolvedModal, setShowResolvedModal] = useState(false);
 
   // Sample damaged product data
   const [formData, setFormData] = useState({
@@ -55,6 +57,10 @@ const EditDamagedProduct = () => {
   };
 
   const handleMarkResolved = () => {
+    setShowResolvedModal(true);
+  };
+
+  const handleConfirmResolved = () => {
     const updatedData = {
       ...formData,
       status: "Resolved",
@@ -66,8 +72,9 @@ const EditDamagedProduct = () => {
     };
 
     console.log("Marking as resolved:", updatedData);
-    alert("Damaged product issue has been marked as resolved!");
-    navigate(-1);
+    setFormData(updatedData);
+    // Có thể thêm API call ở đây
+    // navigate(-1); // Nếu muốn quay lại sau khi mark resolved
   };
 
   const handleUpdate = () => {
@@ -400,6 +407,14 @@ const EditDamagedProduct = () => {
           </div>
         </div>
       </div>
+
+      {/* Resolved Confirmation Modal */}
+      <ResolvedConfirmationModal
+        isOpen={showResolvedModal}
+        onClose={() => setShowResolvedModal(false)}
+        onConfirm={handleConfirmResolved}
+        productName={formData.productName}
+      />
     </div>
   );
 };

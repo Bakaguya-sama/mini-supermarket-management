@@ -1,0 +1,194 @@
+/* ResolvedConfirmationModal.css */
+.resolved-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+.resolved-modal-content {
+    background: white;
+    border-radius: 8px;
+    width: 90%;
+    max-width: 450px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+    overflow: hidden;
+}
+
+/* Header */
+.resolved-modal-header {
+    padding: 20px 24px 16px 24px;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.resolved-modal-header h2 {
+    margin: 0;
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #111827;
+}
+
+/* Body */
+.resolved-modal-body {
+    padding: 24px;
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+}
+
+.resolved-warning-icon {
+    flex-shrink: 0;
+}
+
+.resolved-triangle-warning {
+    width: 50px;
+    height: 44px;
+    background-color: transparent;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+}
+
+.resolved-triangle-warning::before {
+    content: '';
+    width: 0;
+    height: 0;
+    border-left: 24px solid transparent;
+    border-right: 24px solid transparent;
+    border-bottom: 42px solid red;
+    position: absolute;
+}
+
+.resolved-triangle-warning span {
+    position: absolute;
+    color: white;
+    font-weight: bold;
+    font-size: 20px;
+    z-index: 1;
+    bottom: 8px;
+}
+
+.resolved-message {
+    margin-top: 10px;
+    flex: 1;
+}
+
+.resolved-message p {
+    margin: 0 0 8px 0;
+    font-size: 1rem;
+    color: #374151;
+    font-weight: 500;
+}
+
+.resolved-product-name {
+    font-size: 0.875rem;
+    color: #6b7280;
+    font-style: italic;
+}
+
+/* Footer */
+.resolved-modal-footer {
+    padding: 4px 24px 16px 24px;
+    display: flex;
+    gap: 12px;
+    justify-content: flex-end;
+}
+
+.resolved-btn-cancel,
+.resolved-btn-confirm {
+    padding: 10px 24px;
+    border: none;
+    border-radius: 6px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    min-width: 80px;
+}
+
+.resolved-btn-cancel {
+    background-color: #6b7280;
+    color: white;
+}
+
+.resolved-btn-cancel:hover {
+    background-color: #4b5563;
+    transform: translateY(-1px);
+}
+
+.resolved-btn-confirm {
+    background-color: #22c55e;
+    color: white;
+}
+
+.resolved-btn-confirm:hover {
+    background-color: #16a34a;
+    transform: translateY(-1px);
+}
+
+.resolved-btn-cancel:active,
+.resolved-btn-confirm:active {
+    transform: translateY(0);
+}
+
+/* Responsive Design */
+@media (max-width: 640px) {
+    .resolved-modal-content {
+        width: 95%;
+        margin: 20px;
+    }
+
+    .resolved-modal-header,
+    .resolved-modal-body,
+    .resolved-modal-footer {
+        padding-left: 16px;
+        padding-right: 16px;
+    }
+
+    .resolved-modal-footer {
+        flex-direction: column-reverse;
+    }
+
+    .resolved-btn-cancel,
+    .resolved-btn-confirm {
+        width: 100%;
+    }
+}
+
+/* Animation */
+.resolved-modal-overlay {
+    animation: fadeIn 0.2s ease-out;
+}
+
+.resolved-modal-content {
+    animation: slideUp 0.3s ease-out;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
