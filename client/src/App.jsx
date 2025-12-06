@@ -5,6 +5,7 @@ import {
   Route,
   Navigate,
 } from "react-router-dom";
+import { AuthProvider } from "./context/AuthContext";
 import SignIn from "./views/auth/SignIn";
 import SignUp from "./views/auth/SignUp";
 import ForgetPass from "./views/auth/ForgetPass";
@@ -38,11 +39,13 @@ import AddShelfProduct from "./views/merchandise-supervisor/products-on-shelves/
 import EditDamagedProduct from "./views/merchandise-supervisor/damaged-products/EditDamagedProduct";
 import EditShelfProduct from "./views/merchandise-supervisor/products-on-shelves/EditShelfProduct";
 import CreateInvoice from "./views/cashier/invoice-management/CreateInvoice";
+
 function App() {
   return (
     <Router>
-      <div className="App">
-        <Routes>
+      <AuthProvider>
+        <div className="App">
+          <Routes>
           {/* Auth Routes */}
           <Route path="/signin" element={<SignIn />} />
           <Route path="/signup" element={<SignUp />} />
@@ -369,8 +372,9 @@ function App() {
 
           {/* Redirect root to signin */}
           <Route path="/" element={<Navigate to="/signin" replace />} />
-        </Routes>
-      </div>
+          </Routes>
+        </div>
+      </AuthProvider>
     </Router>
   );
 }

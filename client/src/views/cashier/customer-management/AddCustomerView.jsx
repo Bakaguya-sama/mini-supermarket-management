@@ -1,10 +1,13 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { FaUser, FaTimes } from "react-icons/fa";
+import customerService from "../../../services/customerService";
+import { useNotification } from "../../../hooks/useNotification";
 import "./AddCustomerView.css";
 
 const AddCustomerView = () => {
   const navigate = useNavigate();
+  const { showSuccess, showError } = useNotification();
   const [formData, setFormData] = useState({
     fullName: "",
     email: "",
@@ -13,7 +16,7 @@ const AddCustomerView = () => {
     gender: "",
     address: "",
     membershipType: "",
-    status: "Active",
+    isActive: true,
     notes: "",
   });
 
@@ -74,17 +77,16 @@ const AddCustomerView = () => {
     setIsSubmitting(true);
 
     try {
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      const response = await customerService.create(formData);
 
-      console.log("Customer data to submit:", formData);
-
-      // Show success message and redirect
-      alert("Customer added successfully!");
-      navigate("/customers");
+      if (response.success) {
+        showSuccess("Success", "Customer added successfully!");
+        navigate("/customers");
+      } else {
+        showError("Error", response.message || "Failed to add customer");
+      }
     } catch (error) {
-      console.error("Error adding customer:", error);
-      alert("Error adding customer. Please try again.");
+      showError("Error", error.message || "Error adding customer. Please try again.");
     } finally {
       setIsSubmitting(false);
     }

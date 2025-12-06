@@ -4,6 +4,10 @@ import Logo from "../../components/ui/Logo";
 import Input from "../../components/ui/Input";
 import Button from "../../components/ui/Button";
 import Checkbox from "../../components/ui/Checkbox";
+import useAuth from "../../hooks/useAuth";
+import { useNotification } from "../../hooks/useNotification";
+import SuccessNotification from "../../components/Notification/SuccessNotification";
+import ErrorNotification from "../../components/Notification/ErrorNotification";
 import "./SignIn.css";
 
 // Sample user accounts for different roles
@@ -89,7 +93,11 @@ const SignIn = () => {
     password: "",
     rememberMe: false,
   });
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const { login } = useAuth();
+  const { showSuccess, showError, successNotification, errorNotification } =
+    useNotification();
 
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -99,53 +107,44 @@ const SignIn = () => {
     }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log("Sign in attempt:", formData);
-    console.log("User type:", activeTab);
-
+    
     // Simple validation
     if (!formData.username || !formData.password) {
-      alert("Please enter username and password");
+      showError("Validation Error", "Please enter username and password");
       return;
     }
 
-    // Check against sample accounts
-    const account = SAMPLE_ACCOUNTS[formData.username.toLowerCase()];
-
-    if (!account) {
-      alert("Username not found");
-      return;
+    try {
+      setLoading(true);
+      console.log("Attempting login with:", formData.username);
+      const result = await login(formData.username, formData.password);
+      console.log("Login result:", result);
+      showSuccess("Login Successful", "Welcome back!");
+      
+      // Navigate to dashboard after successful login
+      setTimeout(() => {
+        navigate("/dashboard");
+      }, 500);
+    } catch (error) {
+      console.error("❌ Login error caught in SignIn:", error);
+      console.error("❌ Error type:", typeof error);
+      console.error("❌ Error message:", error?.message);
+      console.error("❌ Error object:", JSON.stringify(error, null, 2));
+      
+      let errorMessage = "Login failed. Please check your credentials.";
+      if (error?.message) {
+        errorMessage = error.message;
+      } else if (typeof error === 'string') {
+        errorMessage = error;
+      }
+      
+      console.error("❌ Final error message to show:", errorMessage);
+      showError("Login Failed", errorMessage);
+    } finally {
+      setLoading(false);
     }
-
-    if (account.password !== formData.password) {
-      alert("Incorrect password");
-      return;
-    }
-
-    // Check if user type matches account type
-    if (account.type !== activeTab) {
-      alert(
-        `This account is for ${account.type}, please select the correct tab`
-      );
-      return;
-    }
-
-    // Store user data in localStorage for demo purposes
-    localStorage.setItem("userRole", account.role);
-    localStorage.setItem("userName", account.name);
-    localStorage.setItem("userUsername", formData.username);
-    localStorage.setItem("isLoggedIn", "true");
-
-    console.log("Login successful:", {
-      username: formData.username,
-      role: account.role,
-      name: account.name,
-      type: account.type,
-    });
-
-    // Navigate to dashboard
-    navigate("/dashboard");
   };
 
   return (
@@ -210,8 +209,8 @@ const SignIn = () => {
             </a>
           </div>
 
-          <Button type="submit" size="large" className="signin-button">
-            Sign In
+          <Button type="submit" size="large" className="signin-button" disabled={loading}>
+            {loading ? "Signing in..." : "Sign In"}
           </Button>
         </form>
 
@@ -259,6 +258,22 @@ const SignIn = () => {
           )}
         </div>
       </div>
+
+      {/* Notification Components */}
+      {successNotification.isVisible && (
+        <SuccessNotification
+          title={successNotification.title}
+          message={successNotification.message}
+          onClose={() => {}}
+        />
+      )}
+      {errorNotification.isVisible && (
+        <ErrorNotification
+          title={errorNotification.title}
+          message={errorNotification.message}
+          onClose={() => {}}
+        />
+      )}
     </div>
   );
 };

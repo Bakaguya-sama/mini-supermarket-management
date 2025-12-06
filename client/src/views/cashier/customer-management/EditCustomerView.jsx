@@ -1,34 +1,61 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { FaUser, FaSave } from "react-icons/fa";
+import customerService from "../../../services/customerService";
+import { useNotification } from "../../../hooks/useNotification";
 import "./EditCustomerView.css";
 
 const EditCustomerView = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { showSuccess, showError } = useNotification();
 
   const [formData, setFormData] = useState({
-    fullName: "David Wilson",
-    email: "customer@gmail.com",
-    phone: "+1234567890",
-    dateOfBirth: "1985-03-20",
-    gender: "Male",
-    address: "654 Maple Drive, Greenfield, CA 94005",
-    membershipType: "Regular",
-    status: "Active",
+    fullName: "",
+    email: "",
+    phone: "",
+    dateOfBirth: "",
+    gender: "",
+    address: "",
+    membershipType: "",
+    isActive: true,
     notes: "",
-    customerId: "CUS001",
-    username: "davidwilson",
-    totalPurchases: "3200.00",
-    loyaltyPoints: "320",
-    lastPurchase: "Oct 31, 2025",
-    membershipSince: "Feb 28, 2024",
-    createdAt: "Feb 28, 2024",
-    updatedAt: "Nov 26, 2025",
   });
 
   const [errors, setErrors] = useState({});
+  const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEffect(() => {
+    const fetchCustomerData = async () => {
+      try {
+        setLoading(true);
+        const response = await customerService.getById(id);
+        if (response.success && response.data) {
+          const customer = response.data;
+          setFormData({
+            fullName: customer.fullName || "",
+            email: customer.email || "",
+            phone: customer.phone || "",
+            dateOfBirth: customer.dateOfBirth || "",
+            gender: customer.gender || "",
+            address: customer.address || "",
+            membershipType: customer.membershipType || "",
+            isActive: customer.isActive !== false,
+            notes: customer.notes || "",
+          });
+        } else {
+          showError("Error", "Failed to load customer data");
+        }
+      } catch (error) {
+        showError("Error", error.message || "Failed to load customer data");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (id) fetchCustomerData();
+  }, [id, showError]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -84,17 +111,16 @@ const EditCustomerView = () => {
     setIsSubmitting(true);
 
     try {
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      const response = await customerService.update(id, formData);
 
-      console.log("Customer data updated:", formData);
-
-      // Show success message and redirect
-      alert("Customer updated successfully!");
-      navigate("/customers");
+      if (response.success) {
+        showSuccess("Success", "Customer updated successfully!");
+        navigate("/customers");
+      } else {
+        showError("Error", response.message || "Failed to update customer");
+      }
     } catch (error) {
-      console.error("Error updating customer:", error);
-      alert("Error updating customer. Please try again.");
+      showError("Error", error.message || "Error updating customer");
     } finally {
       setIsSubmitting(false);
     }
@@ -287,17 +313,19 @@ const EditCustomerView = () => {
                 </div>
 
                 <div className="customer-form-group">
-                  <label htmlFor="status" className="customer-form-label">
+                  <label htmlFor="isActive" className="customer-form-label">
                     Status
                   </label>
-                  <input
-                    type="text"
-                    id="status"
-                    name="status"
-                    value={formData.status}
-                    className="customer-form-input readonly"
-                    readOnly
-                  />
+                  <select
+                    id="isActive"
+                    name="isActive"
+                    value={formData.isActive}
+                    onChange={handleInputChange}
+                    className="customer-form-input"
+                  >
+                    <option value={true}>Active</option>
+                    <option value={false}>Inactive</option>
+                  </select>
                 </div>
               </div>
             </div>

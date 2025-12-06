@@ -1,42 +1,86 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { FaUser, FaSave } from "react-icons/fa";
+import staffService from "../../../services/staffService";
+import { useNotification } from "../../../hooks/useNotification";
 import "./EditStaffView.css";
 
 const EditStaffView = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { showSuccess, showError } = useNotification();
 
   const [formData, setFormData] = useState({
-    fullName: "Bob Martinez",
-    email: "staff@gmail.com",
-    phone: "+1234567890",
-    dateOfBirth: "1990-05-15",
-    address: "456 Sales Ave, City, CA 94002",
-    position: "Store manager",
-    employmentType: "Full-time",
-    status: "Active",
-    annualSalary: "35000",
-    hireDate: "2023-01-10",
+    fullName: "",
+    email: "",
+    phone: "",
+    dateOfBirth: "",
+    address: "",
+    position: "",
+    employmentType: "",
+    isActive: true,
+    annualSalary: "",
+    hireDate: "",
     notes: "",
-    staffId: "STF001",
-    username: "bobhihi",
-    createdAt: "Jan 10, 2023",
-    updatedAt: "Jan 12, 2025",
   });
+
+  const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        const response = await staffService.getById(id);
+        if (response.success && response.data) {
+          const staff = response.data;
+          setFormData({
+            fullName: staff.fullName || "",
+            email: staff.email || "",
+            phone: staff.phone || "",
+            dateOfBirth: staff.dateOfBirth || "",
+            address: staff.address || "",
+            position: staff.position || "",
+            employmentType: staff.employmentType || "",
+            isActive: staff.isActive !== false,
+            annualSalary: staff.annualSalary || "",
+            hireDate: staff.hireDate || "",
+            notes: staff.notes || "",
+          });
+        }
+      } catch (error) {
+        console.error("Error loading staff:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    if (id) fetchData();
+  }, [id]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({
       ...prev,
-      [name]: value,
+      [name]: name === "isActive" ? value === "true" : value,
     }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log("Form updated:", formData);
-    // Add your form submission logic here
+    try {
+      setSubmitting(true);
+      const response = await staffService.update(id, formData);
+      if (response.success) {
+        showSuccess("Success", "Staff updated successfully!");
+        navigate("/staff");
+      } else {
+        showError("Error", response.message || "Failed to update staff");
+      }
+    } catch (error) {
+      showError("Error", error.message || "Error updating staff");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const handleCancel = () => {

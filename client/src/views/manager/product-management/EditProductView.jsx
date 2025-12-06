@@ -1,34 +1,33 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { FaBox, FaSave, FaUpload } from "react-icons/fa";
+import productService from "../../../services/productService";
+import { useNotification } from "../../../hooks/useNotification";
 import "./EditProductView.css";
 
 const EditProductView = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { showSuccess, showError } = useNotification();
 
   const [formData, setFormData] = useState({
-    productName: "Product 1",
-    category: "Category 1",
-    supplier: "Supplier 1",
-    origin: "Farm",
-    description: "Fresh organic tomatoes from local farms",
+    productName: "",
+    category: "",
+    supplier: "",
+    origin: "",
+    description: "",
     price: "0.00",
-    unit: "Kilogram (kg)",
-    currentStock: "0",
-    minimumStockLevel: "10",
-    maximumStockLevel: "0",
-    storageLocation: "Warehouse A",
-    sku: "PRD001",
-    barcode: "890123",
-    productId: "001",
-    lastRestocked: "Oct 30, 2025",
-    createdAt: "Jan 10, 2023",
-    updatedAt: "Jan 12, 2025",
+    unit: "",
+    stockQuantity: "0",
+    lowStockThreshold: "10",
+    highStockThreshold: "0",
+    storageLocation: "",
   });
 
   const [productImage, setProductImage] = useState(null);
   const [imagePreview, setImagePreview] = useState("https://placehold.co/400");
+  const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -37,6 +36,42 @@ const EditProductView = () => {
       [name]: value,
     }));
   };
+
+  useEffect(() => {
+    const fetchProductData = async () => {
+      try {
+        setLoading(true);
+        const response = await productService.getById(id);
+        if (response.success && response.data) {
+          const product = response.data;
+          setFormData({
+            productName: product.productName || "",
+            category: product.category || "",
+            supplier: product.supplier || "",
+            origin: product.origin || "",
+            description: product.description || "",
+            price: product.price || "0.00",
+            unit: product.unit || "",
+            stockQuantity: product.stockQuantity || "0",
+            lowStockThreshold: product.lowStockThreshold || "10",
+            highStockThreshold: product.highStockThreshold || "0",
+            storageLocation: product.storageLocation || "",
+          });
+          if (product.imageUrl) {
+            setImagePreview(product.imageUrl);
+          }
+        } else {
+          showError("Error", "Failed to load product data");
+        }
+      } catch (error) {
+        showError("Error", error.message || "Failed to load product data");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (id) fetchProductData();
+  }, [id, showError]);
 
   const handleImageChange = (e) => {
     const file = e.target.files[0];
@@ -50,23 +85,34 @@ const EditProductView = () => {
     }
   };
 
-  const generateBarcode = () => {
-    const barcode = Math.floor(Math.random() * 1000000000000).toString();
-    setFormData((prev) => ({
-      ...prev,
-      barcode: barcode,
-    }));
-  };
-
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log("Product updated:", formData);
-    console.log("Product image:", productImage);
-    // Add your form submission logic here
+
+    try {
+      setSubmitting(true);
+      const response = await productService.update(id, formData);
+
+      if (response.success) {
+        showSuccess("Success", "Product updated successfully!");
+        navigate("/products");
+      } else {
+        showError("Error", response.message || "Failed to update product");
+      }
+    } catch (error) {
+      showError("Error", error.message || "Error updating product");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const handleCancel = () => {
     navigate(-1);
+  };
+
+  const generateBarcode = () => {
+    // Generate random barcode - this can be improved with actual barcode generation
+    const barcode = Math.floor(Math.random() * 1000000000000).toString();
+    console.log("Generated barcode:", barcode);
   };
 
   return (
@@ -246,16 +292,16 @@ const EditProductView = () => {
               <div className="edit-product-form-row">
                 <div className="edit-product-form-group">
                   <label
-                    htmlFor="currentStock"
+                    htmlFor="stockQuantity"
                     className="edit-product-form-label"
                   >
                     Current Stock
                   </label>
                   <input
                     type="number"
-                    id="currentStock"
-                    name="currentStock"
-                    value={formData.currentStock}
+                    id="stockQuantity"
+                    name="stockQuantity"
+                    value={formData.stockQuantity}
                     onChange={handleInputChange}
                     placeholder="0"
                     className="edit-product-form-input"
@@ -265,16 +311,16 @@ const EditProductView = () => {
                 </div>
                 <div className="edit-product-form-group">
                   <label
-                    htmlFor="minimumStockLevel"
+                    htmlFor="lowStockThreshold"
                     className="edit-product-form-label"
                   >
                     Minimum Stock Level
                   </label>
                   <input
                     type="number"
-                    id="minimumStockLevel"
-                    name="minimumStockLevel"
-                    value={formData.minimumStockLevel}
+                    id="lowStockThreshold"
+                    name="lowStockThreshold"
+                    value={formData.lowStockThreshold}
                     onChange={handleInputChange}
                     placeholder="10"
                     className="edit-product-form-input"
@@ -286,16 +332,16 @@ const EditProductView = () => {
               <div className="edit-product-form-row">
                 <div className="edit-product-form-group">
                   <label
-                    htmlFor="maximumStockLevel"
+                    htmlFor="highStockThreshold"
                     className="edit-product-form-label"
                   >
                     Maximum Stock Level
                   </label>
                   <input
                     type="number"
-                    id="maximumStockLevel"
-                    name="maximumStockLevel"
-                    value={formData.maximumStockLevel}
+                    id="highStockThreshold"
+                    name="highStockThreshold"
+                    value={formData.highStockThreshold}
                     onChange={handleInputChange}
                     placeholder="0"
                     className="edit-product-form-input"

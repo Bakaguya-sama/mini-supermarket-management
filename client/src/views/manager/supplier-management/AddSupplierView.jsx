@@ -1,10 +1,14 @@
 import React, { useState } from "react";
 import { FaBuilding, FaTimes } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
+import supplierService from "../../../services/supplierService";
+import { useNotification } from "../../../hooks/useNotification";
 import "./AddSupplierView.css";
 
 const AddSupplierView = () => {
   const navigate = useNavigate();
+  const { showSuccess, showError } = useNotification();
+  const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     supplierName: "",
     contactPerson: "",
@@ -13,7 +17,7 @@ const AddSupplierView = () => {
     website: "",
     address: "",
     category: "",
-    status: "Active",
+    isActive: true,
     taxId: "",
     paymentTerms: "",
     bankName: "",
@@ -22,22 +26,33 @@ const AddSupplierView = () => {
   });
 
   const handleInputChange = (e) => {
-    const { name, value } = e.target;
+    const { name, value, type, checked } = e.target;
     setFormData((prev) => ({
       ...prev,
-      [name]: value,
+      [name]: type === "checkbox" ? checked : value,
     }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log("Form submitted:", formData);
-    // Add your form submission logic here
+    try {
+      setLoading(true);
+      const response = await supplierService.create(formData);
+      if (response.success) {
+        showSuccess("Success", "Supplier created successfully");
+        navigate("/supplier");
+      } else {
+        showError("Error", response.message || "Failed to create supplier");
+      }
+    } catch (err) {
+      showError("Error", err.message || "Failed to create supplier");
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleCancel = () => {
-    console.log("Form cancelled");
-    navigate(-1); // Navigate back to previous page
+    navigate(-1);
   };
 
   return (

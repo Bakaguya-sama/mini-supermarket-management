@@ -1,10 +1,14 @@
 import React, { useState } from "react";
 import { FaUser, FaTimes } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
+import staffService from "../../../services/staffService";
+import { useNotification } from "../../../hooks/useNotification";
 import "./AddStaffView.css";
 
 const AddStaffView = () => {
   const navigate = useNavigate();
+  const { showSuccess, showError } = useNotification();
+  const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     fullName: "",
     email: "",
@@ -13,29 +17,40 @@ const AddStaffView = () => {
     address: "",
     position: "",
     employmentType: "Full-time",
-    status: "Active",
-    annualSalary: "",
-    hireDate: "",
+    isActive: true,
+    salary: "",
+    joinDate: "",
     notes: "",
   });
 
   const handleInputChange = (e) => {
-    const { name, value } = e.target;
+    const { name, value, type, checked } = e.target;
     setFormData((prev) => ({
       ...prev,
-      [name]: value,
+      [name]: type === "checkbox" ? checked : value,
     }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log("Form submitted:", formData);
-    // Add your form submission logic here
+    try {
+      setLoading(true);
+      const response = await staffService.create(formData);
+      if (response.success) {
+        showSuccess("Success", "Staff created successfully");
+        navigate("/staff");
+      } else {
+        showError("Error", response.message || "Failed to create staff");
+      }
+    } catch (err) {
+      showError("Error", err.message || "Failed to create staff");
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleCancel = () => {
-    console.log("Form cancelled");
-    navigate(-1); // Navigate back to previous page
+    navigate(-1);
   };
 
   return (

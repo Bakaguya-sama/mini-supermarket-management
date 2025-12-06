@@ -1,6 +1,8 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { FaSearch, FaEye, FaEdit, FaTrash, FaPlus } from "react-icons/fa";
+import customerService from "../../../services/customerService";
+import { useNotification } from "../../../hooks/useNotification";
 import CustomerModal from "../../../components/CustomerModal/CustomerModal";
 import DeleteCustomerConfirmationModal from "../../../components/CustomerModal/DeleteCustomerConfirmationModal";
 import "./CustomerListView.css";
@@ -16,169 +18,52 @@ const CustomerListView = () => {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [customerToDelete, setCustomerToDelete] = useState(null);
 
-  // Sample customer data - matching the design structure
-  const customerData = [
-    {
-      id: "001",
-      name: "John Smith",
-      email: "john@gmail.com",
-      phone: "+1234567890",
-      membership: "Regular",
-      joinDate: "Jan 15, 2024",
-      status: "Active",
-      totalPurchases: "$2200.00",
-      points: 100,
-      address: "123 Main St, City, CA 94001",
-    },
-    {
-      id: "002",
-      name: "John Smith",
-      email: "john@gmail.com",
-      phone: "+1234567890",
-      membership: "Silver",
-      joinDate: "Jan 15, 2024",
-      status: "Inactive",
-      totalPurchases: "$2200.00",
-      points: 100,
-    },
-    {
-      id: "003",
-      name: "John Smith",
-      email: "john@gmail.com",
-      phone: "+1234567890",
-      membership: "Platinum",
-      joinDate: "Jan 15, 2024",
-      status: "Inactive",
-      totalPurchases: "$2200.00",
-      points: 100,
-    },
-    {
-      id: "004",
-      name: "John Smith",
-      email: "john@gmail.com",
-      phone: "+1234567890",
-      membership: "Gold",
-      joinDate: "Jan 15, 2024",
-      status: "Inactive",
-      totalPurchases: "$2200.00",
-      points: 100,
-    },
-    {
-      id: "005",
-      name: "Emma Wilson",
-      email: "emma@gmail.com",
-      phone: "+1 234 567-8902",
-      membership: "Silver",
-      joinDate: "Feb 20, 2024",
-      status: "Active",
-      totalPurchases: "$1850.00",
-      points: 75,
-    },
-    {
-      id: "006",
-      name: "Michael Brown",
-      email: "michael@gmail.com",
-      phone: "+1 234 567-8903",
-      membership: "Gold",
-      joinDate: "Mar 10, 2024",
-      status: "Active",
-      totalPurchases: "$3200.00",
-      points: 160,
-    },
-    {
-      id: "007",
-      name: "Sarah Davis",
-      email: "sarah@gmail.com",
-      phone: "+1 234 567-8904",
-      membership: "Regular",
-      joinDate: "Apr 05, 2024",
-      status: "Inactive",
-      totalPurchases: "$950.00",
-      points: 45,
-    },
-    {
-      id: "008",
-      name: "James Johnson",
-      email: "james@gmail.com",
-      phone: "+1 234 567-8905",
-      membership: "Platinum",
-      joinDate: "May 15, 2024",
-      status: "Active",
-      totalPurchases: "$4500.00",
-      points: 225,
-    },
-    {
-      id: "009",
-      name: "Lisa Anderson",
-      email: "lisa@gmail.com",
-      phone: "+1 234 567-8906",
-      membership: "Regular",
-      joinDate: "Jun 01, 2024",
-      status: "Active",
-      totalPurchases: "$1200.00",
-      points: 60,
-    },
-    {
-      id: "010",
-      name: "Robert Taylor",
-      email: "robert@gmail.com",
-      phone: "+1 234 567-8907",
-      membership: "Silver",
-      joinDate: "Jul 20, 2024",
-      status: "Inactive",
-      totalPurchases: "$1750.00",
-      points: 85,
-    },
-    {
-      id: "011",
-      name: "Jennifer White",
-      email: "jennifer@gmail.com",
-      phone: "+1 234 567-8908",
-      membership: "Gold",
-      joinDate: "Aug 10, 2024",
-      status: "Active",
-      totalPurchases: "$2800.00",
-      points: 140,
-    },
-    {
-      id: "012",
-      name: "David Miller",
-      email: "david@gmail.com",
-      phone: "+1 234 567-8909",
-      membership: "Regular",
-      joinDate: "Sep 05, 2024",
-      status: "Active",
-      totalPurchases: "$890.00",
-      points: 44,
-    },
-  ];
-
+  // API-driven customer data
+  const [customerData, setCustomerData] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const { showSuccess, showError } = useNotification();
   const itemsPerPage = 10;
 
-  // Calculate stats for header cards
-  const totalCustomers = customerData.length;
-  const premiumMembers = customerData.filter(
-    (c) => c.membership === "Gold" || c.membership === "Platinum"
-  ).length;
-  const activeCustomers = customerData.filter(
-    (c) => c.status === "Active"
-  ).length;
+  useEffect(() => {
+    fetchCustomerData();
+  }, [currentPage, searchTerm, membershipFilter, statusFilter]);
 
-  // Filter data first
+  const fetchCustomerData = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const params = {
+        page: currentPage,
+        limit: itemsPerPage,
+      };
+      if (searchTerm) params.search = searchTerm;
+      if (membershipFilter !== "All Memberships") params.membership = membershipFilter;
+      if (statusFilter !== "All Status") params.status = statusFilter;
+      const response = await customerService.getAll(params);
+      if (response.success) {
+        setCustomerData(response.data || []);
+      } else {
+        setError(response.message || "Failed to fetch customers");
+        showError("Error", response.message || "Failed to fetch customers");
+      }
+    } catch (err) {
+      setError(err.message || "Failed to fetch customers");
+      showError("Error", err.message || "Failed to fetch customers");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+
+  // Filter data client-side for status filter
   const filteredData = customerData.filter((customer) => {
-    const matchesSearch =
-      customer.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      customer.id.includes(searchTerm) ||
-      customer.email.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesMembership =
-      membershipFilter === "All Memberships" ||
-      customer.membership === membershipFilter;
     const matchesStatus =
-      statusFilter === "All Status" || customer.status === statusFilter;
-    return matchesSearch && matchesMembership && matchesStatus;
+      statusFilter === "All Status" || customer.isActive === (statusFilter === "Active");
+    return matchesStatus;
   });
 
-  // Calculate pagination based on filtered data
+  // Calculate pagination
   const totalItems = filteredData.length;
   const totalPages = Math.ceil(totalItems / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
@@ -186,7 +71,7 @@ const CustomerListView = () => {
   const paginatedData = filteredData.slice(startIndex, endIndex);
 
   // Reset to first page when filters change
-  React.useEffect(() => {
+  useEffect(() => {
     setCurrentPage(1);
   }, [searchTerm, membershipFilter, statusFilter]);
 
@@ -199,17 +84,15 @@ const CustomerListView = () => {
   };
 
   const handleAddCustomer = () => {
-    console.log("Add new customer");
     navigate("/customer/add");
   };
 
   const handleEdit = (customerId) => {
-    console.log("Edit customer:", customerId);
     navigate(`/customer/edit/${customerId}`);
   };
 
   const handleDelete = (customerId) => {
-    const customer = customerData.find((c) => c.id === customerId);
+    const customer = customerData.find((c) => c._id === customerId);
     if (customer) {
       setCustomerToDelete(customer);
       setIsDeleteModalOpen(true);
@@ -218,12 +101,20 @@ const CustomerListView = () => {
 
   const handleConfirmDelete = () => {
     if (customerToDelete) {
-      console.log("Deleting customer:", customerToDelete.id);
-      // Add your actual delete logic here
-
-      // Reset state
-      setCustomerToDelete(null);
-      setIsDeleteModalOpen(false);
+      (async () => {
+        try {
+          setLoading(true);
+          await customerService.delete(customerToDelete._id);
+          showSuccess("Success", "Customer deleted successfully");
+          await fetchCustomerData();
+          setCustomerToDelete(null);
+          setIsDeleteModalOpen(false);
+        } catch (err) {
+          showError("Error", err.message || "Failed to delete customer");
+        } finally {
+          setLoading(false);
+        }
+      })();
     }
   };
 
@@ -233,7 +124,7 @@ const CustomerListView = () => {
   };
 
   const handleView = (customerId) => {
-    const customer = customerData.find((c) => c.id === customerId);
+    const customer = customerData.find((c) => c._id === customerId);
     if (customer) {
       setSelectedCustomer(customer);
       setIsModalOpen(true);
@@ -362,13 +253,34 @@ const CustomerListView = () => {
             </tr>
           </thead>
           <tbody>
+            {loading && (
+              <tr>
+                <td colSpan="8" style={{ textAlign: "center", padding: "20px" }}>
+                  Loading customers...
+                </td>
+              </tr>
+            )}
+            {error && (
+              <tr>
+                <td colSpan="8" style={{ textAlign: "center", padding: "20px", color: "red" }}>
+                  {error}
+                </td>
+              </tr>
+            )}
+            {!loading && !error && paginatedData.length === 0 && (
+              <tr>
+                <td colSpan="8" style={{ textAlign: "center", padding: "20px" }}>
+                  No customers found
+                </td>
+              </tr>
+            )}
             {paginatedData.map((customer, index) => (
-              <tr key={`page-${currentPage}-${customer.id}-${index}`}>
-                <td className="customer-id">{customer.id}</td>
+              <tr key={`page-${currentPage}-${customer._id || customer.id}-${index}`}>
+                <td className="customer-id">{(customer._id || customer.id)?.slice?.(-6) || customer.id}</td>
                 <td className="customer-info">
-                  <div className="customer-name">{customer.name}</div>
+                  <div className="customer-name">{customer.fullName || customer.name}</div>
                   <div className="customer-join-date">
-                    Member since {customer.joinDate}
+                    Member since {customer.joinDate ? new Date(customer.joinDate).toLocaleDateString() : "-"}
                   </div>
                 </td>
                 <td className="customer-contact">
@@ -385,29 +297,29 @@ const CustomerListView = () => {
                   </span>
                 </td>
                 <td className="customer-purchases">
-                  {customer.totalPurchases}
+                  {customer.totalPurchases || "-"}
                 </td>
-                <td className="customer-points">{customer.points}</td>
+                <td className="customer-points">{customer.points ?? "-"}</td>
                 <td>
                   <span
                     className={`customer-status-badge ${getStatusBadgeClass(
-                      customer.status
+                      customer.isActive ? "Active" : "Inactive"
                     )}`}
                   >
-                    {customer.status}
+                    {customer.isActive ? "Active" : "Inactive"}
                   </span>
                 </td>
                 <td className="customer-action-buttons">
                   <button
                     className="customer-action-btn customer-view-btn"
-                    onClick={() => handleView(customer.id)}
+                    onClick={() => handleView(customer._id || customer.id)}
                     title="View Details"
                   >
                     <FaEye />
                   </button>
                   <button
                     className="customer-action-btn customer-edit-btn"
-                    onClick={() => handleEdit(customer.id)}
+                    onClick={() => handleEdit(customer._id || customer.id)}
                     title="Edit Customer"
                   >
                     <FaEdit />
@@ -415,7 +327,7 @@ const CustomerListView = () => {
                   <button
                     style={{ display: "none" }}
                     className="customer-action-btn customer-delete-btn"
-                    onClick={() => handleDelete(customer.id)}
+                    onClick={() => handleDelete(customer._id || customer.id)}
                     title="Delete Customer"
                   >
                     <FaTrash />

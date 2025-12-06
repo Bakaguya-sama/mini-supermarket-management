@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   FaSearch,
@@ -6,183 +6,57 @@ import {
   FaFileInvoiceDollar,
   FaCalendarAlt,
 } from "react-icons/fa";
+import invoiceService from "../../../services/invoiceService";
+import { useNotification } from "../../../hooks/useNotification";
 import "./InvoiceListView.css";
 
 const InvoiceListView = () => {
   const navigate = useNavigate();
+  const { showError } = useNotification();
+  const [invoiceData, setInvoiceData] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [paymentMethodFilter, setPaymentMethodFilter] = useState("All Methods");
-  const [statusFilter, setStatusFilter] = useState("Pending"); // Mặc định là "Pending" - chưa thanh toán
+  const [statusFilter, setStatusFilter] = useState("Pending");
   const [selectedDate, setSelectedDate] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
+  const [loading, setLoading] = useState(false);
 
-  // Sample invoice data - matching the design structure
-  const invoiceData = [
-    {
-      id: "INV-2024-001",
-      txnNumber: "TXN001234",
-      date: "Nov 26, 2025",
-      time: "09:15:23",
-      customer: "John Doe",
-      customerInitials: "JO",
-      customerId: "CUST-001",
-      hasCustomerInfo: true,
-      staff: "Staff A",
-      items: "3 items",
-      itemsList: "Fresh Milk, Bread, ...",
-      amount: "$135.50",
-      paymentMethod: "Card",
-      status: "Pending",
-    },
-    {
-      id: "INV-2024-002",
-      txnNumber: "TXN001235",
-      date: "Nov 25, 2025",
-      time: "09:32:45",
-      customer: "Emma Wilson",
-      customerInitials: "EM",
-      customerId: "CUST-002",
-      hasCustomerInfo: true,
-      staff: "Staff A",
-      items: "2 items",
-      itemsList: "Coca Cola 2L, ...",
-      amount: "$89.00",
-      paymentMethod: "Cash",
-      status: "Completed",
-    },
-    {
-      id: "INV-2024-003",
-      txnNumber: "TXN001236",
-      date: "Nov 25, 2025",
-      time: "10:05:12",
-      customer: "Sarah Smith",
-      customerInitials: "SA",
-      customerId: null,
-      hasCustomerInfo: false,
-      staff: "Staff A",
-      items: "3 items",
-      itemsList: "Greek Yogurt, ...",
-      amount: "$36.30",
-      paymentMethod: "E-Wallet",
-      status: "Completed",
-    },
-    {
-      id: "INV-2024-004",
-      txnNumber: "TXN001237",
-      date: "Nov 24, 2025",
-      time: "10:28:36",
-      customer: "Mike Johnson",
-      customerInitials: "MI",
-      customerId: "CUST-003",
-      hasCustomerInfo: true,
-      staff: "Staff A",
-      items: "3 items",
-      itemsList: "Chicken Breast, ...",
-      amount: "$16.04",
-      paymentMethod: "Card",
-      status: "Completed",
-    },
-    {
-      id: "INV-2024-005",
-      txnNumber: "TXN001238",
-      date: "Nov 22, 2025",
-      time: "11:15:33",
-      customer: "Guest",
-      customerInitials: "GU",
-      customerId: null,
-      hasCustomerInfo: false,
-      staff: "Staff A",
-      items: "2 items",
-      itemsList: "Chocolate Bar, ...",
-      amount: "$13.75",
-      paymentMethod: "Cash",
-      status: "Completed",
-    },
-    {
-      id: "INV-2024-006",
-      txnNumber: "TXN001239",
-      date: "Nov 21, 2025",
-      time: "11:48:22",
-      customer: "Emily Davis",
-      customerInitials: "EM",
-      customerId: "CUST-004",
-      hasCustomerInfo: true,
-      staff: "Staff A",
-      items: "2 items",
-      itemsList: "Croissant, ...",
-      amount: "$21.76",
-      paymentMethod: "E-Wallet",
-      status: "Completed",
-    },
-    {
-      id: "INV-2024-007",
-      txnNumber: "TXN001240",
-      date: "Nov 20, 2025",
-      time: "12:10:15",
-      customer: "Robert Brown",
-      customerInitials: "RO",
-      customerId: null,
-      hasCustomerInfo: false,
-      staff: "Staff A",
-      items: "2 items",
-      itemsList: "Frozen Pizza, ...",
-      amount: "$24.20",
-      paymentMethod: "Card",
-      status: "Refunded",
-    },
-    {
-      id: "INV-2024-008",
-      txnNumber: "TXN001241",
-      date: "Nov 24, 2025",
-      time: "08:30:10",
-      customer: "Alice Cooper",
-      customerInitials: "AL",
-      customerId: "CUST-005",
-      hasCustomerInfo: true,
-      staff: "Staff B",
-      items: "4 items",
-      itemsList: "Coffee, Sugar, ...",
-      amount: "$42.90",
-      paymentMethod: "Card",
-      status: "Pending",
-    },
-    {
-      id: "INV-2024-009",
-      txnNumber: "TXN001242",
-      date: "Nov 23, 2025",
-      time: "09:45:22",
-      customer: "David Lee",
-      customerInitials: "DA",
-      customerId: null,
-      hasCustomerInfo: false,
-      staff: "Staff B",
-      items: "1 item",
-      itemsList: "Energy Drink",
-      amount: "$5.50",
-      paymentMethod: "Cash",
-      status: "Pending",
-    },
-    {
-      id: "INV-2024-010",
-      txnNumber: "TXN001243",
-      date: "Nov 26, 2025",
-      time: "10:20:45",
-      customer: "Maria Garcia",
-      customerInitials: "MA",
-      customerId: "CUST-006",
-      hasCustomerInfo: true,
-      staff: "Staff C",
-      items: "5 items",
-      itemsList: "Vegetables, Fruits, ...",
-      amount: "$78.30",
-      paymentMethod: "E-Wallet",
-      status: "Pending",
-    },
-  ];
+  useEffect(() => {
+    fetchInvoiceData();
+  }, []);
+
+  const fetchInvoiceData = async () => {
+    try {
+      setLoading(true);
+      const response = await invoiceService.getAll();
+      if (response.success && response.data) {
+        const invoices = Array.isArray(response.data) ? response.data : response.data.data || [];
+        setInvoiceData(
+          invoices.map((invoice) => ({
+            id: invoice._id,
+            invoiceNumber: invoice.invoiceNumber || invoice._id,
+            customerId: invoice.customerId || null,
+            customer: invoice.customerName || "Guest",
+            customerInitials: (
+              invoice.customerName || "Guest"
+            ).substring(0, 2).toUpperCase(),
+            amount: `$${parseFloat(invoice.totalAmount || 0).toFixed(2)}`,
+            paymentStatus: invoice.paymentStatus || "Pending",
+            invoiceDate: new Date(invoice.invoiceDate || invoice.createdAt).toLocaleDateString(),
+            createdAt: invoice.createdAt,
+          }))
+        );
+      }
+    } catch (error) {
+      showError("Error", "Failed to load invoices");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const itemsPerPage = 10;
 
-  // Calculate stats for header cards
+  // Calculate stats for header cards  // Calculate stats for header cards
   const totalRevenue = invoiceData
     .filter((invoice) => invoice.status === "Completed")
     .reduce(

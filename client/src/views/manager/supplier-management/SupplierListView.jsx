@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   FaSearch,
@@ -13,270 +13,84 @@ import {
 import SupplierModal from "../../../components/SupplierModal/SupplierModal";
 import SupplierOrderModal from "../../../components/SupplierModal/SupplierOrderModal";
 import SupplierDeleteConfirmationModal from "../../../components/SupplierModal/SupplierDeleteConfirmationModal";
+import supplierService from "../../../services/supplierService";
+import { useNotification } from "../../../hooks/useNotification";
 import "./SupplierListView.css";
 
 const SupplierListView = () => {
   const navigate = useNavigate();
+  const { showSuccess, showError } = useNotification();
+  
+  // State for data
+  const [supplierData, setSupplierData] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  
+  // State for filtering and pagination
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("All Status");
   const [categoryFilter, setCategoryFilter] = useState("All Categories");
   const [currentPage, setCurrentPage] = useState(1);
-  const [activeSection, setActiveSection] = useState("suppliers"); // "suppliers" or "orders"
+  
+  // State for sections and modals
+  const [activeSection, setActiveSection] = useState("suppliers");
   const [orderSearchTerm, setOrderSearchTerm] = useState("");
   const [orderStatusFilter, setOrderStatusFilter] = useState("All Status");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedSupplier, setSelectedSupplier] = useState(null);
   const [isOrderModalOpen, setIsOrderModalOpen] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState(null);
-  const [showAlert, setShowAlert] = useState(false);
-  const [alertMessage, setAlertMessage] = useState("");
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [supplierToDelete, setSupplierToDelete] = useState(null);
 
-  // Sample supplier data
-  const supplierData = [
-    {
-      id: "001",
-      name: "Supplier 1",
-      contactPerson: "Sarah Miller",
-      phone: "+1234567890",
-      contact: "Sarah Miller\n+1234567890",
-      category: "Category 1",
-      orders: 38,
-      lastOrder: "Oct 30, 2025",
-      status: "Active",
-      email: "sarah@gmail.com",
-      address: "456 Milk Lane, Cream City, CA 94124",
-    },
-    {
-      id: "002",
-      name: "Supplier B",
-      contact: "Supplier 1\n+1 234-567-8901",
-      category: "Category 1",
-      orders: 13,
-      lastOrder: "Oct 15, 2025",
-      status: "Active",
-      email: "supplierb@email.com",
-      address: "456 Commerce Ave, City, State 12345",
-    },
-    {
-      id: "003",
-      name: "Supplier C",
-      contact: "Supplier 1\n+1 234-567-8901",
-      category: "Category 1",
-      orders: 14,
-      lastOrder: "Oct 15, 2025",
-      status: "Active",
-      email: "supplierc@email.com",
-      address: "789 Trade Blvd, City, State 12345",
-    },
-    {
-      id: "004",
-      name: "Supplier D",
-      contact: "Supplier 1\n+1 234-567-8901",
-      category: "Category 1",
-      orders: 15,
-      lastOrder: "Oct 15, 2025",
-      status: "Inactive",
-      email: "supplierd@email.com",
-      address: "321 Supply Lane, City, State 12345",
-    },
-    {
-      id: "005",
-      name: "Supplier E",
-      contact: "Supplier 1\n+1 234-567-8901",
-      category: "Category 1",
-      orders: 16,
-      lastOrder: "Oct 15, 2025",
-      status: "Inactive",
-      email: "suppliere@email.com",
-      address: "654 Vendor St, City, State 12345",
-    },
-    {
-      id: "006",
-      name: "Supplier F",
-      contact: "Supplier 1\n+1 234-567-8901",
-      category: "Category 1",
-      orders: 17,
-      lastOrder: "Oct 15, 2025",
-      status: "Inactive",
-      email: "supplierf@email.com",
-      address: "987 Distribution Dr, City, State 12345",
-    },
-    {
-      id: "007",
-      name: "Supplier G",
-      contact: "Supplier 1\n+1 234-567-8901",
-      category: "Category 1",
-      orders: 19,
-      lastOrder: "Oct 15, 2025",
-      status: "Inactive",
-      email: "supplierg@email.com",
-      address: "147 Wholesale Way, City, State 12345",
-    },
-    {
-      id: "001",
-      name: "Supplier A",
-      contact: "Supplier 1\n+1 234-567-8901",
-      category: "Category 1",
-      orders: 12,
-      lastOrder: "Oct 15, 2025",
-      status: "Active",
-      email: "suppliera@email.com",
-      address: "123 Business St, City, State 12345",
-    },
-    {
-      id: "002",
-      name: "Supplier B",
-      contact: "Supplier 1\n+1 234-567-8901",
-      category: "Category 1",
-      orders: 13,
-      lastOrder: "Oct 15, 2025",
-      status: "Active",
-      email: "supplierb@email.com",
-      address: "456 Commerce Ave, City, State 12345",
-    },
-    {
-      id: "003",
-      name: "Supplier C",
-      contact: "Supplier 1\n+1 234-567-8901",
-      category: "Category 1",
-      orders: 14,
-      lastOrder: "Oct 15, 2025",
-      status: "Active",
-      email: "supplierc@email.com",
-      address: "789 Trade Blvd, City, State 12345",
-    },
-    {
-      id: "004",
-      name: "Supplier D",
-      contact: "Supplier 1\n+1 234-567-8901",
-      category: "Category 1",
-      orders: 15,
-      lastOrder: "Oct 15, 2025",
-      status: "Inactive",
-      email: "supplierd@email.com",
-      address: "321 Supply Lane, City, State 12345",
-    },
-    {
-      id: "005",
-      name: "Supplier E",
-      contact: "Supplier 1\n+1 234-567-8901",
-      category: "Category 1",
-      orders: 16,
-      lastOrder: "Oct 15, 2025",
-      status: "Inactive",
-      email: "suppliere@email.com",
-      address: "654 Vendor St, City, State 12345",
-    },
-    {
-      id: "006",
-      name: "Supplier F",
-      contact: "Supplier 1\n+1 234-567-8901",
-      category: "Category 1",
-      orders: 17,
-      lastOrder: "Oct 15, 2025",
-      status: "Inactive",
-      email: "supplierf@email.com",
-      address: "987 Distribution Dr, City, State 12345",
-    },
-    {
-      id: "007",
-      name: "Supplier G",
-      contact: "Supplier 1\n+1 234-567-8901",
-      category: "Category 1",
-      orders: 19,
-      lastOrder: "Oct 15, 2025",
-      status: "Inactive",
-      email: "supplierg@email.com",
-      address: "147 Wholesale Way, City, State 12345",
-    },
-  ];
+  const itemsPerPage = 10;
 
-  // Sample order data for Order List section
-  const orderData = [
-    {
-      id: "ORD-2025-001",
-      supplier: "Fresh Farm Produce Co.",
-      orderDate: "Oct 28, 2025",
-      deliveryDate: "Nov 02, 2025",
-      items: [
-        { product: "Fresh Tomatoes", unit: "kg", quantity: 12 },
-        { product: "Fresh Tomatoes", unit: "box", quantity: 11 },
-        { product: "Fresh Tomatoes", unit: "g", quantity: 4 },
-      ],
-      amount: "$123",
-      status: "Delivered",
-      notes: "Urgent delivery required",
-    },
-    {
-      id: "ORD02",
-      supplier: "Supplier 2",
-      orderDate: "06-01-2025",
-      deliveryDate: "06-01-2025",
-      items: [], // Empty array - sẽ trigger alert
-      amount: "$123",
-      status: "Pending",
-    },
-    {
-      id: "ORD03",
-      supplier: "Supplier 3",
-      orderDate: "06-01-2025",
-      deliveryDate: "06-01-2025",
-      amount: "$123",
-      status: "Delivered",
-      // Không có items field - sẽ trigger alert
-    },
-    {
-      id: "ORD04",
-      supplier: "Supplier 4",
-      orderDate: "06-01-2025",
-      deliveryDate: "06-01-2025",
-      items: 1, // Number thay vì array - sẽ trigger alert
-      amount: "$123",
-      status: "Cancelled",
-    },
-    {
-      id: "ORD05",
-      supplier: "Supplier 5",
-      orderDate: "06-01-2025",
-      deliveryDate: "06-01-2025",
-      items: 1,
-      amount: "$123",
-      status: "Pending",
-    },
-  ];
+  // Fetch supplier data from API
+  useEffect(() => {
+    fetchSupplierData();
+  }, [currentPage, searchTerm, statusFilter]);
 
-  // Order statistics
-  const getOrderStats = () => {
-    const totalOrders = orderData.length;
-    const pendingOrders = orderData.filter(
-      (o) => o.status === "Pending"
-    ).length;
-    const cancelledOrders = orderData.filter(
-      (o) => o.status === "Cancelled"
-    ).length;
-    const deliveredOrders = orderData.filter(
-      (o) => o.status === "Delivered"
-    ).length;
+  const fetchSupplierData = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      const params = {
+        page: currentPage,
+        limit: itemsPerPage,
+      };
+      
+      // Add search if provided
+      if (searchTerm) {
+        params.search = searchTerm;
+      }
 
-    return {
-      totalOrders,
-      pendingOrders,
-      cancelledOrders,
-      deliveredOrders,
-    };
+      const response = await supplierService.getAll(params);
+      
+      if (response.success) {
+        setSupplierData(response.data || []);
+      } else {
+        setError(response.message || "Failed to fetch suppliers");
+        showError("Error", response.message || "Failed to fetch suppliers");
+      }
+    } catch (err) {
+      console.error("Error fetching suppliers:", err);
+      const errorMessage = err.message || "Failed to fetch suppliers";
+      setError(errorMessage);
+      showError("Error", errorMessage);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const orderStats = getOrderStats();
-
-  // Filter logic
-  const filteredSuppliers = supplierData.filter((supplier) => {
+  // Filter suppliers by search and status
+  const filteredSuppliers = (supplierData || []).filter((supplier) => {
     const matchesSearch =
-      supplier.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      supplier.contact.toLowerCase().includes(searchTerm.toLowerCase());
+      supplier.supplierName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      supplier.contactPerson?.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus =
-      statusFilter === "All Status" || supplier.status === statusFilter;
+      statusFilter === "All Status" || 
+      (statusFilter === "Active" ? supplier.isActive : !supplier.isActive);
     const matchesCategory =
       categoryFilter === "All Categories" ||
       supplier.category === categoryFilter;
@@ -284,28 +98,11 @@ const SupplierListView = () => {
   });
 
   // Pagination
-  const itemsPerPage = 10;
   const totalItems = filteredSuppliers.length;
   const totalPages = Math.ceil(totalItems / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
   const currentSuppliers = filteredSuppliers.slice(startIndex, endIndex);
-
-  // Order filtering and pagination
-  const filteredOrders = orderData.filter((order) => {
-    const matchesSearch =
-      order.id.toLowerCase().includes(orderSearchTerm.toLowerCase()) ||
-      order.supplier.toLowerCase().includes(orderSearchTerm.toLowerCase());
-    const matchesStatus =
-      orderStatusFilter === "All Status" || order.status === orderStatusFilter;
-    return matchesSearch && matchesStatus;
-  });
-
-  const totalOrderItems = filteredOrders.length;
-  const totalOrderPages = Math.ceil(totalOrderItems / itemsPerPage);
-  const orderStartIndex = (currentPage - 1) * itemsPerPage;
-  const orderEndIndex = orderStartIndex + itemsPerPage;
-  const currentOrders = filteredOrders.slice(orderStartIndex, orderEndIndex);
 
   // Event handlers
   const handleSearchTermChange = (value) => {
@@ -323,15 +120,6 @@ const SupplierListView = () => {
     setCurrentPage(1);
   };
 
-  const handleOrderSearchTermChange = (value) => {
-    setOrderSearchTerm(value);
-    setCurrentPage(1);
-  };
-
-  const handleOrderStatusFilterChange = (value) => {
-    setOrderStatusFilter(value);
-    setCurrentPage(1);
-  };
   const handleAddSupplier = () => {
     navigate("/supplier/add");
   };
@@ -341,12 +129,31 @@ const SupplierListView = () => {
   };
 
   const handleView = (supplierId) => {
-    console.log("View button clicked, supplierId:", supplierId);
-    const supplier = supplierData.find((s) => s.id === supplierId);
-    console.log("Found supplier:", supplier);
+    const supplier = supplierData.find((s) => s._id === supplierId);
     setSelectedSupplier(supplier);
     setIsModalOpen(true);
-    console.log("Modal should be open now");
+  };
+
+  const handleDelete = (supplierId) => {
+    setSupplierToDelete(supplierId);
+    setShowDeleteModal(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    try {
+      const response = await supplierService.delete(supplierToDelete);
+      if (response.success) {
+        showSuccess("Success", "Supplier deleted successfully!");
+        fetchSupplierData();
+      } else {
+        showError("Error", response.message || "Failed to delete supplier");
+      }
+    } catch (error) {
+      showError("Error", error.message || "Error deleting supplier");
+    } finally {
+      setShowDeleteModal(false);
+      setSupplierToDelete(null);
+    }
   };
 
   const handleCloseModal = () => {
@@ -354,65 +161,21 @@ const SupplierListView = () => {
     setSelectedSupplier(null);
   };
 
-  const handleViewOrder = (orderId) => {
-    const order = orderData.find((o) => o.id === orderId);
+  if (loading) {
+    return (
+      <div className="page-wrapper">
+        <div style={{ textAlign: "center", padding: "20px" }}>Loading suppliers...</div>
+      </div>
+    );
+  }
 
-    // Kiểm tra nếu không có items data hoặc items không phải là array
-    if (
-      !order ||
-      !order.items ||
-      !Array.isArray(order.items) ||
-      order.items.length === 0
-    ) {
-      setAlertMessage(
-        "No detailed items information available for this order."
-      );
-      setShowAlert(true);
-      return;
-    }
-
-    setSelectedOrder(order);
-    setIsOrderModalOpen(true);
-  };
-
-  const handleCloseOrderModal = () => {
-    setIsOrderModalOpen(false);
-    setSelectedOrder(null);
-  };
-
-  const handleCloseAlert = () => {
-    setShowAlert(false);
-    setAlertMessage("");
-  };
-
-  const handleDelete = (supplierId) => {
-    const supplier = supplierData.find((s) => s.id === supplierId);
-    setSupplierToDelete(supplier);
-    setShowDeleteModal(true);
-  };
-
-  const handleConfirmDelete = () => {
-    if (supplierToDelete) {
-      console.log("Confirmed delete supplier:", supplierToDelete.id);
-      // Add actual delete logic here
-      // For now, just close the modal
-      setShowDeleteModal(false);
-      setSupplierToDelete(null);
-    }
-  };
-
-  const handleCancelDelete = () => {
-    setShowDeleteModal(false);
-    setSupplierToDelete(null);
-  };
-
-  const handlePlaceOrder = (supplierId) => {
-    navigate(`/supplier/place-order/${supplierId}`);
-  };
-
-  const getStatusClass = (status) => {
-    return status === "Active" ? "active" : "inactive";
-  };
+  if (error) {
+    return (
+      <div className="page-wrapper">
+        <div style={{ textAlign: "center", padding: "20px", color: "red" }}>{error}</div>
+      </div>
+    );
+  }
 
   return (
     <div className="supplier-list-container">

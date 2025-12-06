@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   FaSearch,
@@ -13,184 +13,110 @@ import {
 import { TbBoxOff } from "react-icons/tb";
 import ProductModal from "../../../components/ProductModal/ProductModal";
 import DeleteProductConfirmationModal from "../../../components/ProductModal/DeleteProductConfirmationModal";
+import productService from "../../../services/productService";
+import { useNotification } from "../../../hooks/useNotification";
 import "./ProductListView.css";
 
 const ProductListView = () => {
   const navigate = useNavigate();
+  const { showSuccess, showError } = useNotification();
+  
+  // State for data
+  const [productData, setProductData] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  
+  // State for filtering and pagination
   const [searchTerm, setSearchTerm] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("All categories");
   const [stockFilter, setStockFilter] = useState("All stock");
+  const [currentPage, setCurrentPage] = useState(1);
+  
+  // State for modals
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [productToDelete, setProductToDelete] = useState(null);
-  const [currentPage, setCurrentPage] = useState(1);
 
-  // Sample product data
-  const productData = [
-    {
-      id: "P001",
-      name: "Coca Cola 330ml",
-      category: "Beverages",
-      brand: "Coca-Cola",
-      price: "$1.99",
-      stock: 150,
-      lowStockThreshold: 50,
-      supplier: "Beverage Co.",
-      status: "In Stock",
-      dateAdded: "Jan 10, 2024",
-    },
-    {
-      id: "P002",
-      name: "White Bread",
-      category: "Bakery",
-      brand: "Wonder Bread",
-      price: "$2.49",
-      stock: 25,
-      lowStockThreshold: 30,
-      supplier: "Bakery Supply",
-      status: "Low Stock",
-      dateAdded: "Jan 12, 2024",
-    },
-    {
-      id: "P003",
-      name: "Milk 1L",
-      category: "Dairy",
-      brand: "Fresh Farms",
-      price: "$3.99",
-      stock: 0,
-      lowStockThreshold: 20,
-      supplier: "Dairy Products Inc",
-      status: "Out of Stock",
-      dateAdded: "Jan 15, 2024",
-    },
-    {
-      id: "P004",
-      name: "Banana (per kg)",
-      category: "Fruits",
-      brand: "Fresh Produce",
-      price: "$2.99",
-      stock: 80,
-      lowStockThreshold: 25,
-      supplier: "Fruit Distributors",
-      status: "In Stock",
-      dateAdded: "Jan 18, 2024",
-    },
-    {
-      id: "P005",
-      name: "Chicken Breast (per kg)",
-      category: "Meat",
-      brand: "Premium Meat",
-      price: "$12.99",
-      stock: 35,
-      lowStockThreshold: 15,
-      supplier: "Meat Suppliers Ltd",
-      status: "In Stock",
-      dateAdded: "Jan 20, 2024",
-    },
-    {
-      id: "P006",
-      name: "Shampoo 400ml",
-      category: "Personal Care",
-      brand: "Head & Shoulders",
-      price: "$6.99",
-      stock: 12,
-      lowStockThreshold: 20,
-      supplier: "Beauty Supplies",
-      status: "Low Stock",
-      dateAdded: "Jan 22, 2024",
-    },
-    {
-      id: "P007",
-      name: "Rice 5kg",
-      category: "Grains",
-      brand: "Golden Rice",
-      price: "$8.99",
-      stock: 60,
-      lowStockThreshold: 30,
-      supplier: "Grain Wholesalers",
-      status: "In Stock",
-      dateAdded: "Jan 25, 2024",
-    },
-    {
-      id: "P008",
-      name: "Orange Juice 1L",
-      category: "Beverages",
-      brand: "Tropicana",
-      price: "$4.49",
-      stock: 5,
-      lowStockThreshold: 25,
-      supplier: "Beverage Co.",
-      status: "Low Stock",
-      dateAdded: "Feb 01, 2024",
-    },
-    {
-      id: "P009",
-      name: "Toilet Paper 12-pack",
-      category: "Household",
-      brand: "Charmin",
-      price: "$9.99",
-      stock: 45,
-      lowStockThreshold: 20,
-      supplier: "Household Goods",
-      status: "In Stock",
-      dateAdded: "Feb 03, 2024",
-    },
-    {
-      id: "P010",
-      name: "Tomatoes (per kg)",
-      category: "Vegetables",
-      brand: "Farm Fresh",
-      price: "$3.49",
-      stock: 0,
-      lowStockThreshold: 15,
-      supplier: "Vegetable Market",
-      status: "Out of Stock",
-      dateAdded: "Feb 05, 2024",
-    },
-  ];
+  const itemsPerPage = 10;
 
-  // Calculate stats
+  // Fetch product data from API
+  useEffect(() => {
+    fetchProductData();
+  }, [currentPage, searchTerm, categoryFilter]);
+
+  const fetchProductData = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      const params = {
+        page: currentPage,
+        limit: itemsPerPage,
+      };
+      
+      // Add search if provided
+      if (searchTerm) {
+        params.search = searchTerm;
+      }
+      
+      // Add category filter if not "All categories"
+      if (categoryFilter !== "All categories") {
+        params.category = categoryFilter;
+      }
+
+      const response = await productService.getAll(params);
+      
+      if (response.success) {
+        setProductData(response.data || []);
+      } else {
+        setError(response.message || "Failed to fetch products");
+        showError("Error", response.message || "Failed to fetch products");
+      }
+    } catch (err) {
+      console.error("Error fetching products:", err);
+      const errorMessage = err.message || "Failed to fetch products";
+      setError(errorMessage);
+      showError("Error", errorMessage);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Filter data client-side for stock filter
+  const filteredData = productData.filter((product) => {
+    const matchesStock =
+      stockFilter === "All stock" ||
+      (stockFilter === "In Stock" && product.stockQuantity > product.lowStockThreshold) ||
+      (stockFilter === "Low Stock" && product.stockQuantity > 0 && product.stockQuantity <= product.lowStockThreshold) ||
+      (stockFilter === "Out of Stock" && product.stockQuantity === 0);
+    return matchesStock;
+  });
+
+  // Calculate pagination
+  const totalItems = filteredData.length;
+  const totalPages = Math.ceil(totalItems / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const paginatedData = filteredData.slice(startIndex, endIndex);
+
+  // Calculate stats from API data
   const totalProducts = productData.length;
   const lowStockProducts = productData.filter(
-    (product) => product.stock > 0 && product.stock <= product.lowStockThreshold
+    (product) => product.stockQuantity > 0 && product.stockQuantity <= product.lowStockThreshold
   ).length;
   const outOfStockProducts = productData.filter(
-    (product) => product.stock === 0
+    (product) => product.stockQuantity === 0
   ).length;
   const totalValue = productData.reduce(
-    (sum, product) =>
-      sum + parseFloat(product.price.replace("$", "")) * product.stock,
+    (sum, product) => sum + (product.price || 0) * product.stockQuantity,
     0
   );
 
-  // Pagination logic
-  const itemsPerPage = 10;
-  const totalPages = Math.ceil(productData.length / itemsPerPage);
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const endIndex = startIndex + itemsPerPage;
-
-  // Filter and search logic
-  const filteredProducts = productData.filter((product) => {
-    const matchesSearch =
-      product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      product.category.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      product.brand.toLowerCase().includes(searchTerm.toLowerCase());
-
-    const matchesCategory =
-      categoryFilter === "All categories" ||
-      product.category === categoryFilter;
-
-    const matchesStock =
-      stockFilter === "All stock" ||
-      (stockFilter === "In Stock" && product.status === "In Stock") ||
-      (stockFilter === "Low Stock" && product.status === "Low Stock") ||
-      (stockFilter === "Out of Stock" && product.status === "Out of Stock");
-
-    return matchesSearch && matchesCategory && matchesStock;
-  });
-
-  const currentProducts = filteredProducts.slice(startIndex, endIndex);
+  // Reset to first page when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, categoryFilter, stockFilter]);
 
   // Event handlers
   const handleAddProduct = () => {
@@ -202,7 +128,7 @@ const ProductListView = () => {
   };
 
   const handleView = (productId) => {
-    const product = productData.find((p) => p.id === productId);
+    const product = productData.find((p) => p._id === productId);
     if (product) {
       setSelectedProduct(product);
       setIsModalOpen(true);
@@ -210,22 +136,29 @@ const ProductListView = () => {
   };
 
   const handleDelete = (productId) => {
-    const product = productData.find((p) => p.id === productId);
+    const product = productData.find((p) => p._id === productId);
     if (product) {
       setProductToDelete(product);
       setIsDeleteModalOpen(true);
     }
   };
 
-  const handleConfirmDelete = () => {
+  const handleConfirmDelete = async () => {
     if (productToDelete) {
-      // Here you would typically call an API to delete the product
-      console.log("Deleting product:", productToDelete.id);
-      // For now, we'll just log it since this is a demo
-      // In a real app, you'd update the productData state or refetch from API
+      try {
+        setLoading(true);
+        await productService.delete(productToDelete._id);
+        showSuccess("Success", "Product deleted successfully");
+        // Refresh product list
+        await fetchProductData();
+        setProductToDelete(null);
+        setIsDeleteModalOpen(false);
+      } catch (err) {
+        showError("Error", err.message);
+      } finally {
+        setLoading(false);
+      }
     }
-    setIsDeleteModalOpen(false);
-    setProductToDelete(null);
   };
 
   const handleCancelDelete = () => {
@@ -238,16 +171,13 @@ const ProductListView = () => {
     setSelectedProduct(null);
   };
 
-  const getStockBadgeClass = (status) => {
-    switch (status) {
-      case "In Stock":
-        return "status-approved";
-      case "Low Stock":
-        return "status-pending";
-      case "Out of Stock":
-        return "status-declined";
-      default:
-        return "status-default";
+  const getStockBadgeClass = (product) => {
+    if (product.stockQuantity > product.lowStockThreshold) {
+      return "status-approved";
+    } else if (product.stockQuantity > 0 && product.stockQuantity <= product.lowStockThreshold) {
+      return "status-pending";
+    } else {
+      return "status-declined";
     }
   };
 
@@ -373,20 +303,41 @@ const ProductListView = () => {
             </tr>
           </thead>
           <tbody>
-            {currentProducts.map((product) => (
-              <tr key={product.id}>
-                <td className="product-id-cell">{product.id}</td>
-                <td className="product-name-cell">{product.name}</td>
+            {loading && (
+              <tr>
+                <td colSpan="7" style={{ textAlign: "center", padding: "20px" }}>
+                  Loading products...
+                </td>
+              </tr>
+            )}
+            {error && (
+              <tr>
+                <td colSpan="7" style={{ textAlign: "center", padding: "20px", color: "red" }}>
+                  {error}
+                </td>
+              </tr>
+            )}
+            {!loading && !error && paginatedData.length === 0 && (
+              <tr>
+                <td colSpan="7" style={{ textAlign: "center", padding: "20px" }}>
+                  No products found
+                </td>
+              </tr>
+            )}
+            {paginatedData.map((product) => (
+              <tr key={product._id}>
+                <td className="product-id-cell">{product._id?.slice(-6) || product.id}</td>
+                <td className="product-name-cell">{product.productName || product.name}</td>
                 <td>
                   <div className="product-category">
                     <div className="category">{product.category}</div>
                     <div className="brand">{product.brand}</div>
                   </div>
                 </td>
-                <td className="product-price">{product.price}</td>
+                <td className="product-price">${(product.price || 0).toFixed(2)}</td>
                 <td>
                   <div className="stock-info">
-                    <div className="stock-number">{product.stock} units</div>
+                    <div className="stock-number">{product.stockQuantity} units</div>
                     <div className="stock-threshold">
                       Min: {product.lowStockThreshold}
                     </div>
@@ -394,32 +345,34 @@ const ProductListView = () => {
                 </td>
                 <td>
                   <span
-                    className={`status-badge ${getStockBadgeClass(
-                      product.status
-                    )}`}
+                    className={`status-badge ${getStockBadgeClass(product)}`}
                   >
-                    {product.status}
+                    {product.stockQuantity > product.lowStockThreshold
+                      ? "In Stock"
+                      : product.stockQuantity > 0
+                      ? "Low Stock"
+                      : "Out of Stock"}
                   </span>
                 </td>
                 <td>
                   <div className="action-buttons">
                     <button
                       className="action-btn view-btn"
-                      onClick={() => handleView(product.id)}
+                      onClick={() => handleView(product._id)}
                       title="View Details"
                     >
                       <FaEye />
                     </button>
                     <button
                       className="action-btn edit-btn"
-                      onClick={() => handleEdit(product.id)}
+                      onClick={() => handleEdit(product._id)}
                       title="Edit Product"
                     >
                       <FaEdit />
                     </button>
                     <button
                       className="action-btn delete-btn"
-                      onClick={() => handleDelete(product.id)}
+                      onClick={() => handleDelete(product._id)}
                       title="Delete Product"
                     >
                       <FaTrash />
@@ -435,9 +388,8 @@ const ProductListView = () => {
       {/* Pagination */}
       <div className="product-pagination-section">
         <div className="product-pagination-info">
-          Showing {filteredProducts.length > 0 ? startIndex + 1 : 0}-
-          {Math.min(endIndex, filteredProducts.length)} of{" "}
-          {filteredProducts.length}
+          Showing {totalItems > 0 ? startIndex + 1 : 0}-
+          {Math.min(endIndex, totalItems)} of {totalItems}
         </div>
         <div className="product-pagination-controls">
           <button

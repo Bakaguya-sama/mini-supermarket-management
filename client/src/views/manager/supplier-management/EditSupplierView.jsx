@@ -1,46 +1,96 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { FaBuilding, FaSave } from "react-icons/fa";
+import supplierService from "../../../services/supplierService";
+import { useNotification } from "../../../hooks/useNotification";
 import "./EditSupplierView.css";
 
 // Edit Supplier View Component
 const EditSupplierView = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { showSuccess, showError } = useNotification();
 
   const [formData, setFormData] = useState({
-    supplierName: "Fresh Farm Produce Co.",
-    contactPerson: "John Anderson",
-    email: "supplier@gmail.com",
-    phone: "+1234567890",
-    website: "https://www.supplier.com",
-    address: "123 Farm Road, Green Valley, CA 94123",
-    category: "Fresh Produce",
-    status: "Active",
-    taxId: "TAX123456789",
-    paymentTerms: "Net 30",
-    bankName: "Valley Bank",
-    accountNumber: "1234567890123",
-    notes:
-      "Reliable supplier for fresh produce with excellent quality standards.",
-    supplierId: "SUP001",
-    lastOrderDate: "Oct 31, 2025",
-    createdAt: "Jan 10, 2023",
-    updatedAt: "Oct 31, 2025",
+    supplierName: "",
+    contactPerson: "",
+    email: "",
+    phone: "",
+    website: "",
+    address: "",
+    category: "",
+    isActive: true,
+    taxId: "",
+    paymentTerms: "",
+    bankName: "",
+    accountNumber: "",
+    notes: "",
   });
+
+  const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
+
+  useEffect(() => {
+    const fetchSupplierData = async () => {
+      try {
+        setLoading(true);
+        const response = await supplierService.getById(id);
+        if (response.success && response.data) {
+          const supplier = response.data;
+          setFormData({
+            supplierName: supplier.supplierName || "",
+            contactPerson: supplier.contactPerson || "",
+            email: supplier.email || "",
+            phone: supplier.phone || "",
+            website: supplier.website || "",
+            address: supplier.address || "",
+            category: supplier.category || "",
+            isActive: supplier.isActive !== false,
+            taxId: supplier.taxId || "",
+            paymentTerms: supplier.paymentTerms || "",
+            bankName: supplier.bankName || "",
+            accountNumber: supplier.accountNumber || "",
+            notes: supplier.notes || "",
+          });
+        } else {
+          showError("Error", "Failed to load supplier data");
+        }
+      } catch (error) {
+        showError("Error", error.message || "Failed to load supplier data");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (id) fetchSupplierData();
+  }, [id, showError]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({
       ...prev,
-      [name]: value,
+      [name]: name === "isActive" ? value === "true" : value,
     }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log("Form updated:", formData);
-    // Add your form submission logic here
+
+    try {
+      setSubmitting(true);
+      const response = await supplierService.update(id, formData);
+
+      if (response.success) {
+        showSuccess("Success", "Supplier updated successfully!");
+        navigate("/supplier");
+      } else {
+        showError("Error", response.message || "Failed to update supplier");
+      }
+    } catch (error) {
+      showError("Error", error.message || "Error updating supplier");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const handleCancel = () => {
@@ -339,18 +389,18 @@ const EditSupplierView = () => {
               Status & Settings
             </h3>
             <div className="supplier-status-group">
-              <label htmlFor="status" className="supplier-status-label">
+              <label htmlFor="isActive" className="supplier-status-label">
                 Status
               </label>
               <select
-                id="status"
-                name="status"
-                value={formData.status}
+                id="isActive"
+                name="isActive"
+                value={formData.isActive}
                 onChange={handleInputChange}
                 className="supplier-status-select"
               >
-                <option value="Active">Active</option>
-                <option value="Inactive">Inactive</option>
+                <option value={true}>Active</option>
+                <option value={false}>Inactive</option>
               </select>
             </div>
           </div>

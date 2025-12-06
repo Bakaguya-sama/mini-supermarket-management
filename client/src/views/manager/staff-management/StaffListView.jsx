@@ -1,282 +1,94 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { FaSearch, FaEye, FaEdit, FaTrash, FaPlus } from "react-icons/fa";
 import StaffModal from "../../../components/StaffModal/StaffModal";
 import DeleteConfirmationModal from "../../../components/StaffModal/DeleteConfirmationModal";
+import staffService from "../../../services/staffService";
+import { useNotification } from "../../../hooks/useNotification";
 import "./StaffListView.css";
 
 const StaffListView = () => {
   const navigate = useNavigate();
+  const { showSuccess, showError } = useNotification();
+  
+  // State for data
+  const [staffData, setStaffData] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  
+  // State for filtering and pagination
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("All positions");
   const [monthFilter, setMonthFilter] = useState("All Status");
   const [currentPage, setCurrentPage] = useState(1);
+  
+  // State for modals
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedStaff, setSelectedStaff] = useState(null);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [staffToDelete, setStaffToDelete] = useState(null);
 
-  // Sample staff data - matching the design structure
-  const staffData = [
-    {
-      id: "001",
-      name: "Alice Johnson",
-      email: "alice@gmail.com",
-      phone: "+1234567890",
-      position: "Store Manager",
-      joinDate: "Jan 10, 2023",
-      status: "Active",
-      address: "123 Manager St, City, CA 94001",
-      employmentType: "Full-time",
-      salary: "$65,000/year",
-    },
-    {
-      id: "002",
-      name: "John Smith",
-      email: "staff@gmail.com",
-      phone: "+1 234 567-8901",
-      position: "Store manager",
-      joinDate: "Jan 15, 2024",
-      status: "Active",
-    },
-    {
-      id: "003",
-      name: "John Smith",
-      email: "staff@gmail.com",
-      phone: "+1 234 567-8901",
-      position: "Store manager",
-      joinDate: "Jan 15, 2024",
-      status: "Inactive",
-    },
-    {
-      id: "004",
-      name: "John Smith",
-      email: "staff@gmail.com",
-      phone: "+1 234 567-8901",
-      position: "Store manager",
-      joinDate: "Jan 15, 2024",
-      status: "Active",
-    },
-    {
-      id: "005",
-      name: "Emma Wilson",
-      email: "emma@gmail.com",
-      phone: "+1 234 567-8902",
-      position: "Cashier",
-      joinDate: "Feb 20, 2024",
-      status: "Active",
-    },
-    {
-      id: "006",
-      name: "Michael Brown",
-      email: "michael@gmail.com",
-      phone: "+1 234 567-8903",
-      position: "Stock Manager",
-      joinDate: "Mar 10, 2024",
-      status: "Active",
-    },
-    {
-      id: "007",
-      name: "Sarah Davis",
-      email: "sarah@gmail.com",
-      phone: "+1 234 567-8904",
-      position: "Security",
-      joinDate: "Apr 05, 2024",
-      status: "Inactive",
-    },
-    {
-      id: "008",
-      name: "James Johnson",
-      email: "james@gmail.com",
-      phone: "+1 234 567-8905",
-      position: "Cleaner",
-      joinDate: "May 15, 2024",
-      status: "Active",
-    },
-    {
-      id: "009",
-      name: "Lisa Anderson",
-      email: "lisa@gmail.com",
-      phone: "+1 234 567-8906",
-      position: "Cashier",
-      joinDate: "Jun 01, 2024",
-      status: "Active",
-    },
-    {
-      id: "010",
-      name: "Robert Taylor",
-      email: "robert@gmail.com",
-      phone: "+1 234 567-8907",
-      position: "Stock Manager",
-      joinDate: "Jul 20, 2024",
-      status: "Inactive",
-    },
-    {
-      id: "011",
-      name: "Jennifer White",
-      email: "jennifer@gmail.com",
-      phone: "+1 234 567-8908",
-      position: "Cashier",
-      joinDate: "Aug 10, 2024",
-      status: "Active",
-    },
-    {
-      id: "012",
-      name: "David Miller",
-      email: "david@gmail.com",
-      phone: "+1 234 567-8909",
-      position: "Security",
-      joinDate: "Sep 05, 2024",
-      status: "Active",
-    },
-    {
-      id: "013",
-      name: "Jessica Garcia",
-      email: "jessica@gmail.com",
-      phone: "+1 234 567-8910",
-      position: "Store manager",
-      joinDate: "Oct 12, 2024",
-      status: "Inactive",
-    },
-    {
-      id: "014",
-      name: "Matthew Wilson",
-      email: "matthew@gmail.com",
-      phone: "+1 234 567-8911",
-      position: "Cleaner",
-      joinDate: "Nov 01, 2024",
-      status: "Active",
-    },
-    {
-      id: "015",
-      name: "Amanda Rodriguez",
-      email: "amanda@gmail.com",
-      phone: "+1 234 567-8912",
-      position: "Cashier",
-      joinDate: "Nov 15, 2024",
-      status: "Active",
-    },
-    {
-      id: "016",
-      name: "Christopher Lee",
-      email: "christopher@gmail.com",
-      phone: "+1 234 567-8913",
-      position: "Stock Manager",
-      joinDate: "Dec 01, 2024",
-      status: "Inactive",
-    },
-    {
-      id: "017",
-      name: "Ashley Martinez",
-      email: "ashley@gmail.com",
-      phone: "+1 234 567-8914",
-      position: "Security",
-      joinDate: "Dec 10, 2024",
-      status: "Active",
-    },
-    {
-      id: "018",
-      name: "Joshua Thompson",
-      email: "joshua@gmail.com",
-      phone: "+1 234 567-8915",
-      position: "Cashier",
-      joinDate: "Jan 05, 2025",
-      status: "Active",
-    },
-    {
-      id: "019",
-      name: "Nicole Clark",
-      email: "nicole@gmail.com",
-      phone: "+1 234 567-8916",
-      position: "Cleaner",
-      joinDate: "Jan 20, 2025",
-      status: "Inactive",
-    },
-    {
-      id: "020",
-      name: "Ryan Hall",
-      email: "ryan@gmail.com",
-      phone: "+1 234 567-8917",
-      position: "Store manager",
-      joinDate: "Feb 01, 2025",
-      status: "Active",
-    },
-    {
-      id: "021",
-      name: "Stephanie Adams",
-      email: "stephanie@gmail.com",
-      phone: "+1 234 567-8918",
-      position: "Cashier",
-      joinDate: "Feb 15, 2025",
-      status: "Inactive",
-    },
-    {
-      id: "022",
-      name: "Kevin Wright",
-      email: "kevin@gmail.com",
-      phone: "+1 234 567-8919",
-      position: "Security",
-      joinDate: "Mar 01, 2025",
-      status: "Active",
-    },
-    {
-      id: "023",
-      name: "Rachel Green",
-      email: "rachel@gmail.com",
-      phone: "+1 234 567-8920",
-      position: "Cleaner",
-      joinDate: "Mar 10, 2025",
-      status: "Active",
-    },
-    {
-      id: "024",
-      name: "Brandon Scott",
-      email: "brandon@gmail.com",
-      phone: "+1 234 567-8921",
-      position: "Stock Manager",
-      joinDate: "Mar 20, 2025",
-      status: "Inactive",
-    },
-    {
-      id: "025",
-      name: "Melissa Turner",
-      email: "melissa@gmail.com",
-      phone: "+1 234 567-8922",
-      position: "Store manager",
-      joinDate: "Apr 01, 2025",
-      status: "Active",
-    },
-  ];
-
   const itemsPerPage = 10;
 
-  // Filter data first
+  // Fetch staff data from API
+  useEffect(() => {
+    fetchStaffData();
+  }, [currentPage, searchTerm, statusFilter]);
+
+  const fetchStaffData = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      const params = {
+        page: currentPage,
+        limit: itemsPerPage,
+      };
+      
+      // Add search if provided
+      if (searchTerm) {
+        params.search = searchTerm;
+      }
+      
+      // Add position filter if not "All positions"
+      if (statusFilter !== "All positions") {
+        params.position = statusFilter;
+      }
+
+      const response = await staffService.getAll(params);
+      
+      if (response.success) {
+        setStaffData(response.data || []);
+      } else {
+        setError(response.message || "Failed to fetch staff");
+        showError("Error", response.message || "Failed to fetch staff");
+      }
+    } catch (err) {
+      console.error("Error fetching staff:", err);
+      const errorMessage = err.message || "Failed to fetch staff";
+      setError(errorMessage);
+      showError("Error", errorMessage);
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+  // Filter data client-side for status filter
   const filteredData = staffData.filter((staff) => {
-    const matchesSearch =
-      staff.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      staff.id.includes(searchTerm);
-    const matchesPosition =
-      statusFilter === "All positions" || staff.position === statusFilter;
     const matchesStatus =
-      monthFilter === "All Status" || staff.status === monthFilter;
-    return matchesSearch && matchesPosition && matchesStatus;
+      monthFilter === "All Status" || staff.isActive === (monthFilter === "Active");
+    return matchesStatus;
   });
 
-  // Calculate pagination based on filtered data
+  // Calculate pagination
   const totalItems = filteredData.length;
   const totalPages = Math.ceil(totalItems / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
   const paginatedData = filteredData.slice(startIndex, endIndex);
 
-  // Debug pagination
-  console.log(
-    `Current Page: ${currentPage}, Start Index: ${startIndex}, End Index: ${endIndex}`
-  );
-  console.log("Paginated Data:", paginatedData);
-
   // Reset to first page when filters change
-  React.useEffect(() => {
+  useEffect(() => {
     setCurrentPage(1);
   }, [searchTerm, statusFilter, monthFilter]);
 
@@ -297,22 +109,28 @@ const StaffListView = () => {
   };
 
   const handleDelete = (staffId) => {
-    const staff = staffData.find((s) => s.id === staffId);
+    const staff = staffData.find((s) => s._id === staffId);
     if (staff) {
       setStaffToDelete(staff);
       setIsDeleteModalOpen(true);
     }
   };
 
-  const handleConfirmDelete = () => {
+  const handleConfirmDelete = async () => {
     if (staffToDelete) {
-      console.log("Deleting staff:", staffToDelete.id);
-      // Add your actual delete logic here
-      // Example: Remove from staffData or call API
-
-      // Reset state
-      setStaffToDelete(null);
-      setIsDeleteModalOpen(false);
+      try {
+        setLoading(true);
+        await staffService.delete(staffToDelete._id);
+        showSuccess("Success", "Staff deleted successfully");
+        // Refresh staff list
+        await fetchStaffData();
+        setStaffToDelete(null);
+        setIsDeleteModalOpen(false);
+      } catch (err) {
+        showError("Error", err.message);
+      } finally {
+        setLoading(false);
+      }
     }
   };
 
@@ -322,7 +140,7 @@ const StaffListView = () => {
   };
 
   const handleView = (staffId) => {
-    const staff = staffData.find((s) => s.id === staffId);
+    const staff = staffData.find((s) => s._id === staffId);
     if (staff) {
       setSelectedStaff(staff);
       setIsModalOpen(true);
@@ -414,12 +232,33 @@ const StaffListView = () => {
             </tr>
           </thead>
           <tbody>
+            {loading && (
+              <tr>
+                <td colSpan="6" style={{ textAlign: "center", padding: "20px" }}>
+                  Loading staff data...
+                </td>
+              </tr>
+            )}
+            {error && (
+              <tr>
+                <td colSpan="6" style={{ textAlign: "center", padding: "20px", color: "red" }}>
+                  {error}
+                </td>
+              </tr>
+            )}
+            {!loading && !error && paginatedData.length === 0 && (
+              <tr>
+                <td colSpan="6" style={{ textAlign: "center", padding: "20px" }}>
+                  No staff found
+                </td>
+              </tr>
+            )}
             {paginatedData.map((staff, index) => (
-              <tr key={`page-${currentPage}-${staff.id}-${index}`}>
-                <td className="staff-id">{staff.id}</td>
+              <tr key={`page-${currentPage}-${staff._id}-${index}`}>
+                <td className="staff-id">{staff._id?.slice(-6) || staff.id}</td>
                 <td className="staff-info">
-                  <div className="staff-name">{staff.name}</div>
-                  <div className="staff-join-date">Joined {staff.joinDate}</div>
+                  <div className="staff-name">{staff.fullName || staff.name}</div>
+                  <div className="staff-join-date">Joined {new Date(staff.joinDate).toLocaleDateString()}</div>
                 </td>
                 <td className="staff-contact">
                   <div className="staff-email">{staff.email}</div>
@@ -429,30 +268,30 @@ const StaffListView = () => {
                 <td>
                   <span
                     className={`status-badge ${getStatusBadgeClass(
-                      staff.status
+                      staff.isActive ? "Active" : "Inactive"
                     )}`}
                   >
-                    {staff.status}
+                    {staff.isActive ? "Active" : "Inactive"}
                   </span>
                 </td>
                 <td className="action-buttons">
                   <button
                     className="action-btn view-btn"
-                    onClick={() => handleView(staff.id)}
+                    onClick={() => handleView(staff._id)}
                     title="View Details"
                   >
                     <FaEye />
                   </button>
                   <button
                     className="action-btn edit-btn"
-                    onClick={() => handleEdit(staff.id)}
+                    onClick={() => handleEdit(staff._id)}
                     title="Edit Staff"
                   >
                     <FaEdit />
                   </button>
                   <button
                     className="action-btn delete-btn"
-                    onClick={() => handleDelete(staff.id)}
+                    onClick={() => handleDelete(staff._id)}
                     title="Delete Staff"
                   >
                     <FaTrash />

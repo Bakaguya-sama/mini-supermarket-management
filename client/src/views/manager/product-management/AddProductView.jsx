@@ -1,10 +1,14 @@
 import React, { useState } from "react";
 import { FaBox, FaUpload } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
+import productService from "../../../services/productService";
+import { useNotification } from "../../../hooks/useNotification";
 import "./AddProductView.css";
 
 const AddProductView = () => {
   const navigate = useNavigate();
+  const { showSuccess, showError } = useNotification();
+  const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     productName: "",
     category: "",
@@ -13,9 +17,9 @@ const AddProductView = () => {
     description: "",
     price: "",
     unit: "",
-    currentStock: "",
-    minimumStockLevel: "",
-    maximumStockLevel: "",
+    stockQuantity: "",
+    lowStockThreshold: "",
+    highStockThreshold: "",
     storageLocation: "",
     sku: "",
     barcode: "",
@@ -52,16 +56,26 @@ const AddProductView = () => {
     }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log("Form submitted:", formData);
-    console.log("Product image:", productImage);
-    // Add your form submission logic here
+    try {
+      setLoading(true);
+      const response = await productService.create(formData);
+      if (response.success) {
+        showSuccess("Success", "Product created successfully");
+        navigate("/products");
+      } else {
+        showError("Error", response.message || "Failed to create product");
+      }
+    } catch (err) {
+      showError("Error", err.message || "Failed to create product");
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleCancel = () => {
-    console.log("Form cancelled");
-    navigate(-1); // Navigate back to previous page
+    navigate(-1);
   };
 
   return (
