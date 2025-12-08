@@ -96,6 +96,8 @@ npm run build
 
 ### Netlify (Frontend)
 
+- Link: mini-supermarket-management.netlify.app
+
 1. **Connect repository** to Netlify
 2. **Build settings** (auto-detected):
 
