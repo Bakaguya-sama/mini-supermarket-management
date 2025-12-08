@@ -4,6 +4,7 @@ import Logo from "../../components/ui/Logo";
 import Input from "../../components/ui/Input";
 import Button from "../../components/ui/Button";
 import Checkbox from "../../components/ui/Checkbox";
+import ErrorMessage from "../../components/Messages/ErrorMessage";
 import "./SignUp.css";
 
 const SignUp = () => {
@@ -12,8 +13,8 @@ const SignUp = () => {
     email: "",
     password: "",
     confirmPassword: "",
-    agreeToTerms: false,
   });
+  const [errorMessage, setErrorMessage] = useState("");
   const navigate = useNavigate();
 
   const handleInputChange = (e) => {
@@ -30,19 +31,16 @@ const SignUp = () => {
 
     // Simple validation
     if (!formData.username || !formData.email || !formData.password) {
-      alert("Please fill in all required fields");
+      setErrorMessage("Please fill in all required fields");
       return;
     }
 
     if (formData.password !== formData.confirmPassword) {
-      alert("Passwords do not match");
+      setErrorMessage("Passwords do not match");
       return;
     }
 
-    if (!formData.agreeToTerms) {
-      alert("Please agree to the terms and conditions");
-      return;
-    }
+    //TODO: Check if the entered username had been existed. This username had been existed in the system. Please choose another username.
 
     // Navigate to sign in after successful registration
     navigate("/auth/signin");
@@ -50,6 +48,10 @@ const SignUp = () => {
 
   return (
     <div className="signup-container">
+      <ErrorMessage
+        message={errorMessage}
+        onClose={() => setErrorMessage("")}
+      />
       <div className="signup-card">
         <Logo />
 

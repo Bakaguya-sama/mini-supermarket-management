@@ -2,12 +2,17 @@ import React, { use, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { FaSearch, FaEye, FaEdit, FaPlus } from "react-icons/fa";
 import "./DamagedProduct.css";
+import SuccessMessage from "../../../components/Messages/SuccessMessage";
+import ErrorMessage from "../../../components/Messages/ErrorMessage";
 
 const DamagedProduct = () => {
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState("");
   const [reasonFilter, setReasonFilter] = useState("All");
   const [currentPage, setCurrentPage] = useState(1);
+
+  const [errorMessage, setErrorMessage] = useState("");
+  const [successMessage, setSuccessMessage] = useState("");
 
   // Sample damaged product data
   const damagedProductData = [
@@ -189,6 +194,18 @@ const DamagedProduct = () => {
 
   return (
     <div className="damaged-product-view">
+      <SuccessMessage
+        message={successMessage}
+        onClose={() => {
+          setSuccessMessage("");
+        }}
+      />
+      <ErrorMessage
+        message={errorMessage}
+        onClose={() => {
+          setErrorMessage("");
+        }}
+      />
       {/* Header */}
       <div className="damaged-page-header">
         <h1 className="damaged-page-title">Damaged Products</h1>

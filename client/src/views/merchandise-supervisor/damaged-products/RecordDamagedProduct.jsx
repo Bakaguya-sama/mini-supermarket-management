@@ -9,6 +9,8 @@ import {
   FaArrowLeft,
 } from "react-icons/fa";
 import "./RecordDamagedProduct.css";
+import SuccessMessage from "../../../components/Messages/SuccessMessage";
+import ErrorMessage from "../../../components/Messages/ErrorMessage";
 
 const RecordDamagedProduct = () => {
   const navigate = useNavigate();
@@ -25,6 +27,9 @@ const RecordDamagedProduct = () => {
   const [damagedQuantities, setDamagedQuantities] = useState({});
   const [damagedReasons, setDamagedReasons] = useState({});
   const [customReasons, setCustomReasons] = useState({});
+
+  const [errorMessage, setErrorMessage] = useState("");
+  const [successMessage, setSuccessMessage] = useState("");
 
   const itemsPerPage = 15;
 
@@ -248,7 +253,7 @@ const RecordDamagedProduct = () => {
     });
 
     if (invalidRecords.length > 0) {
-      alert(
+      setErrorMessage(
         "Please fix validation errors before saving:\n- Damaged quantity must be between 1 and available quantity\n- Reason must be selected\n- Custom reason must be provided when 'Other reason' is selected"
       );
       return;
@@ -271,7 +276,7 @@ const RecordDamagedProduct = () => {
     });
 
     console.log("Saving damaged product records:", recordsToSave);
-    alert(
+    setSuccessMessage(
       `Saved ${recordsToSave.length} damaged product records successfully!`
     );
 
@@ -284,6 +289,18 @@ const RecordDamagedProduct = () => {
 
   return (
     <div className="record-damaged-view">
+      <SuccessMessage
+        message={successMessage}
+        onClose={() => {
+          setSuccessMessage("");
+        }}
+      />
+      <ErrorMessage
+        message={errorMessage}
+        onClose={() => {
+          setErrorMessage("");
+        }}
+      />
       {/* Header */}
       <div className="record-damaged-header">
         <div className="record-damaged-title-section">

@@ -10,10 +10,15 @@ import {
   FaArrowLeft,
 } from "react-icons/fa";
 import "./EditShelfProduct.css";
+import SuccessMessage from "../../../components/Messages/SuccessMessage";
+import ErrorMessage from "../../../components/Messages/ErrorMessage";
 
 const EditShelfProduct = () => {
   const { combinedId } = useParams();
   const navigate = useNavigate();
+
+  const [errorMessage, setErrorMessage] = useState("");
+  const [successMessage, setSuccessMessage] = useState("");
 
   // Parse the combined id to extract productId and location
   const [productId, location] = combinedId ? combinedId.split("-") : ["", ""];
@@ -169,12 +174,12 @@ const EditShelfProduct = () => {
     );
 
     if (moveQuantity <= 0) {
-      alert("Please enter a valid quantity to move");
+      setErrorMessage("Please enter a valid quantity to move");
       return;
     }
 
     if (moveQuantity > targetShelf.availableSpace) {
-      alert(
+      setErrorMessage(
         `Cannot move ${moveQuantity} units. Available space: ${targetShelf.availableSpace}`
       );
       return;
@@ -208,12 +213,12 @@ const EditShelfProduct = () => {
     );
 
     if (removeQuantity <= 0) {
-      alert("Please enter a valid quantity to remove");
+      setErrorMessage("Please enter a valid quantity to remove");
       return;
     }
 
     if (removeQuantity > sourceLocation.stock) {
-      alert(
+      setErrorMessage(
         `Cannot remove ${removeQuantity} units. Available stock: ${sourceLocation.stock}`
       );
       return;
@@ -248,12 +253,12 @@ const EditShelfProduct = () => {
 
   const handleSaveChanges = () => {
     if (pendingActions.length === 0) {
-      alert("No changes to save");
+      setErrorMessage("No changes to save");
       return;
     }
 
     console.log("Saving changes:", pendingActions);
-    alert(`Successfully saved ${pendingActions.length} changes!`);
+    setSuccessMessage(`Successfully saved ${pendingActions.length} changes!`);
     navigate(-1);
   };
 
@@ -290,6 +295,18 @@ const EditShelfProduct = () => {
 
   return (
     <div className="edit-shelf-product-view">
+      <SuccessMessage
+        message={successMessage}
+        onClose={() => {
+          setSuccessMessage("");
+        }}
+      />
+      <ErrorMessage
+        message={errorMessage}
+        onClose={() => {
+          setErrorMessage("");
+        }}
+      />
       {/* Header */}
       <div className="edit-shelf-page-header">
         <button onClick={handleCancel} className="edit-shelf-back-btn">

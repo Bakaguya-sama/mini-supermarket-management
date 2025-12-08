@@ -10,10 +10,15 @@ import {
 } from "react-icons/fa";
 import { useNavigate, useLocation } from "react-router-dom";
 import "./CreateInvoice.css";
+import SuccessMessage from "../../../components/Messages/SuccessMessage";
+import ErrorMessage from "../../../components/Messages/ErrorMessage";
 
 const CreateInvoice = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  // Messages
+  const [errorMessage, setErrorMessage] = useState("");
+  const [successMessage, setSuccessMessage] = useState("");
 
   // Product search and filter states
   const [productSearchTerm, setProductSearchTerm] = useState("");
@@ -648,7 +653,7 @@ const CreateInvoice = () => {
 
       // Check if total quantity exceeds stock
       if (totalQuantity > product.stock) {
-        alert(
+        errorMessage(
           `Cannot add ${quantity} items. Stock available: ${
             product.stock
           }, Current in cart: ${currentQuantity}, Maximum you can add: ${
@@ -690,7 +695,9 @@ const CreateInvoice = () => {
     const existingProduct = products.find((p) => p.id === product.id);
     if (existingProduct) {
       if (existingProduct.quantity >= product.stock) {
-        alert(`Cannot add more items. Stock available: ${product.stock}`);
+        setErrorMessage(
+          `Cannot add more items. Stock available: ${product.stock}`
+        );
         return;
       }
       handleQuantityChange(product.id, existingProduct.quantity + 1);
@@ -715,7 +722,7 @@ const CreateInvoice = () => {
     // Find the original product to check stock
     const originalProduct = availableProducts.find((p) => p.id === productId);
     if (originalProduct && newQuantity > originalProduct.stock) {
-      alert(
+      setErrorMessage(
         `Cannot set quantity to ${newQuantity}. Stock available: ${originalProduct.stock}`
       );
       return;
@@ -745,7 +752,7 @@ const CreateInvoice = () => {
 
   const handleCreateInvoice = () => {
     if (products.length === 0) {
-      alert("Please add at least one product to create an invoice.");
+      setErrorMessage("Please add at least one product to create an invoice.");
       return;
     }
 
@@ -763,8 +770,8 @@ const CreateInvoice = () => {
     };
 
     console.log("Creating invoice:", invoiceData);
-    alert("Invoice created successfully!");
-    navigate("/invoice");
+    setSuccessMessage("Invoice created successfully!");
+    setTimeout(() => navigate("/invoice"), 2000);
   };
 
   const handleBack = () => {
@@ -773,6 +780,18 @@ const CreateInvoice = () => {
 
   return (
     <div className="create-invoice-detail-view">
+      <SuccessMessage
+        message={successMessage}
+        onClose={() => {
+          setSuccessMessage("");
+        }}
+      />
+      <ErrorMessage
+        message={errorMessage}
+        onClose={() => {
+          setErrorMessage("");
+        }}
+      />
       {/* Header */}
       <div className="create-invoice-page-header">
         <h1 className="create-invoice-page-title">Create New Invoice</h1>

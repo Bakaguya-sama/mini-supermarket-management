@@ -2,10 +2,15 @@ import React, { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { FaUser, FaSave } from "react-icons/fa";
 import "./EditStaffView.css";
+import ErrorMessage from "../../../components/Messages/ErrorMessage";
+import SuccessMessage from "../../../components/Messages/SuccessMessage";
 
 const EditStaffView = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+
+  const [errorMessage, setErrorMessage] = useState("");
+  const [successMessage, setSuccessMessage] = useState("");
 
   const [formData, setFormData] = useState({
     fullName: "Bob Martinez",
@@ -37,6 +42,7 @@ const EditStaffView = () => {
     e.preventDefault();
     console.log("Form updated:", formData);
     // Add your form submission logic here
+    // TODO: Implement success message here
   };
 
   const handleCancel = () => {
@@ -45,6 +51,18 @@ const EditStaffView = () => {
 
   return (
     <div className="edit-staff-view">
+      <SuccessMessage
+        message={successMessage}
+        onClose={() => {
+          setSuccessMessage("");
+        }}
+      />
+      <ErrorMessage
+        message={errorMessage}
+        onClose={() => {
+          setErrorMessage("");
+        }}
+      />
       {/* Header */}
       <div className="page-header">
         <h1 className="page-title">Edit Staff</h1>

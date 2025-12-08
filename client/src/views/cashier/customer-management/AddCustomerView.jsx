@@ -2,6 +2,8 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { FaUser, FaTimes } from "react-icons/fa";
 import "./AddCustomerView.css";
+import SuccessMessage from "../../../components/Messages/SuccessMessage";
+import ErrorMessage from "../../../components/Messages/ErrorMessage";
 
 const AddCustomerView = () => {
   const navigate = useNavigate();
@@ -16,6 +18,9 @@ const AddCustomerView = () => {
     status: "Active",
     notes: "",
   });
+
+  const [successMessage, setSuccessMessage] = useState("");
+  const [errorMessage, setErrorMessage] = useState("");
 
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -80,11 +85,16 @@ const AddCustomerView = () => {
       console.log("Customer data to submit:", formData);
 
       // Show success message and redirect
-      alert("Customer added successfully!");
-      navigate("/customers");
+      //TODO: Check if the entered email or phone of the customer has existed
+      setSuccessMessage("Customer added successfully!");
+
+      // Wait for user to see the message before redirecting
+      setTimeout(() => {
+        navigate("/customer");
+      }, 2000);
     } catch (error) {
       console.error("Error adding customer:", error);
-      alert("Error adding customer. Please try again.");
+      setErrorMessage("Error adding customer. Please try again.");
     } finally {
       setIsSubmitting(false);
     }
@@ -97,6 +107,18 @@ const AddCustomerView = () => {
 
   return (
     <div className="add-customer-view">
+      <SuccessMessage
+        message={successMessage}
+        onClose={() => {
+          setSuccessMessage("");
+        }}
+      />
+      <ErrorMessage
+        message={errorMessage}
+        onClose={() => {
+          setErrorMessage("");
+        }}
+      />
       {/* Header */}
       <div className="customer-page-header">
         <h1 className="customer-page-title">Add New Customer</h1>
