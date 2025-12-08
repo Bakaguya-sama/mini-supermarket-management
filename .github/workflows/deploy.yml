@@ -5,6 +5,10 @@ on:
     branches: [main]
   workflow_dispatch: # Allow manual trigger
 
+permissions:
+  contents: read
+  deployments: write
+
 jobs:
   deploy:
     name: Deploy to Netlify
