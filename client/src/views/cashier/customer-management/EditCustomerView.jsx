@@ -2,6 +2,8 @@ import React, { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { FaUser, FaSave } from "react-icons/fa";
 import "./EditCustomerView.css";
+import SuccessMessage from "../../../components/Messages/SuccessMessage";
+import ErrorMessage from "../../../components/Messages/ErrorMessage";
 
 const EditCustomerView = () => {
   const { id } = useParams();
@@ -29,6 +31,8 @@ const EditCustomerView = () => {
 
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
+  const [successMessage, setSuccessMessage] = useState("");
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -90,11 +94,13 @@ const EditCustomerView = () => {
       console.log("Customer data updated:", formData);
 
       // Show success message and redirect
-      alert("Customer updated successfully!");
-      navigate("/customers");
+      setSuccessMessage("Customer updated successfully!");
+      setTimeout(() => {
+        navigate("/customer");
+      }, 2000);
     } catch (error) {
       console.error("Error updating customer:", error);
-      alert("Error updating customer. Please try again.");
+      setErrorMessage("Error updating customer. Please try again.");
     } finally {
       setIsSubmitting(false);
     }
@@ -106,6 +112,18 @@ const EditCustomerView = () => {
 
   return (
     <div className="edit-customer-view">
+      <SuccessMessage
+        message={successMessage}
+        onClose={() => {
+          setSuccessMessage("");
+        }}
+      />
+      <ErrorMessage
+        message={errorMessage}
+        onClose={() => {
+          setErrorMessage("");
+        }}
+      />
       {/* Header */}
       <div className="customer-page-header">
         <h1 className="customer-page-title">Edit Customer</h1>

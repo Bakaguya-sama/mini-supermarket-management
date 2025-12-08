@@ -4,6 +4,7 @@ import Logo from "../../components/ui/Logo";
 import Input from "../../components/ui/Input";
 import Button from "../../components/ui/Button";
 import Checkbox from "../../components/ui/Checkbox";
+import ErrorMessage from "../../components/Messages/ErrorMessage";
 import "./SignIn.css";
 
 // Sample user accounts for different roles
@@ -83,12 +84,33 @@ const SAMPLE_ACCOUNTS = {
 };
 
 const SignIn = () => {
-  const [activeTab, setActiveTab] = useState("customer");
-  const [formData, setFormData] = useState({
-    username: "",
-    password: "",
-    rememberMe: false,
-  });
+  // Load remembered credentials from localStorage
+  const getRememberedCredentials = () => {
+    const rememberedUsername = localStorage.getItem("rememberedUsername");
+    const rememberedPassword = localStorage.getItem("rememberedPassword");
+
+    if (rememberedUsername && rememberedPassword) {
+      return {
+        username: rememberedUsername,
+        password: rememberedPassword,
+        rememberMe: true,
+      };
+    }
+
+    return {
+      username: "",
+      password: "",
+      rememberMe: false,
+    };
+  };
+
+  const getRememberedTab = () => {
+    return localStorage.getItem("rememberedTab") || "customer";
+  };
+
+  const [activeTab, setActiveTab] = useState(getRememberedTab);
+  const [formData, setFormData] = useState(getRememberedCredentials);
+  const [errorMessage, setErrorMessage] = useState("");
   const navigate = useNavigate();
 
   const handleInputChange = (e) => {
@@ -106,7 +128,7 @@ const SignIn = () => {
 
     // Simple validation
     if (!formData.username || !formData.password) {
-      alert("Please enter username and password");
+      setErrorMessage("Please enter username and password");
       return;
     }
 
@@ -114,18 +136,20 @@ const SignIn = () => {
     const account = SAMPLE_ACCOUNTS[formData.username.toLowerCase()];
 
     if (!account) {
-      alert("Username not found");
+      setErrorMessage(
+        "Username not found. Please check your username and try again."
+      );
       return;
     }
 
     if (account.password !== formData.password) {
-      alert("Incorrect password");
+      setErrorMessage("Incorrect password. Please try again.");
       return;
     }
 
     // Check if user type matches account type
     if (account.type !== activeTab) {
-      alert(
+      setErrorMessage(
         `This account is for ${account.type}, please select the correct tab`
       );
       return;
@@ -136,6 +160,17 @@ const SignIn = () => {
     localStorage.setItem("userName", account.name);
     localStorage.setItem("userUsername", formData.username);
     localStorage.setItem("isLoggedIn", "true");
+
+    // Handle remember me
+    if (formData.rememberMe) {
+      localStorage.setItem("rememberedUsername", formData.username);
+      localStorage.setItem("rememberedPassword", formData.password);
+      localStorage.setItem("rememberedTab", activeTab);
+    } else {
+      localStorage.removeItem("rememberedUsername");
+      localStorage.removeItem("rememberedPassword");
+      localStorage.removeItem("rememberedTab");
+    }
 
     console.log("Login successful:", {
       username: formData.username,
@@ -150,6 +185,10 @@ const SignIn = () => {
 
   return (
     <div className="signin-container">
+      <ErrorMessage
+        message={errorMessage}
+        onClose={() => setErrorMessage("")}
+      />
       <div className="signin-card">
         <Logo />
 

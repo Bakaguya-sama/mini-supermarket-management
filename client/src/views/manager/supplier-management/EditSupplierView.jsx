@@ -2,10 +2,16 @@ import React, { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { FaBuilding, FaSave } from "react-icons/fa";
 import "./EditSupplierView.css";
+import SuccessMessage from "../../../components/Messages/SuccessMessage";
+import ErrorMessage from "../../../components/Messages/ErrorMessage";
 
 // Edit Supplier View Component
 const EditSupplierView = () => {
   const { id } = useParams();
+
+  const [errorMessage, setErrorMessage] = useState("");
+  const [successMessage, setSuccessMessage] = useState("");
+
   const navigate = useNavigate();
 
   const [formData, setFormData] = useState({
@@ -41,6 +47,7 @@ const EditSupplierView = () => {
     e.preventDefault();
     console.log("Form updated:", formData);
     // Add your form submission logic here
+    // TODO: Implement success message here
   };
 
   const handleCancel = () => {
@@ -49,6 +56,18 @@ const EditSupplierView = () => {
 
   return (
     <div className="edit-supplier-view">
+      <SuccessMessage
+        message={successMessage}
+        onClose={() => {
+          setSuccessMessage("");
+        }}
+      />
+      <ErrorMessage
+        message={errorMessage}
+        onClose={() => {
+          setErrorMessage("");
+        }}
+      />
       {/* Header */}
       <div className="supplier-edit-page-header">
         <h1 className="supplier-edit-page-title">Edit Supplier</h1>

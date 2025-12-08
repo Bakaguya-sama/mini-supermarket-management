@@ -2,9 +2,15 @@ import React, { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { FaBox, FaSave, FaUpload } from "react-icons/fa";
 import "./EditProductView.css";
+import SuccessMessage from "../../../components/Messages/SuccessMessage";
+import ErrorMessage from "../../../components/Messages/ErrorMessage";
 
 const EditProductView = () => {
   const { id } = useParams();
+
+  const [successMessage, setSuccessMessage] = useState("");
+  const [errorMessage, setErrorMessage] = useState("");
+
   const navigate = useNavigate();
 
   const [formData, setFormData] = useState({
@@ -63,6 +69,7 @@ const EditProductView = () => {
     console.log("Product updated:", formData);
     console.log("Product image:", productImage);
     // Add your form submission logic here
+    // TODO: Implement success message here
   };
 
   const handleCancel = () => {
@@ -71,6 +78,18 @@ const EditProductView = () => {
 
   return (
     <div className="edit-product-view">
+      <SuccessMessage
+        message={successMessage}
+        onClose={() => {
+          setSuccessMessage("");
+        }}
+      />
+      <ErrorMessage
+        message={errorMessage}
+        onClose={() => {
+          setErrorMessage("");
+        }}
+      />
       {/* Header */}
       <div className="edit-product-page-header">
         <h1 className="edit-product-page-title">Edit Product</h1>

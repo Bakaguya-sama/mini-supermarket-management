@@ -10,11 +10,13 @@ import {
 import { useNavigate, useParams } from "react-router-dom";
 import ConfirmationModal from "../../../components/DeliveryOrderModal/ConfirmationModal";
 import "./AssignedOrderDetail.css";
+import SuccessMessage from "../../../components/Messages/SuccessMessage";
 
 const AssignedOrderDetail = () => {
   const navigate = useNavigate();
   const { orderId } = useParams();
   const [isConfirmationModalOpen, setIsConfirmationModalOpen] = useState(false);
+  const [successMessage, setSuccessMessage] = useState("");
 
   // Sample order data - in real app, fetch by orderId
   const orderData = {
@@ -90,7 +92,7 @@ const AssignedOrderDetail = () => {
     console.log("Confirming pickup for order:", orderData.id);
     // Add pickup confirmation logic here
     // You can add API call here to update order status
-    alert("Order pickup confirmed successfully!");
+    setSuccessMessage("Order pickup confirmed successfully!");
   };
 
   const handleCloseConfirmationModal = () => {
@@ -115,6 +117,10 @@ const AssignedOrderDetail = () => {
 
   return (
     <div className="order-detail-view">
+      <SuccessMessage
+        message={successMessage}
+        onClose={() => setSuccessMessage("")}
+      />
       {/* Header */}
       <div className="order-page-header">
         <h1 className="order-page-title">Order Details</h1>
