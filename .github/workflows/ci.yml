@@ -1,0 +1,77 @@
+name: CI - Build and Test
+
+on:
+  pull_request:
+    branches: [main, develop]
+  push:
+    branches: [main, develop]
+
+jobs:
+  # Job 1: Build and test client
+  client:
+    name: Build Client
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "18"
+          cache: "npm"
+          cache-dependency-path: client/package-lock.json
+
+      - name: Install client dependencies
+        working-directory: ./client
+        run: npm ci
+
+      - name: Lint client code
+        working-directory: ./client
+        run: npm run lint
+        continue-on-error: true
+
+      - name: Build client
+        working-directory: ./client
+        run: npm run build
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: client-build
+          path: client/dist/
+          retention-days: 7
+
+  # Job 2: Check server (if you have tests later)
+  server:
+    name: Check Server
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "18"
+
+      - name: Check server files
+        working-directory: ./server
+        run: |
+          if [ -f "package.json" ]; then
+            echo "Server package.json found"
+            if [ -f "package-lock.json" ]; then
+              npm ci
+            else
+              npm install
+            fi
+          else
+            echo "No server package.json found, skipping"
+          fi
+
+      - name: Run server tests (placeholder)
+        working-directory: ./server
+        run: echo "Server tests will be added here"
+        continue-on-error: true
