@@ -2,9 +2,15 @@ import React, { useState } from "react";
 import { FaBuilding, FaTimes } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 import "./AddSupplierView.css";
+import SuccessMessage from "../../../components/Messages/SuccessMessage";
+import ErrorMessage from "../../../components/Messages/ErrorMessage";
 
 const AddSupplierView = () => {
   const navigate = useNavigate();
+
+  const [errorMessage, setErrorMessage] = useState("");
+  const [successMessage, setSuccessMessage] = useState("");
+
   const [formData, setFormData] = useState({
     supplierName: "",
     contactPerson: "",
@@ -33,6 +39,7 @@ const AddSupplierView = () => {
     e.preventDefault();
     console.log("Form submitted:", formData);
     // Add your form submission logic here
+    // TODO: Implement success message here
   };
 
   const handleCancel = () => {
@@ -42,6 +49,18 @@ const AddSupplierView = () => {
 
   return (
     <div className="add-supplier-view">
+      <SuccessMessage
+        message={successMessage}
+        onClose={() => {
+          setSuccessMessage("");
+        }}
+      />
+      <ErrorMessage
+        message={errorMessage}
+        onClose={() => {
+          setErrorMessage("");
+        }}
+      />
       {/* Header */}
       <div className="supplier-page-header">
         <h1 className="supplier-page-title">Create New Supplier</h1>

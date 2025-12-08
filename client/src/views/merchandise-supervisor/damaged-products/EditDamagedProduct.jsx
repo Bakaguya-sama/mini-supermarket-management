@@ -9,11 +9,16 @@ import {
 } from "react-icons/fa";
 import ResolvedConfirmationModal from "../../../components/DamagedProduct/ResolvedConfirmationModal";
 import "./EditDamagedProduct.css";
+import SuccessMessage from "../../../components/Messages/SuccessMessage";
+import ErrorMessage from "../../../components/Messages/ErrorMessage";
 
 const EditDamagedProduct = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const [showResolvedModal, setShowResolvedModal] = useState(false);
+
+  const [errorMessage, setErrorMessage] = useState("");
+  const [successMessage, setSuccessMessage] = useState("");
 
   // Sample damaged product data
   const [formData, setFormData] = useState({
@@ -88,7 +93,7 @@ const EditDamagedProduct = () => {
     };
 
     console.log("Updating damaged product:", updatedData);
-    alert("Damaged product information has been updated!");
+    setSuccessMessage("Damaged product information has been updated!");
     navigate(-1);
   };
 
@@ -98,6 +103,18 @@ const EditDamagedProduct = () => {
 
   return (
     <div className="edit-damaged-product-view">
+      <SuccessMessage
+        message={successMessage}
+        onClose={() => {
+          setSuccessMessage("");
+        }}
+      />
+      <ErrorMessage
+        message={errorMessage}
+        onClose={() => {
+          setErrorMessage("");
+        }}
+      />
       {/* Header */}
       <div className="edit-damaged-product-page-header">
         <h1 className="edit-damaged-product-page-title">

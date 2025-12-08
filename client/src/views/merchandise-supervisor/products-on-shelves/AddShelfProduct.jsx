@@ -9,9 +9,14 @@ import {
   FaExclamationTriangle,
 } from "react-icons/fa";
 import "./AddShelfProduct.css";
+import SuccessMessage from "../../../components/Messages/SuccessMessage";
+import ErrorMessage from "../../../components/Messages/ErrorMessage";
 
 const AddShelfProduct = () => {
   const navigate = useNavigate();
+
+  const [errorMessage, setErrorMessage] = useState("");
+  const [successMessage, setSuccessMessage] = useState("");
 
   // State for product inventory table (left)
   const [productSearchTerm, setProductSearchTerm] = useState("");
@@ -269,7 +274,7 @@ const AddShelfProduct = () => {
 
   const handleAddToShelf = () => {
     if (selectedProducts.size === 0 || !selectedShelf) {
-      alert("Please select at least one product and one shelf!");
+      setErrorMessage("Please select at least one product and one shelf!");
       return;
     }
 
@@ -280,7 +285,7 @@ const AddShelfProduct = () => {
     });
 
     if (invalidProducts.length > 0) {
-      alert("Please enter valid quantities for all selected products!");
+      setE("Please enter valid quantities for all selected products!");
       return;
     }
 
@@ -292,7 +297,7 @@ const AddShelfProduct = () => {
 
     // Validate shelf capacity
     if (totalQuantity > shelf.available) {
-      alert(
+      setErrorMessage(
         `Cannot add ${totalQuantity} items to ${shelf.name}!\n` +
           `Available space: ${shelf.available} items\n` +
           `You're trying to add: ${totalQuantity} items\n` +
@@ -317,7 +322,7 @@ const AddShelfProduct = () => {
       totalQuantity: totalQuantity,
     });
 
-    alert(
+    setSuccessMessage(
       `Successfully added ${totalQuantity} item(s) from ${selectedProducts.size} product(s) to ${shelf.name}!`
     );
 
@@ -394,6 +399,18 @@ const AddShelfProduct = () => {
 
   return (
     <div className="add-shelf-view">
+      <SuccessMessage
+        message={successMessage}
+        onClose={() => {
+          setSuccessMessage("");
+        }}
+      />
+      <ErrorMessage
+        message={errorMessage}
+        onClose={() => {
+          setErrorMessage("");
+        }}
+      />
       {/* Header */}
       <div className="add-shelf-header">
         <div className="add-shelf-title-section">

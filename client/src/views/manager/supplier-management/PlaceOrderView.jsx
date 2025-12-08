@@ -2,9 +2,14 @@ import React, { useState } from "react";
 import { FaShoppingCart, FaPlus, FaTrash } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 import "./PlaceOrderView.css";
+import SuccessMessage from "../../../components/Messages/SuccessMessage";
+import ErrorMessage from "../../../components/Messages/ErrorMessage";
 
 const PlaceOrderView = () => {
   const navigate = useNavigate();
+
+  const [errorMessage, setErrorMessage] = useState("");
+  const [successMessage, setSuccessMessage] = useState("");
 
   // Sample supplier data with their products
   const supplierData = {
@@ -128,6 +133,7 @@ const PlaceOrderView = () => {
     e.preventDefault();
     console.log("Order submitted:", { formData, orderItems });
     // Add your form submission logic here
+    // TODO: Implement success message here
   };
 
   const handleCancel = () => {
@@ -137,6 +143,18 @@ const PlaceOrderView = () => {
 
   return (
     <div className="place-order-view">
+      <SuccessMessage
+        message={successMessage}
+        onClose={() => {
+          setSuccessMessage("");
+        }}
+      />
+      <ErrorMessage
+        message={errorMessage}
+        onClose={() => {
+          setErrorMessage("");
+        }}
+      />
       {/* Header */}
       <div className="place-order-page-header">
         <h1 className="place-order-page-title">Place Order</h1>

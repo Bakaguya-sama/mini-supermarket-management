@@ -10,11 +10,17 @@ import {
 } from "react-icons/fa";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
 import "./InvoiceDetail.css";
+import SuccessMessage from "../../../components/Messages/SuccessMessage";
+import ErrorMessage from "../../../components/Messages/ErrorMessage";
 
 const InvoiceDetail = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { invoiceId } = useParams();
+
+  // Message
+  const [errorMessage, setErrorMessage] = useState("");
+  const [successMessage, setSuccessMessage] = useState("");
 
   // Sample invoice data - in real app, fetch by invoiceId
   const invoiceData = {
@@ -351,8 +357,8 @@ const InvoiceDetail = () => {
     console.log("Confirming payment for:", invoiceData.id);
     // In real app: updateInvoiceStatus(invoiceData.id, "completed")
     // Show success message and navigate back
-    alert("Payment confirmed successfully!");
-    navigate(-1);
+    setSuccessMessage("Payment confirmed successfully!");
+    setTimeout(() => navigate("/invoice"), 2000);
   };
 
   const handleCancelTransaction = () => {
@@ -362,9 +368,9 @@ const InvoiceDetail = () => {
   const confirmCancelTransaction = () => {
     console.log("Canceling transaction:", invoiceData.id);
     // In real app: updateInvoiceStatus(invoiceData.id, "refunded")
-    alert("Transaction canceled and refunded!");
+    errorMessage("Transaction canceled and refunded!");
     setShowCancelModal(false);
-    navigate(-1);
+    navigate("/invoice");
   };
 
   const handlePaymentMethodChange = (methodId) => {
@@ -391,6 +397,18 @@ const InvoiceDetail = () => {
 
   return (
     <div className="invoice-detail-view">
+      <SuccessMessage
+        message={successMessage}
+        onClose={() => {
+          setSuccessMessage("");
+        }}
+      />
+      <ErrorMessage
+        message={errorMessage}
+        onClose={() => {
+          setErrorMessage("");
+        }}
+      />
       {/* Header */}
       <div className="invoice-page-header">
         <h1 className="invoice-page-title">Invoice Detail</h1>
