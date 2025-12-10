@@ -221,7 +221,8 @@ exports.createProduct = async (req, res) => {
       price = 0,
       status = 'active',
       supplier_id,
-      category
+      category,
+      image_link
     } = req.body;
 
     // Validate required fields
@@ -263,7 +264,8 @@ exports.createProduct = async (req, res) => {
       price,
       status,
       supplier_id,
-      category
+      category,
+      image_link
     });
 
     await product.populate('supplier_id', 'name contact_person_name email phone');
@@ -305,7 +307,8 @@ exports.updateProduct = async (req, res) => {
       price,
       status,
       supplier_id,
-      category
+      category,
+      image_link
     } = req.body;
 
     // Validate supplier if provided
@@ -330,6 +333,7 @@ exports.updateProduct = async (req, res) => {
     if (status !== undefined) product.status = status;
     if (supplier_id !== undefined) product.supplier_id = supplier_id;
     if (category !== undefined) product.category = category;
+    if (image_link !== undefined) product.image_link = image_link;
 
     await product.save();
     await product.populate('supplier_id', 'name contact_person_name email phone');

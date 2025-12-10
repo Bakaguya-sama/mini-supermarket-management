@@ -247,7 +247,8 @@ exports.createSupplier = async (req, res) => {
       address,
       tax_id,
       note,
-      is_active = true
+      is_active = true,
+      image_link
     } = req.body;
 
     // Validate required fields
@@ -287,7 +288,8 @@ exports.createSupplier = async (req, res) => {
       address,
       tax_id,
       note,
-      is_active
+      is_active,
+      image_link
     });
 
     res.status(201).json({
@@ -326,7 +328,8 @@ exports.updateSupplier = async (req, res) => {
       address,
       tax_id,
       note,
-      is_active
+      is_active,
+      image_link
     } = req.body;
 
     // Check if new name already exists (if name is being changed)
@@ -361,6 +364,7 @@ exports.updateSupplier = async (req, res) => {
     if (tax_id !== undefined) supplier.tax_id = tax_id;
     if (note !== undefined) supplier.note = note;
     if (is_active !== undefined) supplier.is_active = is_active;
+    if (image_link !== undefined) supplier.image_link = image_link;
 
     await supplier.save();
 

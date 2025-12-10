@@ -20,9 +20,32 @@ export const productService = {
       
       const response = await apiClient.get(API_BASE_URL, { params });
       
-      console.log('✅ Products fetched successfully:', response.data);
-      // API đã trả về { success, data, ... } - return trực tiếp
-      return response.data;
+      console.log('✅ Raw response:', response.data);
+      
+      // Handle both formats: array directly OR object with data property
+      let formattedResponse;
+      if (Array.isArray(response.data)) {
+        // Backend returning array directly
+        formattedResponse = {
+          success: true,
+          data: response.data,
+          count: response.data.length,
+          total: response.data.length
+        };
+      } else if (response.data.success !== undefined) {
+        // Backend returning object format
+        formattedResponse = response.data;
+      } else {
+        // Fallback
+        formattedResponse = {
+          success: true,
+          data: response.data || [],
+          count: Array.isArray(response.data) ? response.data.length : 0
+        };
+      }
+      
+      console.log('✅ Products fetched successfully:', formattedResponse.data);
+      return formattedResponse;
     } catch (error) {
       console.error('❌ Error fetching products:', error);
       return {
@@ -44,11 +67,31 @@ export const productService = {
       
       const response = await apiClient.get(`${API_BASE_URL}/${id}`);
       
-      console.log('✅ Product fetched successfully:', response.data);
-      return response.data;
+      console.log('✅ Raw product response:', response.data);
+      
+      // Handle both formats
+      let formattedResponse;
+      if (response.data.success !== undefined) {
+        formattedResponse = response.data;
+      } else if (response.data._id || response.data.id) {
+        // Product data directly
+        formattedResponse = {
+          success: true,
+          data: response.data
+        };
+      } else {
+        formattedResponse = response.data;
+      }
+      
+      console.log('✅ Product fetched successfully:', formattedResponse.data);
+      return formattedResponse;
     } catch (error) {
       console.error(`❌ Error fetching product ${id}:`, error);
-      throw error;
+      return {
+        success: false,
+        message: error.message || 'Failed to fetch product',
+        data: null
+      };
     }
   },
 
@@ -61,29 +104,40 @@ export const productService = {
     try {
       console.log('📦 Creating new product:', productData);
       
-      // Chuẩn bị dữ liệu theo đúng format backend
       const payload = {
         name: productData.name,
-        description: productData.description,
+        description: productData.description || '',
         unit: productData.unit,
-        price: parseFloat(productData.price),
-        current_stock: parseInt(productData.currentStock) || 0,
-        minimum_stock_level: parseInt(productData.minimumStockLevel) || 10,
-        maximum_stock_level: parseInt(productData.maximumStockLevel) || 1000,
+        price: parseFloat(productData.price) || 0,
+        current_stock: parseInt(productData.currentStock) || parseInt(productData.current_stock) || 0,
+        minimum_stock_level: parseInt(productData.minimumStockLevel) || parseInt(productData.minimum_stock_level) || 10,
+        maximum_stock_level: parseInt(productData.maximumStockLevel) || parseInt(productData.maximum_stock_level) || 1000,
         category: productData.category,
         supplier_id: productData.supplier_id,
         status: 'active',
-        storage_location: productData.storageLocation || '',
+        storage_location: productData.storageLocation || productData.storage_location || '',
         image_link: productData.image_link || null
       };
 
       const response = await apiClient.post(API_BASE_URL, payload);
       
-      console.log('✅ Product created successfully:', response.data);
-      return response.data;
+      console.log('✅ Product created response - success:', response.data?.success);
+      
+      // Ensure response has proper format
+      const formattedResponse = {
+        success: response.data?.success ?? true,
+        message: response.data?.message || 'Product created successfully',
+        data: response.data?.data || response.data
+      };
+      
+      return formattedResponse;
     } catch (error) {
-      console.error('❌ Error creating product:', error);
-      throw error;
+      console.error('❌ Error creating product:', error.message);
+      return {
+        success: false,
+        message: error.message || 'Failed to create product',
+        data: null
+      };
     }
   },
 
@@ -99,26 +153,38 @@ export const productService = {
       
       const payload = {
         name: productData.name,
-        description: productData.description,
+        description: productData.description || '',
         unit: productData.unit,
-        price: parseFloat(productData.price),
-        current_stock: parseInt(productData.currentStock) || 0,
-        minimum_stock_level: parseInt(productData.minimumStockLevel) || 10,
-        maximum_stock_level: parseInt(productData.maximumStockLevel) || 1000,
+        price: parseFloat(productData.price) || 0,
+        current_stock: parseInt(productData.currentStock) || parseInt(productData.current_stock) || 0,
+        minimum_stock_level: parseInt(productData.minimumStockLevel) || parseInt(productData.minimum_stock_level) || 10,
+        maximum_stock_level: parseInt(productData.maximumStockLevel) || parseInt(productData.maximum_stock_level) || 1000,
         category: productData.category,
         supplier_id: productData.supplier_id,
         status: productData.status || 'active',
-        storage_location: productData.storageLocation || '',
+        storage_location: productData.storageLocation || productData.storage_location || '',
         image_link: productData.image_link || null
       };
 
       const response = await apiClient.put(`${API_BASE_URL}/${id}`, payload);
       
-      console.log('✅ Product updated successfully:', response.data);
-      return response.data;
+      console.log('✅ Product updated response - success:', response.data?.success);
+      
+      // Ensure response has proper format
+      const formattedResponse = {
+        success: response.data?.success ?? true,
+        message: response.data?.message || 'Product updated successfully',
+        data: response.data?.data || response.data
+      };
+      
+      return formattedResponse;
     } catch (error) {
-      console.error(`❌ Error updating product ${id}:`, error);
-      throw error;
+      console.error(`❌ Error updating product ${id}:`, error.message);
+      return {
+        success: false,
+        message: error.message || 'Failed to update product',
+        data: null
+      };
     }
   },
 
@@ -134,10 +200,20 @@ export const productService = {
       const response = await apiClient.delete(`${API_BASE_URL}/${id}`);
       
       console.log('✅ Product deleted successfully:', response.data);
-      return response.data;
+      
+      // Ensure response has success property
+      let formattedResponse = response.data;
+      if (!formattedResponse.success) {
+        formattedResponse.success = true;
+      }
+      
+      return formattedResponse;
     } catch (error) {
       console.error(`❌ Error deleting product ${id}:`, error);
-      throw error;
+      return {
+        success: false,
+        message: error.message || 'Failed to delete product'
+      };
     }
   },
 

@@ -20,8 +20,29 @@ export const supplierService = {
       
       const response = await apiClient.get(API_BASE_URL, { params });
       
-      console.log('✅ Suppliers fetched successfully:', response.data);
-      return response.data;
+      console.log('✅ Raw supplier response:', response.data);
+      
+      // Handle both formats: array directly OR object with data property
+      let formattedResponse;
+      if (Array.isArray(response.data)) {
+        formattedResponse = {
+          success: true,
+          data: response.data,
+          count: response.data.length,
+          total: response.data.length
+        };
+      } else if (response.data.success !== undefined) {
+        formattedResponse = response.data;
+      } else {
+        formattedResponse = {
+          success: true,
+          data: response.data || [],
+          count: Array.isArray(response.data) ? response.data.length : 0
+        };
+      }
+      
+      console.log('✅ Suppliers fetched successfully:', formattedResponse.data);
+      return formattedResponse;
     } catch (error) {
       console.error('❌ Error fetching suppliers:', error);
       return {
@@ -43,11 +64,30 @@ export const supplierService = {
       
       const response = await apiClient.get(`${API_BASE_URL}/${id}`);
       
-      console.log('✅ Supplier fetched successfully:', response.data);
-      return response.data;
+      console.log('✅ Raw supplier response:', response.data);
+      
+      // Handle both formats
+      let formattedResponse;
+      if (response.data.success !== undefined) {
+        formattedResponse = response.data;
+      } else if (response.data._id || response.data.id) {
+        formattedResponse = {
+          success: true,
+          data: response.data
+        };
+      } else {
+        formattedResponse = response.data;
+      }
+      
+      console.log('✅ Supplier fetched successfully:', formattedResponse.data);
+      return formattedResponse;
     } catch (error) {
       console.error(`❌ Error fetching supplier ${id}:`, error);
-      throw error;
+      return {
+        success: false,
+        message: error.message || 'Failed to fetch supplier',
+        data: null
+      };
     }
   },
 

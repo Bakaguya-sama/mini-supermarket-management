@@ -48,7 +48,7 @@ const customerSchema = new mongoose.Schema({
   registered_at: { type: Date, default: Date.now }
 }, { timestamps: true });
 
-// ==================== 5. SUPPLIERS ====================
+// ==================== 2. SUPPLIERS ====================
 const supplierSchema = new mongoose.Schema({
   name: { type: String, required: true },
   contact_person_name: { type: String },
@@ -58,7 +58,8 @@ const supplierSchema = new mongoose.Schema({
   address: { type: String },
   tax_id: { type: String },
   note: { type: String },
-  is_active: { type: Boolean, default: true }
+  is_active: { type: Boolean, default: true },
+  image_link: { type: String }
 }, { timestamps: true });
 
 supplierSchema.index({ name: 1 });
@@ -75,7 +76,8 @@ const productSchema = new mongoose.Schema({
   price: { type: Number, default: 0 },
   status: { type: String, enum: ['active', 'inactive', 'discontinued'] },
   supplier_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Supplier' },
-  category: { type: String }
+  category: { type: String },
+  image_link: { type: String }
 }, { timestamps: true });
 
 productSchema.index({ name: 1, category: 1, supplier_id: 1 });

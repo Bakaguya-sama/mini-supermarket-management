@@ -78,18 +78,18 @@ async function seedDatabase() {
     // 5. SUPPLIERS
     console.log('5/24 🏢 Tạo Suppliers...');
     const suppliers = await Supplier.insertMany([
-      { name: 'Công ty Thực phẩm Sạch', contact_person_name: 'Nguyễn X', email: 'contact@tps.vn', phone: '0281234567', address: 'TP.HCM', tax_id: '0123456789', is_active: true },
-      { name: 'Vinamilk', contact_person_name: 'Trần Y', email: 'b2b@vinamilk.vn', phone: '0283456789', address: 'TP.HCM', tax_id: '1122334455', is_active: true }
+      { name: 'Công ty Thực phẩm Sạch', contact_person_name: 'Nguyễn X', email: 'contact@tps.vn', phone: '0281234567', address: 'TP.HCM', tax_id: '0123456789', is_active: true, image_link: 'https://via.placeholder.com/300x200?text=Thuc+Pham+Sach' },
+      { name: 'Vinamilk', contact_person_name: 'Trần Y', email: 'b2b@vinamilk.vn', phone: '0283456789', address: 'TP.HCM', tax_id: '1122334455', is_active: true, image_link: 'https://via.placeholder.com/300x200?text=Vinamilk' }
     ]);
     console.log(`   ✅ ${suppliers.length} suppliers\n`);
 
     // 6. PRODUCTS
     console.log('6/24 📦 Tạo Products...');
     const products = await Product.insertMany([
-      { name: 'Gạo ST25 5kg', description: 'Gạo thơm cao cấp', unit: 'túi', current_stock: 100, minimum_stock_level: 20, maximum_stock_level: 200, price: 145000, status: 'active', supplier_id: suppliers[0]._id, category: 'Lương thực' },
-      { name: 'Sữa Vinamilk 1L', description: 'Sữa tươi tiệt trùng', unit: 'hộp', current_stock: 200, minimum_stock_level: 50, maximum_stock_level: 500, price: 32000, status: 'active', supplier_id: suppliers[1]._id, category: 'Sữa' },
-      { name: 'Coca Cola 330ml', description: 'Nước giải khát', unit: 'lon', current_stock: 500, minimum_stock_level: 100, maximum_stock_level: 1000, price: 10000, status: 'active', supplier_id: suppliers[0]._id, category: 'Đồ uống' },
-      { name: 'Trứng gà', description: 'Trứng tươi sạch', unit: 'vỉ', current_stock: 80, minimum_stock_level: 20, maximum_stock_level: 150, price: 45000, status: 'active', supplier_id: suppliers[0]._id, category: 'Thực phẩm tươi' }
+      { name: 'Gạo ST25 5kg', description: 'Gạo thơm cao cấp', unit: 'túi', current_stock: 100, minimum_stock_level: 20, maximum_stock_level: 200, price: 145000, status: 'active', supplier_id: suppliers[0]._id, category: 'Lương thực', image_link: 'https://via.placeholder.com/300x200?text=Gao+ST25' },
+      { name: 'Sữa Vinamilk 1L', description: 'Sữa tươi tiệt trùng', unit: 'hộp', current_stock: 200, minimum_stock_level: 50, maximum_stock_level: 500, price: 32000, status: 'active', supplier_id: suppliers[1]._id, category: 'Sữa', image_link: 'https://via.placeholder.com/300x200?text=Sua+Vinamilk' },
+      { name: 'Coca Cola 330ml', description: 'Nước giải khát', unit: 'lon', current_stock: 500, minimum_stock_level: 100, maximum_stock_level: 1000, price: 10000, status: 'active', supplier_id: suppliers[0]._id, category: 'Đồ uống', image_link: 'https://via.placeholder.com/300x200?text=Coca+Cola' },
+      { name: 'Trứng gà', description: 'Trứng tươi sạch', unit: 'vỉ', current_stock: 80, minimum_stock_level: 20, maximum_stock_level: 150, price: 45000, status: 'active', supplier_id: suppliers[0]._id, category: 'Thực phẩm tươi', image_link: 'https://via.placeholder.com/300x200?text=Trung+Ga' }
     ]);
     console.log(`   ✅ ${products.length} products\n`);
 

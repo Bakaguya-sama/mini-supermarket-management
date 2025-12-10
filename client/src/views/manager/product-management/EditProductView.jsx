@@ -1,40 +1,95 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { FaBox, FaSave, FaUpload } from "react-icons/fa";
 import "./EditProductView.css";
 import SuccessMessage from "../../../components/Messages/SuccessMessage";
 import ErrorMessage from "../../../components/Messages/ErrorMessage";
+import productService from "../../../services/productService";
+import supplierService from "../../../services/supplierService";
 
 const EditProductView = () => {
   const { id } = useParams();
+  const navigate = useNavigate();
 
   const [successMessage, setSuccessMessage] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
-
-  const navigate = useNavigate();
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [suppliers, setSuppliers] = useState([]);
+  const [isLoadingSuppliers, setIsLoadingSuppliers] = useState(true);
+  const [productData, setProductData] = useState(null);
 
   const [formData, setFormData] = useState({
-    productName: "Product 1",
-    category: "Category 1",
-    supplier: "Supplier 1",
-    origin: "Farm",
-    description: "Fresh organic tomatoes from local farms",
-    price: "0.00",
-    unit: "Kilogram (kg)",
-    currentStock: "0",
-    minimumStockLevel: "10",
-    maximumStockLevel: "0",
-    storageLocation: "Warehouse A",
-    sku: "PRD001",
-    barcode: "890123",
-    productId: "001",
-    lastRestocked: "Oct 30, 2025",
-    createdAt: "Jan 10, 2023",
-    updatedAt: "Jan 12, 2025",
+    productName: "",
+    category: "",
+    supplier_id: "",
+    origin: "",
+    description: "",
+    price: "",
+    unit: "",
+    currentStock: "",
+    minimumStockLevel: "",
+    maximumStockLevel: "",
+    storageLocation: "",
+    sku: "",
+    barcode: "",
   });
 
   const [productImage, setProductImage] = useState(null);
-  const [imagePreview, setImagePreview] = useState("https://placehold.co/400");
+  const [imagePreview, setImagePreview] = useState(null);
+
+  // Load suppliers and product on mount
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        // Load suppliers
+        setIsLoadingSuppliers(true);
+        const suppliersResponse = await supplierService.getAll({ limit: 100 });
+        if (suppliersResponse.success && suppliersResponse.data) {
+          setSuppliers(suppliersResponse.data);
+        }
+
+        // Load product details
+        const productResponse = await productService.getById(id);
+        if (productResponse.success && productResponse.data) {
+          const product = productResponse.data;
+          setProductData(product);
+          
+          // Populate form with product data
+          setFormData({
+            productName: product.name || "",
+            category: product.category || "",
+            supplier_id: product.supplier_id?._id || product.supplier_id || "",
+            origin: product.origin || "",
+            description: product.description || "",
+            price: product.price || "",
+            unit: product.unit || "",
+            currentStock: product.current_stock || "",
+            minimumStockLevel: product.minimum_stock_level || "",
+            maximumStockLevel: product.maximum_stock_level || "",
+            storageLocation: product.storage_location || "",
+            sku: product.sku || "",
+            barcode: product.barcode || "",
+          });
+
+          // Set image preview
+          if (product.image_link) {
+            setImagePreview(product.image_link);
+          }
+        } else {
+          setErrorMessage("Failed to load product details");
+        }
+      } catch (error) {
+        console.error("Error loading data:", error);
+        setErrorMessage(error.message || "Failed to load product");
+      } finally {
+        setIsLoading(false);
+        setIsLoadingSuppliers(false);
+      }
+    };
+
+    loadData();
+  }, [id]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -47,10 +102,52 @@ const EditProductView = () => {
   const handleImageChange = (e) => {
     const file = e.target.files[0];
     if (file) {
+      // Validate file size (max 2MB for original)
+      if (file.size > 2 * 1024 * 1024) {
+        setErrorMessage("Image size must be less than 2MB");
+        return;
+      }
+      // Validate file type
+      if (!file.type.startsWith("image/")) {
+        setErrorMessage("Please select a valid image file");
+        return;
+      }
       setProductImage(file);
+      
+      // Read and compress image
       const reader = new FileReader();
       reader.onloadend = () => {
-        setImagePreview(reader.result);
+        // Compress image using canvas
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          let width = img.width;
+          let height = img.height;
+          
+          // Resize if too large
+          const maxSize = 800;
+          if (width > height) {
+            if (width > maxSize) {
+              height = (height * maxSize) / width;
+              width = maxSize;
+            }
+          } else {
+            if (height > maxSize) {
+              width = (width * maxSize) / height;
+              height = maxSize;
+            }
+          }
+          
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, width, height);
+          
+          // Convert to base64 with compression
+          const compressedImage = canvas.toDataURL('image/jpeg', 0.8);
+          setImagePreview(compressedImage);
+        };
+        img.src = reader.result;
       };
       reader.readAsDataURL(file);
     }
@@ -64,17 +161,120 @@ const EditProductView = () => {
     }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log("Product updated:", formData);
-    console.log("Product image:", productImage);
-    // Add your form submission logic here
-    // TODO: Implement success message here
+
+    if (!validateForm()) {
+      return;
+    }
+
+    setIsSubmitting(true);
+    setErrorMessage("");
+    setSuccessMessage("");
+
+    try {
+      // Convert image to base64 if new image selected
+      let image_link = productData?.image_link || null;
+      if (imagePreview && imagePreview !== productData?.image_link) {
+        image_link = imagePreview;
+      }
+
+      // Prepare payload
+      const payload = {
+        name: formData.productName,
+        category: formData.category,
+        supplier_id: formData.supplier_id,
+        description: formData.description,
+        price: formData.price,
+        unit: formData.unit,
+        currentStock: formData.currentStock,
+        minimumStockLevel: formData.minimumStockLevel,
+        maximumStockLevel: formData.maximumStockLevel,
+        storageLocation: formData.storageLocation,
+        image_link: image_link
+      };
+
+      console.log("Updating product with name:", formData.productName);
+
+      const response = await productService.update(id, payload);
+
+      console.log("✅ Update response received:", response.success);
+
+      if (response.success) {
+        setSuccessMessage(`Product "${formData.productName}" updated successfully!`);
+        // Navigate back to products list
+        setTimeout(() => {
+          navigate("/products");
+        }, 2000);
+      } else {
+        console.error("❌ Update failed:", response.message);
+        setErrorMessage(response.message || "Failed to update product");
+      }
+    } catch (error) {
+      console.error("❌ Error updating product:", error.message);
+      setErrorMessage(
+        error.response?.data?.message ||
+        error.message ||
+        "Failed to update product. Please try again."
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const validateForm = () => {
+    // Validate required fields
+    if (!formData.productName.trim()) {
+      setErrorMessage("Product name is required");
+      return false;
+    }
+    if (!formData.category) {
+      setErrorMessage("Category is required");
+      return false;
+    }
+    if (!formData.supplier_id) {
+      setErrorMessage("Supplier is required");
+      return false;
+    }
+    if (!formData.price || parseFloat(formData.price) <= 0) {
+      setErrorMessage("Valid price is required");
+      return false;
+    }
+    if (!formData.unit) {
+      setErrorMessage("Unit is required");
+      return false;
+    }
+    if (formData.currentStock === "" || parseInt(formData.currentStock) < 0) {
+      setErrorMessage("Valid current stock is required");
+      return false;
+    }
+
+    // Validate stock levels
+    const currentStock = parseInt(formData.currentStock);
+    const minStock = parseInt(formData.minimumStockLevel) || 0;
+    const maxStock = parseInt(formData.maximumStockLevel) || 0;
+
+    if (maxStock > 0 && minStock > maxStock) {
+      setErrorMessage("Minimum stock level cannot be greater than maximum");
+      return false;
+    }
+
+    return true;
   };
 
   const handleCancel = () => {
-    navigate(-1);
+    navigate("/products");
   };
+
+  if (isLoading) {
+    return (
+      <div className="edit-product-view">
+        <div style={{ padding: "40px", textAlign: "center" }}>
+          <p>Loading product details...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="edit-product-view">
@@ -159,20 +359,21 @@ const EditProductView = () => {
                   </label>
                   <select
                     id="supplier"
-                    name="supplier"
-                    value={formData.supplier}
+                    name="supplier_id"
+                    value={formData.supplier_id}
                     onChange={handleInputChange}
                     className="edit-product-form-select"
                     required
+                    disabled={isLoadingSuppliers}
                   >
-                    <option value="">Select supplier</option>
-                    <option value="FreshMart Suppliers">
-                      FreshMart Suppliers
+                    <option value="">
+                      {isLoadingSuppliers ? "Loading suppliers..." : "Select supplier"}
                     </option>
-                    <option value="GreenField Co.">GreenField Co.</option>
-                    <option value="Ocean Fresh">Ocean Fresh</option>
-                    <option value="Daily Dairy">Daily Dairy</option>
-                    <option value="Global Foods Inc.">Global Foods Inc.</option>
+                    {suppliers.map((supplier) => (
+                      <option key={supplier._id} value={supplier._id}>
+                        {supplier.name}
+                      </option>
+                    ))}
                   </select>
                 </div>
               </div>
@@ -250,6 +451,10 @@ const EditProductView = () => {
                     required
                   >
                     <option value="">Select unit</option>
+                    <option value="túi">Túi</option>
+                    <option value="hộp">Hộp</option>
+                    <option value="lon">Lon</option>
+                    <option value="vỉ">Vỉ</option>
                     <option value="Kilogram (kg)">Kilogram (kg)</option>
                     <option value="Gram (g)">Gram (g)</option>
                     <option value="Piece">Piece</option>
@@ -425,38 +630,31 @@ const EditProductView = () => {
 
             <div className="edit-product-status-item">
               <label className="edit-product-status-label">
-                Last Restocked
+                Product ID
               </label>
               <span className="edit-product-status-value">
-                {formData.lastRestocked}
-              </span>
-            </div>
-
-            <div className="edit-product-status-item">
-              <label className="edit-product-status-label">Product ID</label>
-              <span className="edit-product-status-value">
-                {formData.productId}
+                {productData?._id || 'N/A'}
               </span>
             </div>
 
             <div className="edit-product-status-item">
               <label className="edit-product-status-label">Current Price</label>
               <span className="edit-product-status-value">
-                ${formData.price}
+                {formData.price ? `$${parseFloat(formData.price).toFixed(2)}` : '$0.00'}
               </span>
             </div>
 
             <div className="edit-product-status-item">
               <label className="edit-product-status-label">Created At</label>
               <span className="edit-product-status-value">
-                {formData.createdAt}
+                {productData?.createdAt ? new Date(productData.createdAt).toLocaleDateString() : 'N/A'}
               </span>
             </div>
 
             <div className="edit-product-status-item">
               <label className="edit-product-status-label">Updated At</label>
               <span className="edit-product-status-value">
-                {formData.updatedAt}
+                {productData?.updatedAt ? new Date(productData.updatedAt).toLocaleDateString() : 'N/A'}
               </span>
             </div>
 
@@ -465,13 +663,15 @@ const EditProductView = () => {
                 type="submit"
                 form="product-form"
                 className="edit-product-update-product-btn"
+                disabled={isSubmitting || isLoadingSuppliers}
               >
                 <FaSave className="edit-product-update-icon" />
-                Update Product
+                {isSubmitting ? "Updating..." : "Update Product"}
               </button>
               <button
                 onClick={handleCancel}
                 className="edit-product-cancel-btn"
+                disabled={isSubmitting}
               >
                 Cancel
               </button>
