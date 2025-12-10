@@ -1,0 +1,314 @@
+### ========================================
+### SUPPLIER API TESTS
+### Base URL: http://localhost:5000/api/suppliers
+### ========================================
+
+### 1. Get all suppliers (with pagination)
+GET http://localhost:5000/api/suppliers?page=1&limit=10
+
+###
+
+### 2. Get supplier statistics
+GET http://localhost:5000/api/suppliers/stats
+
+###
+
+### 3. Get all active suppliers
+GET http://localhost:5000/api/suppliers/active
+
+###
+
+### 4. Create new supplier (full details)
+POST http://localhost:5000/api/suppliers
+Content-Type: application/json
+
+{
+  "name": "VinaMilk Corporation",
+  "contact_person_name": "Nguyen Van A",
+  "email": "contact@vinamilk.com.vn",
+  "phone": "+84281234567",
+  "website": "https://www.vinamilk.com.vn",
+  "address": "10 Tan Trao Street, Tan Phu Ward, District 7, HCMC",
+  "tax_id": "0300588569",
+  "note": "Leading dairy producer in Vietnam",
+  "is_active": true
+}
+
+###
+
+### 5. Create another supplier (beverage supplier)
+POST http://localhost:5000/api/suppliers
+Content-Type: application/json
+
+{
+  "name": "Coca-Cola Vietnam",
+  "contact_person_name": "Tran Thi B",
+  "email": "sales@cocacola.com.vn",
+  "phone": "+84283456789",
+  "website": "https://www.coca-cola.com.vn",
+  "address": "Saigon Hi-Tech Park, District 9, HCMC",
+  "tax_id": "0301234567",
+  "note": "International beverage company",
+  "is_active": true
+}
+
+###
+
+### 6. Create supplier (grocery supplier)
+POST http://localhost:5000/api/suppliers
+Content-Type: application/json
+
+{
+  "name": "Loc Troi Group",
+  "contact_person_name": "Le Van C",
+  "email": "info@loctroi.com",
+  "phone": "+84289876543",
+  "website": "https://www.loctroi.com",
+  "address": "Can Tho City, Mekong Delta",
+  "tax_id": "0301456789",
+  "note": "Rice and agricultural products supplier"
+}
+
+###
+
+### 7. Create supplier with minimal info
+POST http://localhost:5000/api/suppliers
+Content-Type: application/json
+
+{
+  "name": "Local Farm Supplier",
+  "contact_person_name": "Pham Van D",
+  "phone": "+84901234567"
+}
+
+###
+
+### 8. Get single supplier by ID (replace {supplierId} with actual ID)
+GET http://localhost:5000/api/suppliers/674cf1234567890abcdef125
+
+###
+
+### 9. Get supplier products (replace {supplierId} with actual ID)
+GET http://localhost:5000/api/suppliers/674cf1234567890abcdef125/products
+
+###
+
+### 10. Get supplier products with pagination
+GET http://localhost:5000/api/suppliers/674cf1234567890abcdef125/products?page=1&limit=5
+
+###
+
+### 11. Get supplier products by status
+GET http://localhost:5000/api/suppliers/674cf1234567890abcdef125/products?status=active
+
+###
+
+### 12. Update supplier
+PUT http://localhost:5000/api/suppliers/674cf1234567890abcdef125
+Content-Type: application/json
+
+{
+  "name": "VinaMilk Corporation (Updated)",
+  "contact_person_name": "Nguyen Van A - Sales Manager",
+  "email": "sales@vinamilk.com.vn",
+  "phone": "+84281234999",
+  "note": "Leading dairy producer in Vietnam - Premium partner"
+}
+
+###
+
+### 13. Update supplier contact info only
+PUT http://localhost:5000/api/suppliers/674cf1234567890abcdef125
+Content-Type: application/json
+
+{
+  "contact_person_name": "Nguyen Thi E - New Contact",
+  "phone": "+84287777777",
+  "email": "newemail@vinamilk.com.vn"
+}
+
+###
+
+### 14. Search suppliers by name
+GET http://localhost:5000/api/suppliers?search=Coca
+
+###
+
+### 15. Search suppliers by contact person
+GET http://localhost:5000/api/suppliers?search=Nguyen
+
+###
+
+### 16. Search suppliers by email
+GET http://localhost:5000/api/suppliers?search=vinamilk
+
+###
+
+### 17. Filter active suppliers
+GET http://localhost:5000/api/suppliers?is_active=true
+
+###
+
+### 18. Filter inactive suppliers
+GET http://localhost:5000/api/suppliers?is_active=false
+
+###
+
+### 19. Sort suppliers by name
+GET http://localhost:5000/api/suppliers?sort=name
+
+###
+
+### 20. Sort suppliers by creation date (newest first)
+GET http://localhost:5000/api/suppliers?sort=-createdAt
+
+###
+
+### 21. Get suppliers with pagination
+GET http://localhost:5000/api/suppliers?page=1&limit=5
+
+###
+
+### 22. Soft delete supplier (deactivate)
+DELETE http://localhost:5000/api/suppliers/674cf1234567890abcdef125
+
+###
+
+### 23. Activate supplier
+PATCH http://localhost:5000/api/suppliers/674cf1234567890abcdef125/activate
+
+###
+
+### 24. Permanently delete supplier (USE WITH CAUTION!)
+DELETE http://localhost:5000/api/suppliers/674cf1234567890abcdef125/permanent
+
+###
+
+### ========================================
+### TEST SCENARIOS
+### ========================================
+
+### Scenario 1: Try to create duplicate supplier name (should fail)
+POST http://localhost:5000/api/suppliers
+Content-Type: application/json
+
+{
+  "name": "VinaMilk Corporation",
+  "email": "different@email.com",
+  "phone": "+84909999999"
+}
+
+###
+
+### Scenario 2: Try to create duplicate email (should fail)
+POST http://localhost:5000/api/suppliers
+Content-Type: application/json
+
+{
+  "name": "Different Supplier Name",
+  "email": "contact@vinamilk.com.vn",
+  "phone": "+84909999999"
+}
+
+###
+
+### Scenario 3: Create supplier without name (should fail)
+POST http://localhost:5000/api/suppliers
+Content-Type: application/json
+
+{
+  "contact_person_name": "No Name Supplier",
+  "email": "noname@example.com"
+}
+
+###
+
+### Scenario 4: Try to delete supplier with active products (should fail)
+# First create a supplier, then create products with that supplier_id
+# Then try to delete the supplier
+DELETE http://localhost:5000/api/suppliers/674cf1234567890abcdef125
+
+###
+
+### Scenario 5: Update supplier with duplicate name (should fail)
+PUT http://localhost:5000/api/suppliers/674cf1234567890abcdef125
+Content-Type: application/json
+
+{
+  "name": "Coca-Cola Vietnam"
+}
+
+###
+
+### Scenario 6: Get suppliers with search and filter
+GET http://localhost:5000/api/suppliers?search=Vietnam&is_active=true
+
+###
+
+### Scenario 7: Get all suppliers sorted by name with limit
+GET http://localhost:5000/api/suppliers?sort=name&limit=3
+
+###
+
+### Scenario 8: Complex query - active suppliers with products
+GET http://localhost:5000/api/suppliers?is_active=true&page=1&limit=10
+
+###
+
+### ========================================
+### INTEGRATION TEST WORKFLOW
+### ========================================
+
+### Step 1: Create supplier
+POST http://localhost:5000/api/suppliers
+Content-Type: application/json
+
+{
+  "name": "Test Integration Supplier",
+  "contact_person_name": "Test Contact",
+  "email": "test@integration.com",
+  "phone": "+84900000000"
+}
+
+### Copy the returned supplier ID for next steps
+
+###
+
+### Step 2: Create product with this supplier
+POST http://localhost:5000/api/products
+Content-Type: application/json
+
+{
+  "name": "Test Product for Supplier",
+  "unit": "box",
+  "price": 50000,
+  "current_stock": 100,
+  "supplier_id": "PASTE_SUPPLIER_ID_HERE"
+}
+
+###
+
+### Step 3: Get supplier with products
+GET http://localhost:5000/api/suppliers/PASTE_SUPPLIER_ID_HERE
+
+###
+
+### Step 4: Get all products from this supplier
+GET http://localhost:5000/api/suppliers/PASTE_SUPPLIER_ID_HERE/products
+
+###
+
+### Step 5: Try to delete supplier (should fail because it has products)
+DELETE http://localhost:5000/api/suppliers/PASTE_SUPPLIER_ID_HERE
+
+###
+
+### Step 6: Deactivate supplier instead
+DELETE http://localhost:5000/api/suppliers/PASTE_SUPPLIER_ID_HERE
+
+###
+
+### Step 7: Verify supplier is inactive
+GET http://localhost:5000/api/suppliers/PASTE_SUPPLIER_ID_HERE
+
+###
