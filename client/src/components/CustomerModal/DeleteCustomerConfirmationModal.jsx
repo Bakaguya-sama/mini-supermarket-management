@@ -1,18 +1,19 @@
 import React from "react";
 import "./DeleteCustomerConfirmationModal.css";
 
-const DeleteCustomerConfirmationModal = ({ isOpen, onClose, onConfirm }) => {
+const DeleteCustomerConfirmationModal = ({ isOpen, onClose, onConfirm, isLoading }) => {
   if (!isOpen) return null;
 
   const handleOverlayClick = (e) => {
-    if (e.target === e.currentTarget) {
+    if (e.target === e.currentTarget && !isLoading) {
       onClose();
     }
   };
 
   const handleConfirm = () => {
-    onConfirm();
-    onClose();
+    if (!isLoading) {
+      onConfirm();
+    }
   };
 
   return (
@@ -20,7 +21,7 @@ const DeleteCustomerConfirmationModal = ({ isOpen, onClose, onConfirm }) => {
       <div className="delete-customer-modal-content">
         {/* Header */}
         <div className="delete-customer-modal-header">
-          <h2>Delete item</h2>
+          <h2>Delete Customer</h2>
         </div>
 
         {/* Body */}
@@ -31,17 +32,29 @@ const DeleteCustomerConfirmationModal = ({ isOpen, onClose, onConfirm }) => {
             </div>
           </div>
           <div className="delete-customer-message">
-            <p>Are you sure to delete this customer?</p>
+            <p>Are you sure you want to delete this customer?</p>
+            <p style={{ fontSize: '0.9em', color: '#666', marginTop: '10px' }}>
+              This action will soft delete the customer record. Their data will be preserved in the system.
+            </p>
           </div>
         </div>
 
         {/* Footer */}
         <div className="delete-customer-modal-footer">
-          <button className="delete-customer-btn-no" onClick={onClose}>
-            No
+          <button 
+            className="delete-customer-btn-no" 
+            onClick={onClose}
+            disabled={isLoading}
+          >
+            Cancel
           </button>
-          <button className="delete-customer-btn-yes" onClick={handleConfirm}>
-            Yes
+          <button 
+            className="delete-customer-btn-yes" 
+            onClick={handleConfirm}
+            disabled={isLoading}
+            style={{ opacity: isLoading ? 0.6 : 1, cursor: isLoading ? 'not-allowed' : 'pointer' }}
+          >
+            {isLoading ? 'Deleting...' : 'Delete'}
           </button>
         </div>
       </div>

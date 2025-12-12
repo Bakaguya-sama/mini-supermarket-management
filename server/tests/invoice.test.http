@@ -1,0 +1,268 @@
+### ========================================
+### INVOICE API TESTS
+### Base URL: http://localhost:5000/api/invoices
+### ========================================
+
+### Variables
+@baseUrl = http://localhost:5000/api
+@invoiceId = 
+@customerId = 
+@orderId = 
+
+### 1. Get all invoices (with pagination)
+GET {{baseUrl}}/invoices?page=1&limit=10
+
+###
+
+### 2. Get invoice statistics
+GET {{baseUrl}}/invoices/stats
+
+###
+
+### 3. Get all unpaid invoices
+GET {{baseUrl}}/invoices/filter/unpaid?page=1&limit=10
+
+###
+
+### 4. Get all invoices with paid status
+GET {{baseUrl}}/invoices?payment_status=paid&page=1&limit=10
+
+###
+
+### 5. Get invoices by customer (replace customerId)
+GET {{baseUrl}}/invoices/customer/YOUR_CUSTOMER_ID?page=1&limit=10
+
+###
+
+### 6. Get invoices with amount filter
+GET {{baseUrl}}/invoices?minAmount=500000&maxAmount=3000000&page=1&limit=10
+
+###
+
+### 7. Get invoices by date range
+GET {{baseUrl}}/invoices?startDate=2024-01-01&endDate=2024-12-31&page=1&limit=10
+
+###
+
+### 8. Get single invoice by ID (replace invoiceId)
+GET {{baseUrl}}/invoices/YOUR_INVOICE_ID
+
+###
+
+### 9. Search invoice by number
+GET {{baseUrl}}/invoices?search=INV-1734&page=1&limit=10
+
+###
+
+### 10. Create new invoice
+POST {{baseUrl}}/invoices
+Content-Type: application/json
+
+{
+  "customer_id": "YOUR_CUSTOMER_ID",
+  "order_id": "YOUR_ORDER_ID",
+  "items": [
+    {
+      "product_id": "PRODUCT_ID_1",
+      "description": "Product Name",
+      "quantity": 2,
+      "unit_price": 500000,
+      "line_total": 1000000
+    },
+    {
+      "product_id": "PRODUCT_ID_2",
+      "description": "Another Product",
+      "quantity": 1,
+      "unit_price": 750000,
+      "line_total": 750000
+    }
+  ],
+  "notes": "Invoice for order"
+}
+
+###
+
+### 11. Update invoice status to partially paid
+PUT {{baseUrl}}/invoices/YOUR_INVOICE_ID
+Content-Type: application/json
+
+{
+  "payment_status": "partial",
+  "notes": "Partial payment received"
+}
+
+###
+
+### 12. Update invoice status to paid
+PUT {{baseUrl}}/invoices/YOUR_INVOICE_ID
+Content-Type: application/json
+
+{
+  "payment_status": "paid",
+  "notes": "Full payment received"
+}
+
+###
+
+### 13. Mark invoice as paid (quick action)
+PATCH {{baseUrl}}/invoices/YOUR_INVOICE_ID/mark-paid
+Content-Type: application/json
+
+{}
+
+###
+
+### 14. Soft delete invoice
+DELETE {{baseUrl}}/invoices/YOUR_INVOICE_ID
+
+###
+
+### ========================================
+### TEST SCENARIOS
+### ========================================
+
+### Scenario 1: Create invoice with single item
+POST {{baseUrl}}/invoices
+Content-Type: application/json
+
+{
+  "customer_id": "YOUR_CUSTOMER_ID",
+  "order_id": "YOUR_ORDER_ID",
+  "items": [
+    {
+      "product_id": "PRODUCT_ID",
+      "description": "Single item",
+      "quantity": 1,
+      "unit_price": 1000000,
+      "line_total": 1000000
+    }
+  ]
+}
+
+###
+
+### Scenario 2: Try to create invoice with invalid customer (should fail)
+POST {{baseUrl}}/invoices
+Content-Type: application/json
+
+{
+  "customer_id": "INVALID_CUSTOMER_ID",
+  "order_id": "YOUR_ORDER_ID",
+  "items": [
+    {
+      "quantity": 1,
+      "unit_price": 1000000,
+      "line_total": 1000000
+    }
+  ]
+}
+
+###
+
+### Scenario 3: Get unpaid invoices for collection
+GET {{baseUrl}}/invoices/filter/unpaid?page=1&limit=20
+
+###
+
+### Scenario 4: View invoice details with all items
+GET {{baseUrl}}/invoices/YOUR_INVOICE_ID
+
+###
+
+### Scenario 5: Complete payment workflow
+# Step 1: Get unpaid invoices
+GET {{baseUrl}}/invoices/filter/unpaid?page=1&limit=5
+
+# Step 2: Mark invoice as paid (use invoice ID from step 1)
+# PATCH {{baseUrl}}/invoices/RETURNED_ID/mark-paid
+# Content-Type: application/json
+# {}
+
+###
+
+### Scenario 6: View customer's all invoices
+GET {{baseUrl}}/invoices/customer/YOUR_CUSTOMER_ID?page=1&limit=10
+
+###
+
+### Scenario 7: Get high-value invoices
+GET {{baseUrl}}/invoices?minAmount=2000000&sort=-total_amount&page=1&limit=10
+
+###
+
+### Scenario 8: Monitor payment status
+# Unpaid invoices
+GET {{baseUrl}}/invoices?payment_status=unpaid&sort=-invoice_date&page=1&limit=10
+
+# Partial payment
+# GET {{baseUrl}}/invoices?payment_status=partial&page=1&limit=10
+
+# Paid invoices
+# GET {{baseUrl}}/invoices?payment_status=paid&sort=-invoice_date&page=1&limit=10
+
+###
+
+### Scenario 9: Monthly invoice report
+GET {{baseUrl}}/invoices?startDate=2024-12-01&endDate=2024-12-31&page=1&limit=50
+
+###
+
+### Scenario 10: Invoice statistics dashboard
+GET {{baseUrl}}/invoices/stats
+
+###
+
+### Scenario 11: Create invoice for delivered order
+# Prerequisites: Order must be delivered
+POST {{baseUrl}}/invoices
+Content-Type: application/json
+
+{
+  "customer_id": "YOUR_CUSTOMER_ID",
+  "order_id": "DELIVERED_ORDER_ID",
+  "items": [
+    {
+      "product_id": "PRODUCT_ID",
+      "description": "Delivered item",
+      "quantity": 2,
+      "unit_price": 500000,
+      "line_total": 1000000
+    }
+  ],
+  "notes": "Invoice for delivered order"
+}
+
+###
+
+### Scenario 12: Update invoice with partial payment info
+PUT {{baseUrl}}/invoices/YOUR_INVOICE_ID
+Content-Type: application/json
+
+{
+  "payment_status": "partial",
+  "notes": "Received payment of 1,000,000 on 2024-12-15"
+}
+
+###
+
+### Scenario 13: Complete partial payment
+PUT {{baseUrl}}/invoices/YOUR_INVOICE_ID
+Content-Type: application/json
+
+{
+  "payment_status": "paid",
+  "notes": "Final payment received - invoice settled"
+}
+
+###
+
+### Scenario 14: Get overdue invoices (unpaid status)
+GET {{baseUrl}}/invoices/filter/unpaid?page=1&limit=10
+
+###
+
+### Scenario 15: Invoice reconciliation
+# Get all unpaid invoices to reconcile with customer
+GET {{baseUrl}}/invoices/filter/unpaid?page=1&limit=50
+
+###

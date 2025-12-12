@@ -1,0 +1,310 @@
+### ========================================
+### SHOPPING CART API TESTS
+### Base URL: http://localhost:5000/api/carts
+### ========================================
+
+### Variables
+@baseUrl = http://localhost:5000/api
+@cartId = 
+@customerId = 
+@itemId = 
+@productId = 
+
+### 1. Get all carts (with pagination)
+GET {{baseUrl}}/carts?page=1&limit=10
+
+###
+
+### 2. Get cart statistics
+GET {{baseUrl}}/carts/stats
+
+###
+
+### 3. Get all active carts
+GET {{baseUrl}}/carts?status=active&page=1&limit=10
+
+###
+
+### 4. Get carts with amount filter
+GET {{baseUrl}}/carts?minAmount=100000&maxAmount=5000000&page=1&limit=10
+
+###
+
+### 5. Get customer's active cart (auto-create if not exists)
+GET {{baseUrl}}/carts/customer/YOUR_CUSTOMER_ID
+
+###
+
+### 6. Get single cart by ID (replace cartId)
+GET {{baseUrl}}/carts/YOUR_CART_ID
+
+###
+
+### 7. Get cart with all items and details
+GET {{baseUrl}}/carts/YOUR_CART_ID
+
+###
+
+### 8. Add product to cart
+POST {{baseUrl}}/carts/YOUR_CART_ID/items
+Content-Type: application/json
+
+{
+  "product_id": "YOUR_PRODUCT_ID",
+  "quantity": 2
+}
+
+###
+
+### 9. Add another product to cart
+POST {{baseUrl}}/carts/YOUR_CART_ID/items
+Content-Type: application/json
+
+{
+  "product_id": "ANOTHER_PRODUCT_ID",
+  "quantity": 1
+}
+
+###
+
+### 10. Update product quantity in cart
+PUT {{baseUrl}}/carts/items/YOUR_ITEM_ID/quantity
+Content-Type: application/json
+
+{
+  "quantity": 5
+}
+
+###
+
+### 11. Reduce product quantity to 0 (removes item)
+PUT {{baseUrl}}/carts/items/YOUR_ITEM_ID/quantity
+Content-Type: application/json
+
+{
+  "quantity": 0
+}
+
+###
+
+### 12. Remove product from cart
+DELETE {{baseUrl}}/carts/items/YOUR_ITEM_ID
+
+###
+
+### 13. Apply promo code to cart
+POST {{baseUrl}}/carts/YOUR_CART_ID/apply-promo
+Content-Type: application/json
+
+{
+  "promo_id": "YOUR_PROMO_ID"
+}
+
+###
+
+### 14. Remove promo code from cart
+DELETE {{baseUrl}}/carts/YOUR_CART_ID/remove-promo
+
+###
+
+### 15. Clear all items from cart
+DELETE {{baseUrl}}/carts/YOUR_CART_ID/clear
+
+###
+
+### 16. Checkout cart (transition to checked_out)
+PATCH {{baseUrl}}/carts/YOUR_CART_ID/checkout
+Content-Type: application/json
+
+{}
+
+###
+
+### ========================================
+### TEST SCENARIOS
+### ========================================
+
+### Scenario 1: Create new cart for customer (auto-creates on first access)
+GET {{baseUrl}}/carts/customer/YOUR_CUSTOMER_ID
+
+###
+
+### Scenario 2: Add single product to cart
+POST {{baseUrl}}/carts/YOUR_CART_ID/items
+Content-Type: application/json
+
+{
+  "product_id": "YOUR_PRODUCT_ID",
+  "quantity": 1
+}
+
+###
+
+### Scenario 3: Add same product again (should increase quantity)
+POST {{baseUrl}}/carts/YOUR_CART_ID/items
+Content-Type: application/json
+
+{
+  "product_id": "YOUR_PRODUCT_ID",
+  "quantity": 2
+}
+
+###
+
+### Scenario 4: Try to add non-existent product (should fail)
+POST {{baseUrl}}/carts/YOUR_CART_ID/items
+Content-Type: application/json
+
+{
+  "product_id": "INVALID_PRODUCT_ID",
+  "quantity": 1
+}
+
+###
+
+### Scenario 5: Shopping workflow - Add multiple products
+# Step 1: Add product 1
+POST {{baseUrl}}/carts/YOUR_CART_ID/items
+Content-Type: application/json
+
+{
+  "product_id": "PRODUCT_ID_1",
+  "quantity": 2
+}
+
+# Step 2: Add product 2 (use returned cart ID)
+# POST {{baseUrl}}/carts/RETURNED_CART_ID/items
+# Content-Type: application/json
+# {
+#   "product_id": "PRODUCT_ID_2",
+#   "quantity": 3
+# }
+
+# Step 3: View cart
+# GET {{baseUrl}}/carts/RETURNED_CART_ID
+
+# Step 4: Apply discount
+# POST {{baseUrl}}/carts/RETURNED_CART_ID/apply-promo
+# Content-Type: application/json
+# {
+#   "promo_id": "PROMO_ID"
+# }
+
+# Step 5: Checkout
+# PATCH {{baseUrl}}/carts/RETURNED_CART_ID/checkout
+# Content-Type: application/json
+# {}
+
+###
+
+### Scenario 6: Manage quantities in cart
+# Step 1: Add product
+POST {{baseUrl}}/carts/YOUR_CART_ID/items
+Content-Type: application/json
+
+{
+  "product_id": "YOUR_PRODUCT_ID",
+  "quantity": 1
+}
+
+# Step 2: Increase quantity (use returned item ID)
+# PUT {{baseUrl}}/carts/items/RETURNED_ITEM_ID/quantity
+# Content-Type: application/json
+# {
+#   "quantity": 5
+# }
+
+# Step 3: Decrease quantity
+# PUT {{baseUrl}}/carts/items/RETURNED_ITEM_ID/quantity
+# Content-Type: application/json
+# {
+#   "quantity": 3
+# }
+
+###
+
+### Scenario 7: Cart cleanup - Remove items one by one
+# Delete item 1
+DELETE {{baseUrl}}/carts/items/ITEM_ID_1
+
+# Delete item 2 (use different item ID)
+# DELETE {{baseUrl}}/carts/items/ITEM_ID_2
+
+###
+
+### Scenario 8: Clear entire cart at once
+DELETE {{baseUrl}}/carts/YOUR_CART_ID/clear
+
+###
+
+### Scenario 9: Apply and remove promo code
+# Step 1: Apply promo
+POST {{baseUrl}}/carts/YOUR_CART_ID/apply-promo
+Content-Type: application/json
+
+{
+  "promo_id": "YOUR_PROMO_ID"
+}
+
+# Step 2: Check cart with discount (use returned cart ID)
+# GET {{baseUrl}}/carts/RETURNED_CART_ID
+
+# Step 3: Remove promo
+# DELETE {{baseUrl}}/carts/RETURNED_CART_ID/remove-promo
+
+###
+
+### Scenario 10: Complete checkout workflow
+# Prerequisites: Cart with items
+
+# Step 1: Get current cart
+GET {{baseUrl}}/carts/YOUR_CART_ID
+
+# Step 2: Apply promo (optional)
+# POST {{baseUrl}}/carts/YOUR_CART_ID/apply-promo
+# Content-Type: application/json
+# {
+#   "promo_id": "YOUR_PROMO_ID"
+# }
+
+# Step 3: Checkout
+PATCH {{baseUrl}}/carts/YOUR_CART_ID/checkout
+Content-Type: application/json
+
+{}
+
+###
+
+### Scenario 11: Try to checkout empty cart (should fail)
+# First clear the cart
+DELETE {{baseUrl}}/carts/YOUR_CART_ID/clear
+
+# Then try to checkout (will fail)
+# PATCH {{baseUrl}}/carts/YOUR_CART_ID/checkout
+# Content-Type: application/json
+# {}
+
+###
+
+### Scenario 12: Try to checkout already checked-out cart (should fail)
+PATCH {{baseUrl}}/carts/ALREADY_CHECKED_OUT_CART_ID/checkout
+Content-Type: application/json
+
+{}
+
+###
+
+### Scenario 13: View abandoned carts (status not updated recently)
+GET {{baseUrl}}/carts?status=abandoned&page=1&limit=10
+
+###
+
+### Scenario 14: Cart statistics and analytics
+GET {{baseUrl}}/carts/stats
+
+###
+
+### Scenario 15: High-value carts filtering
+GET {{baseUrl}}/carts?minAmount=1000000&sort=-total&page=1&limit=10
+
+###

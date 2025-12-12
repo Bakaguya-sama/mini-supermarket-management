@@ -1,0 +1,226 @@
+### ========================================
+### DELIVERY ORDER API TESTS
+### Base URL: http://localhost:5000/api/delivery-orders
+### ========================================
+
+### Variables
+@baseUrl = http://localhost:5000/api
+@deliveryOrderId = 
+@staffId = 
+@orderId = 
+
+### 1. Get all delivery orders (with pagination)
+GET {{baseUrl}}/delivery-orders?page=1&limit=10
+
+###
+
+### 2. Get delivery order statistics
+GET {{baseUrl}}/delivery-orders/stats
+
+###
+
+### 3. Get all delivery orders with status filter
+GET {{baseUrl}}/delivery-orders?status=assigned&page=1&limit=10
+
+###
+
+### 4. Get delivery orders by staff member (replace staffId)
+GET {{baseUrl}}/delivery-orders/staff/YOUR_STAFF_ID?page=1&limit=10
+
+###
+
+### 5. Get delivery orders for specific staff with status filter
+GET {{baseUrl}}/delivery-orders/staff/YOUR_STAFF_ID?status=in_transit&page=1&limit=10
+
+###
+
+### 6. Get single delivery order by ID (replace deliveryOrderId)
+GET {{baseUrl}}/delivery-orders/YOUR_DELIVERY_ORDER_ID
+
+###
+
+### 7. Get delivery orders with date range filter
+GET {{baseUrl}}/delivery-orders?startDate=2024-01-01&endDate=2024-12-31&page=1&limit=10
+
+###
+
+### 8. Get delivery orders sorted by order date
+GET {{baseUrl}}/delivery-orders?sort=-order_date&page=1&limit=10
+
+###
+
+### 9. Create new delivery order (assign delivery to order)
+POST {{baseUrl}}/delivery-orders
+Content-Type: application/json
+
+{
+  "order_id": "YOUR_ORDER_ID",
+  "staff_id": "YOUR_STAFF_ID",
+  "notes": "Fragile items - handle with care"
+}
+
+###
+
+### 10. Update delivery order status to in_transit
+PUT {{baseUrl}}/delivery-orders/YOUR_DELIVERY_ORDER_ID
+Content-Type: application/json
+
+{
+  "status": "in_transit",
+  "notes": "Driver left warehouse at 9:30 AM"
+}
+
+###
+
+### 11. Update delivery order status to delivered
+PUT {{baseUrl}}/delivery-orders/YOUR_DELIVERY_ORDER_ID
+Content-Type: application/json
+
+{
+  "status": "delivered",
+  "delivery_date": "2024-12-20",
+  "notes": "Delivered successfully - customer satisfied"
+}
+
+###
+
+### 12. Update delivery order status to failed
+PUT {{baseUrl}}/delivery-orders/YOUR_DELIVERY_ORDER_ID
+Content-Type: application/json
+
+{
+  "status": "failed",
+  "notes": "Customer not at home - will reattempt tomorrow"
+}
+
+###
+
+### 13. Reassign delivery to another staff member
+PATCH {{baseUrl}}/delivery-orders/YOUR_DELIVERY_ORDER_ID/reassign
+Content-Type: application/json
+
+{
+  "new_staff_id": "ANOTHER_STAFF_ID"
+}
+
+###
+
+### 14. Soft delete delivery order
+DELETE {{baseUrl}}/delivery-orders/YOUR_DELIVERY_ORDER_ID
+
+###
+
+### ========================================
+### TEST SCENARIOS
+### ========================================
+
+### Scenario 1: Create delivery order with minimal data
+POST {{baseUrl}}/delivery-orders
+Content-Type: application/json
+
+{
+  "order_id": "YOUR_ORDER_ID",
+  "staff_id": "YOUR_STAFF_ID"
+}
+
+###
+
+### Scenario 2: Try to create delivery for non-existent order (should fail)
+POST {{baseUrl}}/delivery-orders
+Content-Type: application/json
+
+{
+  "order_id": "INVALID_ORDER_ID",
+  "staff_id": "YOUR_STAFF_ID"
+}
+
+###
+
+### Scenario 3: Try to assign invalid staff (should fail)
+POST {{baseUrl}}/delivery-orders
+Content-Type: application/json
+
+{
+  "order_id": "YOUR_ORDER_ID",
+  "staff_id": "INVALID_STAFF_ID"
+}
+
+###
+
+### Scenario 4: Track delivery progress - assigned to in_transit
+# First create/get delivery order
+# Then update status to in_transit
+PUT {{baseUrl}}/delivery-orders/YOUR_DELIVERY_ORDER_ID
+Content-Type: application/json
+
+{
+  "status": "in_transit",
+  "notes": "Order picked up from warehouse"
+}
+
+###
+
+### Scenario 5: Complete delivery workflow
+# Step 1: Assign delivery
+# POST {{baseUrl}}/delivery-orders
+# Content-Type: application/json
+# {
+#   "order_id": "YOUR_ORDER_ID",
+#   "staff_id": "YOUR_STAFF_ID"
+# }
+
+# Step 2: Mark as in_transit (use returned delivery order ID)
+# PUT {{baseUrl}}/delivery-orders/RETURNED_ID
+# Content-Type: application/json
+# {
+#   "status": "in_transit"
+# }
+
+# Step 3: Mark as delivered
+# PUT {{baseUrl}}/delivery-orders/RETURNED_ID
+# Content-Type: application/json
+# {
+#   "status": "delivered",
+#   "delivery_date": "2024-12-20"
+# }
+
+###
+
+### Scenario 6: Get all assigned deliveries for a staff
+GET {{baseUrl}}/delivery-orders/staff/YOUR_STAFF_ID?status=assigned
+
+###
+
+### Scenario 7: Get in-transit deliveries
+GET {{baseUrl}}/delivery-orders?status=in_transit&page=1&limit=20
+
+###
+
+### Scenario 8: Get completed deliveries
+GET {{baseUrl}}/delivery-orders?status=delivered&sort=-delivery_date&page=1&limit=10
+
+###
+
+### Scenario 9: Handle failed delivery and reassign
+# Step 1: Mark as failed
+PUT {{baseUrl}}/delivery-orders/YOUR_DELIVERY_ORDER_ID
+Content-Type: application/json
+
+{
+  "status": "failed",
+  "notes": "Customer not available - rescheduling"
+}
+
+# Step 2: Reassign to another staff (use returned delivery order ID)
+# PATCH {{baseUrl}}/delivery-orders/RETURNED_ID/reassign
+# Content-Type: application/json
+# {
+#   "new_staff_id": "ANOTHER_STAFF_ID"
+# }
+
+###
+
+### Scenario 10: View delivery statistics
+GET {{baseUrl}}/delivery-orders/stats
+
+###

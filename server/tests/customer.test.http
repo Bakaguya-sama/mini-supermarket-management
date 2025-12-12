@@ -1,0 +1,219 @@
+### ========================================
+### CUSTOMER API TESTS
+### Base URL: http://localhost:5000/api/customers
+### ========================================
+
+### Variables
+@baseUrl = http://localhost:5000/api
+@customerId = 
+@accountId = 
+
+### 1. Get all customers (with pagination)
+GET {{baseUrl}}/customers?page=1&limit=10
+
+###
+
+### 2. Get customer statistics
+GET {{baseUrl}}/customers/stats
+
+###
+
+### 3. Get all customers with membership filter
+GET {{baseUrl}}/customers?membership_type=standard&page=1&limit=10
+
+###
+
+### 4. Get all customers with spending filter
+GET {{baseUrl}}/customers?minSpent=100000&maxSpent=5000000&page=1&limit=10
+
+###
+
+### 5. Search customers by name
+GET {{baseUrl}}/customers?search=john&page=1&limit=10
+
+###
+
+### 6. Get single customer by ID (replace customerId)
+GET {{baseUrl}}/customers/YOUR_CUSTOMER_ID
+
+###
+
+### 7. Get customer by account ID
+GET {{baseUrl}}/customers/account/YOUR_ACCOUNT_ID
+
+###
+
+### 8. Get customer orders
+GET {{baseUrl}}/customers/YOUR_CUSTOMER_ID/orders?page=1&limit=10
+
+###
+
+### 9. Create new customer
+POST {{baseUrl}}/customers
+Content-Type: application/json
+
+{
+  "account_id": "YOUR_ACCOUNT_ID",
+  "membership_type": "premium",
+  "notes": "VIP customer"
+}
+
+###
+
+### 10. Update customer
+PUT {{baseUrl}}/customers/YOUR_CUSTOMER_ID
+Content-Type: application/json
+
+{
+  "membership_type": "gold",
+  "notes": "Upgraded to gold member"
+}
+
+###
+
+### 11. Add points to customer
+PATCH {{baseUrl}}/customers/YOUR_CUSTOMER_ID/points
+Content-Type: application/json
+
+{
+  "pointsToAdd": 100
+}
+
+###
+
+### 12. Deduct points from customer
+PATCH {{baseUrl}}/customers/YOUR_CUSTOMER_ID/points
+Content-Type: application/json
+
+{
+  "pointsToAdd": -50
+}
+
+###
+
+### 13. Update customer total spent
+PATCH {{baseUrl}}/customers/YOUR_CUSTOMER_ID/spent
+Content-Type: application/json
+
+{
+  "amount": 500000
+}
+
+###
+
+### 14. Soft delete customer
+DELETE {{baseUrl}}/customers/YOUR_CUSTOMER_ID
+
+###
+
+### ========================================
+### TEST SCENARIOS
+### ========================================
+
+### Scenario 1: Create customer with minimal data
+POST {{baseUrl}}/customers
+Content-Type: application/json
+
+{
+  "account_id": "YOUR_ACCOUNT_ID"
+}
+
+###
+
+### Scenario 2: Try to create customer with non-existent account (should fail)
+POST {{baseUrl}}/customers
+Content-Type: application/json
+
+{
+  "account_id": "INVALID_ACCOUNT_ID",
+  "membership_type": "standard"
+}
+
+###
+
+### Scenario 3: Get all active customers
+GET {{baseUrl}}/customers?isActive=true&page=1&limit=10
+
+###
+
+### Scenario 4: Get high-value customers
+GET {{baseUrl}}/customers?minSpent=1000000&sort=-total_spent&page=1&limit=10
+
+###
+
+### Scenario 5: Get customers by membership type
+GET {{baseUrl}}/customers?membership_type=premium&page=1&limit=10
+
+###
+
+### Scenario 6: Customer loyalty workflow - Add points
+# Step 1: Get customer
+GET {{baseUrl}}/customers/YOUR_CUSTOMER_ID
+
+# Step 2: Add reward points (use returned customer ID)
+# PATCH {{baseUrl}}/customers/RETURNED_ID/points
+# Content-Type: application/json
+# {
+#   "pointsToAdd": 500
+# }
+
+###
+
+### Scenario 7: Customer spending update after order
+# Step 1: Create order (from order.test.http)
+
+# Step 2: Update customer total spent (use customer ID from order)
+PATCH {{baseUrl}}/customers/YOUR_CUSTOMER_ID/spent
+Content-Type: application/json
+
+{
+  "amount": 2500000
+}
+
+###
+
+### Scenario 8: View customer purchase history
+GET {{baseUrl}}/customers/YOUR_CUSTOMER_ID/orders?page=1&limit=20
+
+###
+
+### Scenario 9: Update customer membership tier
+PUT {{baseUrl}}/customers/YOUR_CUSTOMER_ID
+Content-Type: application/json
+
+{
+  "membership_type": "platinum",
+  "notes": "Loyalty program - platinum tier"
+}
+
+###
+
+### Scenario 10: Customer statistics dashboard
+GET {{baseUrl}}/customers/stats
+
+###
+
+### Scenario 11: Find top customers by spending
+GET {{baseUrl}}/customers?sort=-total_spent&limit=5
+
+###
+
+### Scenario 12: Get customers registered in date range
+GET {{baseUrl}}/customers?page=1&limit=10
+
+###
+
+### Scenario 13: Search customer by phone
+GET {{baseUrl}}/customers?search=0901234567
+
+###
+
+### Scenario 14: Bulk customer filtering
+GET {{baseUrl}}/customers?membership_type=premium&isActive=true&minSpent=500000&page=1&limit=10
+
+###
+
+### Scenario 15: Customer account linking
+GET {{baseUrl}}/customers/account/YOUR_ACCOUNT_ID
+
+###

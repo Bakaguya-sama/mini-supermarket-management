@@ -4,7 +4,7 @@ const mongoose = require('mongoose');
 // ==================== 1. ACCOUNTS ====================
 const accountSchema = new mongoose.Schema({
   username: { type: String, required: true, unique: true, trim: true },
-  password_hash: { type: String, required: true },
+  password_hash: { type: String, default: '' }, // Optional for customers without login
   email: { type: String, required: true, unique: true, lowercase: true, trim: true },
   full_name: { type: String },
   phone: { type: String },
@@ -144,6 +144,9 @@ promotionProductSchema.index({ promotion_id: 1, product_id: 1 }, { unique: true 
 const orderSchema = new mongoose.Schema({
   order_number: { type: String, required: true, unique: true },
   customer_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Customer' },
+  orderItems: [
+    { type: mongoose.Schema.Types.ObjectId, ref: 'OrderItem' }
+  ],
   order_date: { type: Date, default: Date.now },
   status: { type: String, default: 'pending', enum: ['pending', 'confirmed', 'shipped', 'delivered', 'cancelled'] },
   tracking_number: { type: String },
@@ -155,6 +158,15 @@ const orderSchema = new mongoose.Schema({
 }, { timestamps: true });
 
 orderSchema.index({ customer_id: 1, status: 1 });
+
+// Virtual populate alternative (optional)
+orderSchema.virtual('items', {
+  ref: 'OrderItem',
+  localField: '_id',
+  foreignField: 'order_id'
+});
+
+orderSchema.set('toJSON', { virtuals: true });
 
 // ==================== 12. ORDER ITEMS ====================
 const orderItemSchema = new mongoose.Schema({
@@ -287,6 +299,9 @@ productStockSchema.index({ product_id: 1, warehouse_id: 1, shelf_id: 1 });
 // ==================== 21. CARTS ====================
 const cartSchema = new mongoose.Schema({
   customer_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Customer' },
+  cartItems: [
+    { type: mongoose.Schema.Types.ObjectId, ref: 'CartItem' }
+  ],
   last_activity_at: { type: Date, default: Date.now },
   status: { type: String, default: 'active', enum: ['active', 'checked_out', 'abandoned', 'expired'] },
   currency: { type: String, default: 'VND' },
@@ -301,6 +316,15 @@ const cartSchema = new mongoose.Schema({
 }, { timestamps: true });
 
 cartSchema.index({ customer_id: 1, status: 1 });
+
+// Virtual populate alternative (optional, but good for flexibility)
+cartSchema.virtual('cartItemsVirtual', {
+  ref: 'CartItem',
+  localField: '_id',
+  foreignField: 'cart_id'
+});
+
+cartSchema.set('toJSON', { virtuals: true });
 
 // ==================== 22. CART ITEMS ====================
 const cartItemSchema = new mongoose.Schema({

@@ -10,7 +10,7 @@ const app = express();
 
 // Middleware
 app.use(cors({
-  origin: process.env.CLIENT_URL || 'http://localhost:5173',
+  origin: ['http://localhost:5173', 'http://localhost:5174', 'http://localhost:5175', 'http://192.168.1.197:5173', 'http://192.168.1.197:5174', 'http://192.168.1.197:5175'],
   credentials: true
 }));
 // Increase payload size limit for images (base64 encoded)
@@ -50,13 +50,14 @@ app.get('/api/health', (req, res) => {
 app.use('/api/staff', require('./routes/staffRoutes'));
 app.use('/api/products', require('./routes/productRoutes'));
 app.use('/api/suppliers', require('./routes/supplierRoutes'));
+app.use('/api/orders', require('./routes/orderRoutes'));
+app.use('/api/delivery-orders', require('./routes/deliveryOrderRoutes'));
+app.use('/api/carts', require('./routes/cartRoutes'));
+app.use('/api/customers', require('./routes/customerRoutes'));
+app.use('/api/invoices', require('./routes/invoiceRoutes'));
 
 // Future routes
 // app.use('/api/accounts', require('./routes/accountRoutes'));
-// app.use('/api/orders', require('./routes/orderRoutes'));
-// app.use('/api/customers', require('./routes/customerRoutes'));
-// app.use('/api/invoices', require('./routes/invoiceRoutes'));
-// app.use('/api/carts', require('./routes/cartRoutes'));
 
 // Error handling middleware
 app.use((err, req, res, next) => {
