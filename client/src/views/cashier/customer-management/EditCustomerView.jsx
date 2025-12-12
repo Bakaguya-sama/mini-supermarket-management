@@ -2,22 +2,15 @@ import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { FaUser, FaSave } from "react-icons/fa";
 import { customerService } from "../../../services/customerService";
-import { useNotification } from "../../../hooks/useNotification";
-import SuccessNotification from "../../../components/Notification/SuccessNotification";
-import ErrorNotification from "../../../components/Notification/ErrorNotification";
+import SuccessMessage from "../../../components/Messages/SuccessMessage";
+import ErrorMessage from "../../../components/Messages/ErrorMessage";
 import "./EditCustomerView.css";
 
 const EditCustomerView = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { 
-    successNotification, 
-    errorNotification, 
-    showSuccess, 
-    showError, 
-    hideSuccess, 
-    hideError 
-  } = useNotification();
+  const [successMessage, setSuccessMessage] = useState("");
+  const [errorMessage, setErrorMessage] = useState("");
 
   const [formData, setFormData] = useState({
     full_name: "",
@@ -45,28 +38,28 @@ const EditCustomerView = () => {
 
       if (response.success && response.data) {
         const customer = response.data;
-        console.log('✅ Customer loaded:', customer);
+        console.log("✅ Customer loaded:", customer);
 
         // Set form data from customer
         setFormData({
-          full_name: customer.account_id?.full_name || '',
-          email: customer.account_id?.email || '',
-          phone: customer.account_id?.phone || '',
-          address: customer.account_id?.address || '',
-          membership_type: customer.membership_type || 'Standard',
-          notes: customer.notes || '',
+          full_name: customer.account_id?.full_name || "",
+          email: customer.account_id?.email || "",
+          phone: customer.account_id?.phone || "",
+          address: customer.account_id?.address || "",
+          membership_type: customer.membership_type || "Standard",
+          notes: customer.notes || "",
         });
 
         // Store customer info for display
         setCustomerInfo(customer);
       } else {
-        showError('Error!', response.message || 'Failed to load customer');
-        navigate('/customer');
+        setErrorMessage(response.message || "Failed to load customer");
+        navigate("/customer");
       }
     } catch (err) {
-      console.error('❌ Error fetching customer:', err);
-      showError('Error!', 'Error loading customer');
-      navigate('/customer');
+      console.error("❌ Error fetching customer:", err);
+      setErrorMessage("Error loading customer");
+      navigate("/customer");
     } finally {
       setIsLoading(false);
     }
@@ -120,44 +113,44 @@ const EditCustomerView = () => {
     e.preventDefault();
 
     if (!validateForm()) {
-      showError('Validation Error', 'Please fix the form errors');
+      setErrorMessage("Please fix the form errors");
       return;
     }
 
     setIsSubmitting(true);
 
     try {
-      console.log('🛒 Updating customer:', id, formData);
+      console.log("🛒 Updating customer:", id, formData);
 
       const response = await customerService.update(id, {
         membership_type: formData.membership_type,
-        notes: formData.notes
+        notes: formData.notes,
       });
 
       if (response.success) {
-        showSuccess('Success!', 'Customer updated successfully');
+        setSuccessMessage("Customer updated successfully");
         setTimeout(() => {
-          navigate('/customer');
+          navigate("/customer");
         }, 1500);
       } else {
-        showError('Error!', response.message || 'Failed to update customer');
+        setErrorMessage(response.message || "Failed to update customer");
       }
     } catch (error) {
       console.error("❌ Error updating customer:", error);
-      showError('Error!', error.message || 'Error updating customer');
+      setErrorMessage(error.message || "Error updating customer");
     } finally {
       setIsSubmitting(false);
     }
   };
 
   const handleCancel = () => {
-    navigate('/customer');
+    navigate("/customer");
   };
 
   if (isLoading) {
     return (
       <div className="edit-customer-view">
-        <div style={{ textAlign: 'center', padding: '40px' }}>
+        <div style={{ textAlign: "center", padding: "40px" }}>
           <p>Loading customer information...</p>
         </div>
       </div>
@@ -167,7 +160,7 @@ const EditCustomerView = () => {
   if (!customerInfo) {
     return (
       <div className="edit-customer-view">
-        <div style={{ textAlign: 'center', padding: '40px' }}>
+        <div style={{ textAlign: "center", padding: "40px" }}>
           <p>Customer not found</p>
         </div>
       </div>
@@ -182,17 +175,20 @@ const EditCustomerView = () => {
       </div>
 
       {/* Info Box */}
-      <div style={{
-        backgroundColor: '#f3e5f5',
-        border: '1px solid #9c27b0',
-        borderRadius: '4px',
-        padding: '12px',
-        marginBottom: '20px',
-        marginLeft: '20px',
-        marginRight: '20px'
-      }}>
-        <p style={{ margin: 0, color: '#6a1b9a' }}>
-          💡 Note: Account information (email, phone, address) is read-only. Update membership and notes only.
+      <div
+        style={{
+          backgroundColor: "#f3e5f5",
+          border: "1px solid #9c27b0",
+          borderRadius: "4px",
+          padding: "12px",
+          marginBottom: "20px",
+          marginLeft: "20px",
+          marginRight: "20px",
+        }}
+      >
+        <p style={{ margin: 0, color: "#6a1b9a" }}>
+          💡 Note: Account information (email, phone, address) is read-only.
+          Update membership and notes only.
         </p>
       </div>
 
@@ -203,7 +199,9 @@ const EditCustomerView = () => {
           <form id="customer-form" onSubmit={handleSubmit}>
             {/* Account Information Section - Read Only */}
             <div className="customer-form-section">
-              <h2 className="customer-section-title">Account Information (Read-Only)</h2>
+              <h2 className="customer-section-title">
+                Account Information (Read-Only)
+              </h2>
 
               <div className="customer-form-row">
                 <div className="customer-form-group">
@@ -328,31 +326,38 @@ const EditCustomerView = () => {
         <div className="customer-stats-section">
           <div className="customer-stats-item">
             <label className="customer-stats-label">Customer ID</label>
-            <span className="customer-stats-value">{customerInfo._id?.substring(0, 8) || 'N/A'}</span>
+            <span className="customer-stats-value">
+              {customerInfo._id?.substring(0, 8) || "N/A"}
+            </span>
           </div>
 
           <div className="customer-stats-item">
             <label className="customer-stats-label">Total Purchases</label>
             <span className="customer-stats-value">
-              ₫{customerInfo.total_spent?.toLocaleString() || '0'}
+              ₫{customerInfo.total_spent?.toLocaleString() || "0"}
             </span>
           </div>
 
           <div className="customer-stats-item">
             <label className="customer-stats-label">Loyalty Points</label>
-            <span className="customer-stats-value">{customerInfo.points_balance || '0'}</span>
+            <span className="customer-stats-value">
+              {customerInfo.points_balance || "0"}
+            </span>
           </div>
 
           <div className="customer-stats-item">
             <label className="customer-stats-label">Membership Since</label>
             <span className="customer-stats-value">
               {customerInfo.registered_at
-                ? new Date(customerInfo.registered_at).toLocaleDateString('en-US', {
-                    year: 'numeric',
-                    month: 'short',
-                    day: 'numeric'
-                  })
-                : 'N/A'}
+                ? new Date(customerInfo.registered_at).toLocaleDateString(
+                    "en-US",
+                    {
+                      year: "numeric",
+                      month: "short",
+                      day: "numeric",
+                    }
+                  )
+                : "N/A"}
             </span>
           </div>
 
@@ -373,18 +378,14 @@ const EditCustomerView = () => {
         </div>
       </div>
 
-      {/* Notification Components */}
-      <SuccessNotification
-        isVisible={successNotification.isVisible}
-        title={successNotification.title}
-        message={successNotification.message}
-        onClose={hideSuccess}
+      {/* Message Components */}
+      <SuccessMessage
+        message={successMessage}
+        onClose={() => setSuccessMessage("")}
       />
-      <ErrorNotification
-        isVisible={errorNotification.isVisible}
-        title={errorNotification.title}
-        message={errorNotification.message}
-        onClose={hideError}
+      <ErrorMessage
+        message={errorMessage}
+        onClose={() => setErrorMessage("")}
       />
     </div>
   );

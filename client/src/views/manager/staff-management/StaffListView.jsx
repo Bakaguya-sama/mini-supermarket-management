@@ -34,12 +34,12 @@ const StaffListView = () => {
     try {
       setIsLoading(true);
       const result = await staffService.getAll();
-      
+
       console.log("Raw result from staffService.getAll():", result);
-      
+
       // Check if result has data - could be directly an array or wrapped in response object
       let dataArray = [];
-      
+
       if (Array.isArray(result)) {
         // Result is directly an array
         dataArray = result;
@@ -51,7 +51,7 @@ const StaffListView = () => {
         setErrorMessage(result.message || "Failed to load staff");
         return;
       }
-      
+
       if (dataArray.length > 0) {
         // Transform API response to match expected format
         const transformedData = dataArray.map((staff) => {
@@ -63,11 +63,11 @@ const StaffListView = () => {
             email: account.email || "N/A",
             phone: account.phone || "N/A",
             position: staff.position || "N/A",
-            joinDate: staff.hire_date 
-              ? new Date(staff.hire_date).toLocaleDateString('en-US', { 
-                  year: 'numeric', 
-                  month: 'short', 
-                  day: 'numeric' 
+            joinDate: staff.hire_date
+              ? new Date(staff.hire_date).toLocaleDateString("en-US", {
+                  year: "numeric",
+                  month: "short",
+                  day: "numeric",
                 })
               : "N/A",
             status: staff.is_active ? "ACTIVE" : "INACTIVE",
@@ -75,7 +75,9 @@ const StaffListView = () => {
             isDelete: staff.isDelete || false,
             address: account.address || "N/A",
             employmentType: staff.employment_type || "N/A",
-            salary: staff.annual_salary ? `$${staff.annual_salary.toLocaleString()}/year` : "N/A",
+            salary: staff.annual_salary
+              ? `$${staff.annual_salary.toLocaleString()}/year`
+              : "N/A",
             avatar: account.avatar_link,
           };
         });
@@ -100,9 +102,11 @@ const StaffListView = () => {
       staff.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
       staff.phone.includes(searchTerm);
     const matchesPosition =
-      positionFilter === "all" || staff.position.toLowerCase() === positionFilter.toLowerCase();
+      positionFilter === "all" ||
+      staff.position.toLowerCase() === positionFilter.toLowerCase();
     const matchesStatus =
-      statusFilter === "all" || staff.status.toLowerCase() === statusFilter.toLowerCase();
+      statusFilter === "all" ||
+      staff.status.toLowerCase() === statusFilter.toLowerCase();
     return matchesSearch && matchesPosition && matchesStatus;
   });
 
@@ -175,7 +179,9 @@ const StaffListView = () => {
   };
 
   const getStatusBadgeClass = (status) => {
-    return status && status.toUpperCase() === "ACTIVE" ? "status-approved" : "status-declined";
+    return status && status.toUpperCase() === "ACTIVE"
+      ? "status-approved"
+      : "status-declined";
   };
 
   return (
@@ -197,15 +203,19 @@ const StaffListView = () => {
 
       {/* Loading State */}
       {isLoading ? (
-        <div style={{ textAlign: "center", padding: "40px" }}>
+        <div style={{ textAlign: "center", padding: "20px" }}>
           <p>Loading staff data...</p>
         </div>
       ) : staffData.length === 0 ? (
-        <div style={{ textAlign: "center", padding: "40px" }}>
+        <div
+          style={{ textAlign: "center", padding: "20px", fontWeight: "bold" }}
+        >
           <p>No staff data found. Please add staff members.</p>
         </div>
       ) : (
-        <>
+        ""
+      )}
+
       {/* Filters and Actions */}
       <div className="filters-section">
         <div className="left-filters">
@@ -247,7 +257,10 @@ const StaffListView = () => {
           </div>
         </div>
 
-        <button className="add-staff-btn" onClick={() => navigate("/staff/add")}>
+        <button
+          className="add-staff-btn"
+          onClick={() => navigate("/staff/add")}
+        >
           <FaPlus className="add-icon" />
           Add Staff
         </button>
@@ -269,32 +282,37 @@ const StaffListView = () => {
           </thead>
           <tbody>
             {paginatedData.map((staff, index) => (
-              <tr key={`page-${currentPage}-${staff.id}-${index}`} style={{
-                textDecoration: staff.isDelete ? 'line-through' : 'none',
-                opacity: staff.isDelete ? 0.6 : 1
-              }}>
-                <td className="staff-avatar" style={{ textAlign: 'center' }}>
+              <tr
+                key={`page-${currentPage}-${staff.id}-${index}`}
+                style={{
+                  textDecoration: staff.isDelete ? "line-through" : "none",
+                  opacity: staff.isDelete ? 0.6 : 1,
+                }}
+              >
+                <td className="staff-avatar" style={{ textAlign: "center" }}>
                   {staff.avatar ? (
-                    <img 
-                      src={staff.avatar} 
+                    <img
+                      src={staff.avatar}
                       alt={staff.name}
                       style={{
-                        width: '50px',
-                        height: '50px',
-                        objectFit: 'cover'
+                        width: "50px",
+                        height: "50px",
+                        objectFit: "cover",
                       }}
                     />
                   ) : (
-                    <div style={{
-                      width: '50px',
-                      height: '50px',
-                      backgroundColor: '#ddd',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      color: '#999',
-                      fontSize: '12px'
-                    }}>
+                    <div
+                      style={{
+                        width: "50px",
+                        height: "50px",
+                        backgroundColor: "#ddd",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        color: "#999",
+                        fontSize: "12px",
+                      }}
+                    >
                       No Image
                     </div>
                   )}
@@ -315,7 +333,7 @@ const StaffListView = () => {
                       staff.status
                     )}`}
                   >
-                    {staff.isDelete ? 'DELETED' : staff.status}
+                    {staff.isDelete ? "DELETED" : staff.status}
                   </span>
                 </td>
                 <td className="action-buttons">
@@ -329,11 +347,13 @@ const StaffListView = () => {
                   <button
                     className="action-btn edit-btn"
                     onClick={() => handleEdit(staff.id)}
-                    title={staff.isDelete ? "Cannot edit deleted item" : "Edit Staff"}
+                    title={
+                      staff.isDelete ? "Cannot edit deleted item" : "Edit Staff"
+                    }
                     disabled={staff.isDelete}
                     style={{
                       opacity: staff.isDelete ? 0.5 : 1,
-                      cursor: staff.isDelete ? 'not-allowed' : 'pointer'
+                      cursor: staff.isDelete ? "not-allowed" : "pointer",
                     }}
                   >
                     <FaEdit />
@@ -345,7 +365,7 @@ const StaffListView = () => {
                     disabled={staff.isDelete}
                     style={{
                       opacity: staff.isDelete ? 0.5 : 1,
-                      cursor: staff.isDelete ? 'not-allowed' : 'pointer'
+                      cursor: staff.isDelete ? "not-allowed" : "pointer",
                     }}
                   >
                     <FaTrash />
@@ -433,8 +453,6 @@ const StaffListView = () => {
         onConfirm={handleConfirmDelete}
         staffName={staffToDelete?.name}
       />
-        </>
-      )}
     </div>
   );
 };

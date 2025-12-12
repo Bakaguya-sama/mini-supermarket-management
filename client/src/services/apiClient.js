@@ -4,18 +4,18 @@
  * Xử lí authentication, error handling, logging
  */
 
-import axios from 'axios';
+import axios from "axios";
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
 
-console.log('🔧 API Client initialized with URL:', API_URL);
+console.log("🔧 API Client initialized with URL:", API_URL);
 
 const apiClient = axios.create({
   baseURL: API_URL,
   timeout: 10000,
   headers: {
-    'Content-Type': 'application/json'
-  }
+    "Content-Type": "application/json",
+  },
 });
 
 /**
@@ -24,20 +24,20 @@ const apiClient = axios.create({
 apiClient.interceptors.request.use(
   (config) => {
     // Thêm token nếu có
-    const token = localStorage.getItem('token');
+    const token = localStorage.getItem("token");
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
 
     console.log(`🚀 [${config.method?.toUpperCase()}] ${config.url}`, {
       params: config.params,
-      data: config.data
+      data: config.data,
     });
 
     return config;
   },
   (error) => {
-    console.error('❌ Request interceptor error:', error);
+    console.error("❌ Request interceptor error:", error);
     return Promise.reject(error);
   }
 );
@@ -57,36 +57,36 @@ apiClient.interceptors.response.use(
       console.error(`❌ Error Response [${error.response.status}]:`, {
         url: error.config?.url,
         status: error.response.status,
-        data: error.response.data
+        data: error.response.data,
       });
 
       // Handle 401 Unauthorized
       if (error.response.status === 401) {
-        localStorage.removeItem('token');
-        window.location.href = '/signin';
+        localStorage.removeItem("token");
+        window.location.href = "/signin";
       }
 
       // Return error response data
       return Promise.reject(error.response.data || error);
     } else if (error.request) {
       // Request made but no response
-      console.error('❌ No response received:', {
+      console.error("❌ No response received:", {
         url: error.config?.url,
-        message: error.message
+        message: error.message,
       });
 
       return Promise.reject({
         success: false,
-        message: 'Network error - please check your connection',
-        error: error.message
+        message: "Network error - please check your connection",
+        error: error.message,
       });
     } else {
       // Error in request setup
-      console.error('❌ Request setup error:', error.message);
+      console.error("❌ Request setup error:", error.message);
       return Promise.reject({
         success: false,
-        message: 'Request error',
-        error: error.message
+        message: "Request error",
+        error: error.message,
       });
     }
   }

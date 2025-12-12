@@ -2,23 +2,16 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { FaSearch, FaEye, FaEdit, FaTrash, FaPlus } from "react-icons/fa";
 import { customerService } from "../../../services/customerService";
-import { useNotification } from "../../../hooks/useNotification";
-import SuccessNotification from "../../../components/Notification/SuccessNotification";
-import ErrorNotification from "../../../components/Notification/ErrorNotification";
+import SuccessMessage from "../../../components/Messages/SuccessMessage";
+import ErrorMessage from "../../../components/Messages/ErrorMessage";
 import CustomerModal from "../../../components/CustomerModal/CustomerModal";
 import DeleteCustomerConfirmationModal from "../../../components/CustomerModal/DeleteCustomerConfirmationModal";
 import "./CustomerListView.css";
 
 const CustomerListView = () => {
   const navigate = useNavigate();
-  const { 
-    successNotification, 
-    errorNotification, 
-    showSuccess, 
-    showError, 
-    hideSuccess, 
-    hideError 
-  } = useNotification();
+  const [successMessage, setSuccessMessage] = useState("");
+  const [errorMessage, setErrorMessage] = useState("");
 
   // State for data and loading
   const [customers, setCustomers] = useState([]);
@@ -57,22 +50,22 @@ const CustomerListView = () => {
 
       const response = await customerService.getAll({
         page: 1,
-        limit: 100 // Get all customers for client-side filtering
+        limit: 100, // Get all customers for client-side filtering
       });
 
       if (response.success) {
-        console.log('✅ Customers loaded:', response.data);
+        console.log("✅ Customers loaded:", response.data);
         setCustomers(response.data || []);
         applyFilters();
       } else {
-        setError(response.message || 'Failed to fetch customers');
+        setError(response.message || "Failed to fetch customers");
         setCustomers([]);
-        showError('Error!', 'Failed to load customers: ' + response.message);
+        setErrorMessage("Failed to load customers: " + response.message);
       }
     } catch (err) {
-      console.error('❌ Error fetching customers:', err);
+      console.error("❌ Error fetching customers:", err);
       setError(err.message);
-      showError('Error!', 'Error loading customers');
+      setErrorMessage("Error loading customers");
       setCustomers([]);
     } finally {
       setLoading(false);
@@ -84,12 +77,12 @@ const CustomerListView = () => {
 
     // Apply search filter
     if (searchTerm) {
-      filtered = filtered.filter(customer => {
+      filtered = filtered.filter((customer) => {
         const searchLower = searchTerm.toLowerCase();
-        const fullName = customer.account_id?.full_name || '';
-        const email = customer.account_id?.email || '';
-        const phone = customer.account_id?.phone || '';
-        const customerId = customer._id || '';
+        const fullName = customer.account_id?.full_name || "";
+        const email = customer.account_id?.email || "";
+        const phone = customer.account_id?.phone || "";
+        const customerId = customer._id || "";
 
         return (
           fullName.toLowerCase().includes(searchLower) ||
@@ -101,8 +94,10 @@ const CustomerListView = () => {
     }
 
     // Apply membership filter
-    if (membershipFilter !== 'All') {
-      filtered = filtered.filter(customer => customer.membership_type === membershipFilter);
+    if (membershipFilter !== "All") {
+      filtered = filtered.filter(
+        (customer) => customer.membership_type === membershipFilter
+      );
     }
 
     setFilteredCustomers(filtered);
@@ -114,10 +109,10 @@ const CustomerListView = () => {
   // ];
 
   // Calculate stats for header cards - ONLY count active customers (not deleted)
-  const activeCustomers = customers.filter(c => !c.isDelete);
+  const activeCustomers = customers.filter((c) => !c.isDelete);
   const totalCustomers = activeCustomers.length;
   const premiumMembers = activeCustomers.filter(
-    (c) => c.membership_type === 'Gold' || c.membership_type === 'Platinum'
+    (c) => c.membership_type === "Gold" || c.membership_type === "Platinum"
   ).length;
 
   // Filter data first
@@ -138,7 +133,7 @@ const CustomerListView = () => {
 
   const handleEdit = (customerId, customer) => {
     if (customer && customer.isDelete) {
-      showError('Error!', 'Cannot edit deleted customer');
+      setErrorMessage("Cannot edit deleted customer");
       return;
     }
     console.log("Edit customer:", customerId);
@@ -147,7 +142,7 @@ const CustomerListView = () => {
 
   const handleDelete = (customer) => {
     if (customer.isDelete) {
-      showError('Error!', 'This customer is already deleted');
+      setErrorMessage("This customer is already deleted");
       return;
     }
     setCustomerToDelete(customer);
@@ -162,7 +157,7 @@ const CustomerListView = () => {
       const response = await customerService.delete(customerToDelete._id);
 
       if (response.success) {
-        showSuccess('Success!', 'Customer deleted successfully');
+        setSuccessMessage("Customer deleted successfully");
         // Refresh the customer list and reset to page 1
         setTimeout(() => {
           setCurrentPage(1); // Reset to page 1 to see deleted customer
@@ -171,11 +166,11 @@ const CustomerListView = () => {
           setIsDeleteModalOpen(false);
         }, 500);
       } else {
-        showError('Error!', response.message || 'Failed to delete customer');
+        setErrorMessage(response.message || "Failed to delete customer");
       }
     } catch (err) {
-      console.error('❌ Error deleting customer:', err);
-      showError('Error!', 'Error deleting customer');
+      console.error("❌ Error deleting customer:", err);
+      setErrorMessage("Error deleting customer");
     } finally {
       setIsDeleting(false);
     }
@@ -189,17 +184,17 @@ const CustomerListView = () => {
   const handleView = (customer) => {
     setSelectedCustomer({
       id: customer._id,
-      name: customer.account_id?.full_name || 'N/A',
-      email: customer.account_id?.email || 'N/A',
-      phone: customer.account_id?.phone || 'N/A',
-      address: customer.account_id?.address || 'N/A',
+      name: customer.account_id?.full_name || "N/A",
+      email: customer.account_id?.email || "N/A",
+      phone: customer.account_id?.phone || "N/A",
+      address: customer.account_id?.address || "N/A",
       membership: customer.membership_type,
       totalPurchases: `₫${customer.total_spent?.toLocaleString() || 0}`,
       loyaltyPoints: customer.points_balance || 0,
       registeredAt: customer.registered_at,
       username: customer.account_id?.username,
       _id: customer._id,
-      isDelete: customer.isDelete || false
+      isDelete: customer.isDelete || false,
     });
     setIsModalOpen(true);
   };
@@ -222,32 +217,32 @@ const CustomerListView = () => {
 
   const getMembershipBadgeClass = (membership) => {
     switch (membership) {
-      case 'Standard':
-        return 'customer-membership-regular';
-      case 'Silver':
-        return 'customer-membership-silver';
-      case 'Gold':
-        return 'customer-membership-gold';
-      case 'Platinum':
-        return 'customer-membership-platinum';
+      case "Standard":
+        return "customer-membership-regular";
+      case "Silver":
+        return "customer-membership-silver";
+      case "Gold":
+        return "customer-membership-gold";
+      case "Platinum":
+        return "customer-membership-platinum";
       default:
-        return 'customer-membership-default';
+        return "customer-membership-default";
     }
   };
 
   const formatDate = (date) => {
-    if (!date) return 'N/A';
-    return new Date(date).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
+    if (!date) return "N/A";
+    return new Date(date).toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
     });
   };
 
   if (loading) {
     return (
       <div className="customer-list-view">
-        <div style={{ textAlign: 'center', padding: '40px' }}>
+        <div style={{ textAlign: "center", padding: "40px" }}>
           <p>Loading customers...</p>
         </div>
       </div>
@@ -318,7 +313,7 @@ const CustomerListView = () => {
 
       {/* Error Message */}
       {error && (
-        <div style={{ color: 'red', padding: '10px', textAlign: 'center' }}>
+        <div style={{ color: "red", padding: "10px", textAlign: "center" }}>
           {error}
         </div>
       )}
@@ -326,7 +321,7 @@ const CustomerListView = () => {
       {/* Table */}
       <div className="customer-table-container">
         {paginatedData.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: '40px' }}>
+          <div style={{ textAlign: "center", padding: "40px" }}>
             <p>No customers found</p>
           </div>
         ) : (
@@ -345,24 +340,34 @@ const CustomerListView = () => {
             </thead>
             <tbody>
               {paginatedData.map((customer) => (
-                <tr 
+                <tr
                   key={customer._id}
                   style={{
                     opacity: customer.isDelete ? 0.6 : 1,
-                    textDecoration: customer.isDelete ? 'line-through' : 'none',
-                    backgroundColor: customer.isDelete ? '#f5f5f5' : 'transparent'
+                    textDecoration: customer.isDelete ? "line-through" : "none",
+                    backgroundColor: customer.isDelete
+                      ? "#f5f5f5"
+                      : "transparent",
                   }}
                 >
-                  <td className="customer-id">{customer._id?.substring(0, 8)}</td>
+                  <td className="customer-id">
+                    {customer._id?.substring(0, 8)}
+                  </td>
                   <td className="customer-info">
-                    <div className="customer-name">{customer.account_id?.full_name || 'N/A'}</div>
+                    <div className="customer-name">
+                      {customer.account_id?.full_name || "N/A"}
+                    </div>
                     <div className="customer-join-date">
                       Joined {formatDate(customer.registered_at)}
                     </div>
                   </td>
                   <td className="customer-contact">
-                    <div className="customer-email">{customer.account_id?.email || 'N/A'}</div>
-                    <div className="customer-phone">{customer.account_id?.phone || 'N/A'}</div>
+                    <div className="customer-email">
+                      {customer.account_id?.email || "N/A"}
+                    </div>
+                    <div className="customer-phone">
+                      {customer.account_id?.phone || "N/A"}
+                    </div>
                   </td>
                   <td>
                     <span
@@ -376,7 +381,9 @@ const CustomerListView = () => {
                   <td className="customer-purchases">
                     ₫{customer.total_spent?.toLocaleString() || 0}
                   </td>
-                  <td className="customer-points">{customer.points_balance || 0}</td>
+                  <td className="customer-points">
+                    {customer.points_balance || 0}
+                  </td>
                   <td>{formatDate(customer.registered_at)}</td>
                   <td className="customer-action-buttons">
                     <button
@@ -389,11 +396,15 @@ const CustomerListView = () => {
                     <button
                       className="customer-action-btn customer-edit-btn"
                       onClick={() => handleEdit(customer._id, customer)}
-                      title={customer.isDelete ? "Cannot edit deleted customer" : "Edit Customer"}
+                      title={
+                        customer.isDelete
+                          ? "Cannot edit deleted customer"
+                          : "Edit Customer"
+                      }
                       disabled={customer.isDelete}
-                      style={{ 
+                      style={{
                         opacity: customer.isDelete ? 0.5 : 1,
-                        cursor: customer.isDelete ? 'not-allowed' : 'pointer'
+                        cursor: customer.isDelete ? "not-allowed" : "pointer",
                       }}
                     >
                       <FaEdit />
@@ -401,11 +412,15 @@ const CustomerListView = () => {
                     <button
                       className="customer-action-btn customer-delete-btn"
                       onClick={() => handleDelete(customer)}
-                      title={customer.isDelete ? "Already deleted" : "Delete Customer"}
+                      title={
+                        customer.isDelete
+                          ? "Already deleted"
+                          : "Delete Customer"
+                      }
                       disabled={customer.isDelete}
-                      style={{ 
+                      style={{
                         opacity: customer.isDelete ? 0.5 : 1,
-                        cursor: customer.isDelete ? 'not-allowed' : 'pointer'
+                        cursor: customer.isDelete ? "not-allowed" : "pointer",
                       }}
                     >
                       <FaTrash />
@@ -493,18 +508,14 @@ const CustomerListView = () => {
         isLoading={isDeleting}
       />
 
-      {/* Notification Components */}
-      <SuccessNotification
-        isVisible={successNotification.isVisible}
-        title={successNotification.title}
-        message={successNotification.message}
-        onClose={hideSuccess}
+      {/* Message Components */}
+      <SuccessMessage
+        message={successMessage}
+        onClose={() => setSuccessMessage("")}
       />
-      <ErrorNotification
-        isVisible={errorNotification.isVisible}
-        title={errorNotification.title}
-        message={errorNotification.message}
-        onClose={hideError}
+      <ErrorMessage
+        message={errorMessage}
+        onClose={() => setErrorMessage("")}
       />
     </div>
   );

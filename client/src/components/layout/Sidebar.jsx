@@ -24,6 +24,7 @@ import "./Sidebar.css";
 
 const Sidebar = ({ activeItem, onItemClick, userRole = "manager" }) => {
   const [isReportExpanded, setIsReportExpanded] = useState(false);
+  if (userRole === "customer") return "";
 
   // Menu items based on user role
   const getMenuItemsByRole = (role) => {
@@ -246,7 +247,7 @@ const Sidebar = ({ activeItem, onItemClick, userRole = "manager" }) => {
       setIsReportExpanded(!isReportExpanded);
     } else if (item.action === "signout") {
       // Handle sign out action
-      console.log("Sign out clicked");
+      onItemClick?.(item);
     } else {
       onItemClick?.(item);
     }

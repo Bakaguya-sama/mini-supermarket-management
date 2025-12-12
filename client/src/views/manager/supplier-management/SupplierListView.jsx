@@ -22,7 +22,7 @@ const SupplierListView = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("All Status");
   const [currentPage, setCurrentPage] = useState(1);
-  
+
   const [suppliers, setSuppliers] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -47,22 +47,22 @@ const SupplierListView = () => {
     try {
       setIsLoading(true);
       setError(null);
-      
-      const response = await supplierService.getAll({ 
+
+      const response = await supplierService.getAll({
         limit: 100,
-        page: 1 
+        page: 1,
       });
-      
-      console.log('🔍 Full response:', response);
-      console.log('📦 Response data type:', typeof response.data);
-      console.log('📦 Response data:', response.data);
-      
+
+      console.log("🔍 Full response:", response);
+      console.log("📦 Response data type:", typeof response.data);
+      console.log("📦 Response data:", response.data);
+
       if (response.success && response.data) {
-        console.log('✅ Setting suppliers:', response.data);
+        console.log("✅ Setting suppliers:", response.data);
         setSuppliers(response.data);
         calculateStats(response.data);
       } else {
-        console.warn('❌ Response not successful:', response);
+        console.warn("❌ Response not successful:", response);
         setError("Failed to load suppliers");
       }
     } catch (error) {
@@ -76,8 +76,8 @@ const SupplierListView = () => {
   const calculateStats = (supplierList) => {
     try {
       if (!Array.isArray(supplierList)) {
-        console.error('supplierList is not an array:', supplierList);
-        throw new Error('Invalid supplier list format');
+        console.error("supplierList is not an array:", supplierList);
+        throw new Error("Invalid supplier list format");
       }
 
       if (supplierList.length === 0) {
@@ -90,7 +90,7 @@ const SupplierListView = () => {
       }
 
       const totalSuppliers = supplierList.length;
-      
+
       const activeSuppliers = supplierList.filter((supplier) => {
         if (!supplier) return false;
         return supplier.is_active === true;
@@ -101,15 +101,19 @@ const SupplierListView = () => {
         return supplier.is_active === false;
       }).length;
 
-      console.log('✅ Stats calculated:', { totalSuppliers, activeSuppliers, inactiveSuppliers });
-      
+      console.log("✅ Stats calculated:", {
+        totalSuppliers,
+        activeSuppliers,
+        inactiveSuppliers,
+      });
+
       setStats({
         totalSuppliers,
         activeSuppliers,
         inactiveSuppliers,
       });
     } catch (error) {
-      console.error('❌ Error calculating stats:', error);
+      console.error("❌ Error calculating stats:", error);
       setStats({
         totalSuppliers: 0,
         activeSuppliers: 0,
@@ -120,13 +124,15 @@ const SupplierListView = () => {
 
   // Pagination logic
   const itemsPerPage = 10;
-  
+
   // Filter and search logic
   const filteredSuppliers = suppliers.filter((supplier) => {
     const matchesSearch =
       supplier.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       supplier.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      supplier.contact_person_name.toLowerCase().includes(searchTerm.toLowerCase());
+      supplier.contact_person_name
+        .toLowerCase()
+        .includes(searchTerm.toLowerCase());
 
     let matchesStatus = true;
     if (statusFilter === "Active") {
@@ -167,9 +173,11 @@ const SupplierListView = () => {
 
     try {
       const response = await supplierService.delete(supplierToDelete._id);
-      
+
       if (response.success) {
-        setSuccessMessage(`Supplier "${supplierToDelete.name}" marked as deleted successfully!`);
+        setSuccessMessage(
+          `Supplier "${supplierToDelete.name}" marked as deleted successfully!`
+        );
         setIsDeleteModalOpen(false);
         setSupplierToDelete(null);
         // Reload suppliers to get updated data with isDelete = true
@@ -188,41 +196,24 @@ const SupplierListView = () => {
     setSupplierToDelete(null);
   };
 
-  if (isLoading) {
-    return (
-      <div className="supplier-list-view">
-        <div style={{ padding: "40px", textAlign: "center" }}>
-          <p>Loading suppliers...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (isLoading) {
-    return (
-      <div className="supplier-list-container">
-        <div className="supplier-list-loading">Loading suppliers...</div>
-      </div>
-    );
-  }
-
   return (
     <div className="supplier-list-container">
       <SuccessMessage
         message={successMessage}
         onClose={() => setSuccessMessage("")}
       />
-      <ErrorMessage
-        message={error}
-        onClose={() => setError("")}
-      />
+      <ErrorMessage message={error} onClose={() => setError("")} />
 
       {/* Header */}
       <div className="supplier-list-header">
         <h1 className="supplier-list-title">Supplier Management</h1>
-        <button className="supplier-list-btn-add" onClick={handleAddSupplier}>
-          <FaPlus /> Add New Supplier
-        </button>
+        {isLoading ? (
+          <div style={{ textAlign: "center", padding: "20px" }}>
+            <p>Loading staff data...</p>
+          </div>
+        ) : (
+          ""
+        )}
       </div>
 
       {/* Stats */}
@@ -254,35 +245,23 @@ const SupplierListView = () => {
             }}
           />
         </div>
-        <div className="supplier-list-filter-status">
-          <button 
-            className={`supplier-list-filter-btn ${statusFilter === "All Status" ? "active" : ""}`}
-            onClick={() => {
-              setStatusFilter("All Status");
+        <div className="dropdown">
+          <select
+            value={statusFilter}
+            onChange={(e) => {
+              setStatusFilter(e.target.value);
               setCurrentPage(1);
             }}
+            className="filter-select"
           >
-            All Status
-          </button>
-          <button 
-            className={`supplier-list-filter-btn ${statusFilter === "Active" ? "active" : ""}`}
-            onClick={() => {
-              setStatusFilter("Active");
-              setCurrentPage(1);
-            }}
-          >
-            Active
-          </button>
-          <button 
-            className={`supplier-list-filter-btn ${statusFilter === "Inactive" ? "active" : ""}`}
-            onClick={() => {
-              setStatusFilter("Inactive");
-              setCurrentPage(1);
-            }}
-          >
-            Inactive
-          </button>
+            <option value="All Status">All Status</option>
+            <option value="Active">Active</option>
+            <option value="Inactive">Inactive</option>
+          </select>
         </div>
+        <button className="supplier-list-btn-add" onClick={handleAddSupplier}>
+          <FaPlus /> Add New Supplier
+        </button>
       </div>
 
       {/* Table */}
@@ -303,10 +282,15 @@ const SupplierListView = () => {
               </thead>
               <tbody>
                 {currentSuppliers.map((supplier) => (
-                  <tr key={supplier._id} style={{
-                    textDecoration: supplier.isDelete ? 'line-through' : 'none',
-                    opacity: supplier.isDelete ? 0.6 : 1
-                  }}>
+                  <tr
+                    key={supplier._id}
+                    style={{
+                      textDecoration: supplier.isDelete
+                        ? "line-through"
+                        : "none",
+                      opacity: supplier.isDelete ? 0.6 : 1,
+                    }}
+                  >
                     <td>
                       <img
                         src={supplier.image_link || "https://placehold.co/50"}
@@ -318,7 +302,9 @@ const SupplierListView = () => {
                       />
                     </td>
                     <td>
-                      <div className="supplier-list-cell-name">{supplier.name}</div>
+                      <div className="supplier-list-cell-name">
+                        {supplier.name}
+                      </div>
                     </td>
                     <td>{supplier.contact_person_name}</td>
                     <td>{supplier.email}</td>
@@ -326,10 +312,18 @@ const SupplierListView = () => {
                     <td>
                       <span
                         className={`supplier-status-badge ${
-                          supplier.isDelete ? "deleted" : (supplier.is_active ? "active" : "inactive")
+                          supplier.isDelete
+                            ? "deleted"
+                            : supplier.is_active
+                            ? "active"
+                            : "inactive"
                         }`}
                       >
-                        {supplier.isDelete ? "Deleted" : (supplier.is_active ? "Active" : "Inactive")}
+                        {supplier.isDelete
+                          ? "Deleted"
+                          : supplier.is_active
+                          ? "Active"
+                          : "Inactive"}
                       </span>
                     </td>
                     <td>
@@ -344,11 +338,17 @@ const SupplierListView = () => {
                         <button
                           className="supplier-list-btn-action supplier-list-btn-edit"
                           onClick={() => handleEdit(supplier._id)}
-                          title={supplier.isDelete ? "Cannot edit deleted item" : "Edit"}
+                          title={
+                            supplier.isDelete
+                              ? "Cannot edit deleted item"
+                              : "Edit"
+                          }
                           disabled={supplier.isDelete}
                           style={{
                             opacity: supplier.isDelete ? 0.5 : 1,
-                            cursor: supplier.isDelete ? 'not-allowed' : 'pointer'
+                            cursor: supplier.isDelete
+                              ? "not-allowed"
+                              : "pointer",
                           }}
                         >
                           <FaEdit />
@@ -356,11 +356,15 @@ const SupplierListView = () => {
                         <button
                           className="supplier-list-btn-action supplier-list-btn-delete"
                           onClick={() => handleDeleteClick(supplier)}
-                          title={supplier.isDelete ? "Already deleted" : "Delete"}
+                          title={
+                            supplier.isDelete ? "Already deleted" : "Delete"
+                          }
                           disabled={supplier.isDelete}
                           style={{
                             opacity: supplier.isDelete ? 0.5 : 1,
-                            cursor: supplier.isDelete ? 'not-allowed' : 'pointer'
+                            cursor: supplier.isDelete
+                              ? "not-allowed"
+                              : "pointer",
                           }}
                         >
                           <FaTrash />
@@ -405,9 +409,6 @@ const SupplierListView = () => {
               ? "Try adjusting your filters"
               : "Get started by adding your first supplier"}
           </p>
-          <button className="supplier-list-empty-btn" onClick={handleAddSupplier}>
-            <FaPlus /> Add New Supplier
-          </button>
         </div>
       )}
 

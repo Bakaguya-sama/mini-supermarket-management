@@ -6,10 +6,9 @@
 
 /* Header */
 .page-header {
-    background: white;
+    background: EFFFE8;
     padding: 2rem 2rem 1rem;
     border-bottom: 1px solid #f0f0f0;
-    margin: -2rem -2rem 0 -2rem;
 }
 
 .header-content h1 {

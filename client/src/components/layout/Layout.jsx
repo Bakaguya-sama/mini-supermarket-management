@@ -81,8 +81,7 @@ const Layout = ({ children }) => {
 
   const handleMenuItemClick = (item) => {
     if (item.action === "signout") {
-      // Handle sign out
-      navigate("/signin");
+      handleSignOut();
     } else if (item.path) {
       navigate(item.path);
     }
@@ -105,8 +104,46 @@ const Layout = ({ children }) => {
     localStorage.removeItem("userName");
     localStorage.removeItem("userUsername");
     localStorage.removeItem("isLoggedIn");
+    //TODO: Sign out api here
     navigate("/signin");
   };
+
+  // If role is customer, show under development message
+  if (userRole === "customer") {
+    return (
+      <div
+        className="layout"
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          height: "100vh",
+          backgroundColor: "#f5f5f5",
+        }}
+      >
+        <div style={{ textAlign: "center", padding: "2rem" }}>
+          <h1 style={{ fontSize: "2rem", color: "#333", marginBottom: "1rem" }}>
+            This feature is under development
+          </h1>
+          <button
+            onClick={handleSignOut}
+            style={{
+              marginTop: "2rem",
+              padding: "0.75rem 1.5rem",
+              fontSize: "1rem",
+              backgroundColor: "#007bff",
+              color: "white",
+              border: "none",
+              borderRadius: "4px",
+              cursor: "pointer",
+            }}
+          >
+            Sign Out
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="layout">
