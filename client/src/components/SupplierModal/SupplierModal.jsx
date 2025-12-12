@@ -2,9 +2,9 @@ import React from "react";
 import { useNavigate } from "react-router-dom";
 import "./SupplierModal.css";
 
-const SupplierModal = ({ supplier, isOpen, onClose }) => {
+const SupplierModal = ({ supplier, onClose }) => {
   const navigate = useNavigate();
-  if (!isOpen || !supplier) return null;
+  if (!supplier) return null;
 
   const handleOverlayClick = (e) => {
     if (e.target === e.currentTarget) {
@@ -14,99 +14,119 @@ const SupplierModal = ({ supplier, isOpen, onClose }) => {
 
   const handleEditClick = () => {
     onClose();
-    navigate(`/supplier/edit/${supplier.id}`);
-  };
-
-  const handlePlaceOrderClick = () => {
-    onClose();
-    navigate(`/supplier/place-order/${supplier.id}`);
+    navigate(`/suppliers/edit/${supplier._id}`);
   };
 
   return (
-    <div className="modal-overlay" onClick={handleOverlayClick}>
-      <div className="modal-content">
+    <div className="supplier-modal-overlay" onClick={handleOverlayClick}>
+      <div className="supplier-modal-content">
         {/* Modal Header */}
-        <div className="modal-header">
-          <div className="staff-info">
-            <h2 className="staff-name">{supplier.name}</h2>
-            <p className="staff-position">{supplier.category}</p>
+        <div className="supplier-modal-header">
+          <div className="supplier-modal-info">
+            <h2 className="supplier-modal-name">{supplier.name}</h2>
+            <p className="supplier-modal-contact">{supplier.contact_person_name}</p>
           </div>
-          <button className="close-btn" onClick={onClose}>
+          <button className="supplier-modal-close-btn" onClick={onClose}>
             ×
           </button>
         </div>
 
+        {/* Supplier Image */}
+        <div className="supplier-modal-image-section">
+          <img
+            src={supplier.image_link || "https://placehold.co/400"}
+            alt={supplier.name}
+            className="supplier-modal-image"
+            onError={(e) => {
+              e.target.src = "https://placehold.co/400";
+            }}
+          />
+        </div>
+
         {/* Modal Body */}
-        <div className="modal-body">
-          <div className="info-grid">
+        <div className="supplier-modal-body">
+          <div className="supplier-modal-info-grid">
             {/* Basic Information */}
-            <div className="info-row">
-              <div className="info-item">
+            <div className="supplier-modal-info-row">
+              <div className="supplier-modal-info-item">
                 <label>Supplier ID</label>
-                <p>{supplier.id}</p>
+                <p>{supplier._id || "N/A"}</p>
               </div>
-              <div className="info-item">
-                <label>Category</label>
-                <p>{supplier.category}</p>
-              </div>
-            </div>
-
-            <div className="info-row">
-              <div className="info-item">
-                <label>Contact Person</label>
+              <div className="supplier-modal-info-item">
+                <label>Status</label>
                 <p>
-                  {supplier.contactPerson ||
-                    supplier.contact?.split("\n")[0] ||
-                    "N/A"}
-                </p>
-              </div>
-              <div className="info-item">
-                <label>Phone</label>
-                <p>
-                  {supplier.phone || supplier.contact?.split("\n")[1] || "N/A"}
+                  <span
+                    className={`supplier-status-badge ${
+                      supplier.is_active ? "active" : "inactive"
+                    }`}
+                  >
+                    {supplier.is_active ? "Active" : "Inactive"}
+                  </span>
                 </p>
               </div>
             </div>
 
-            <div className="info-row">
-              <div className="info-item full-width">
+            <div className="supplier-modal-info-row">
+              <div className="supplier-modal-info-item">
                 <label>Email</label>
-                <p>{supplier.email}</p>
+                <p>{supplier.email || "N/A"}</p>
+              </div>
+              <div className="supplier-modal-info-item">
+                <label>Phone</label>
+                <p>{supplier.phone || "N/A"}</p>
               </div>
             </div>
 
-            <div className="info-row">
-              <div className="info-item full-width">
+            <div className="supplier-modal-info-row">
+              <div className="supplier-modal-info-item">
+                <label>Website</label>
+                <p>{supplier.website || "N/A"}</p>
+              </div>
+              <div className="supplier-modal-info-item">
+                <label>Tax ID</label>
+                <p>{supplier.tax_id || "N/A"}</p>
+              </div>
+            </div>
+
+            <div className="supplier-modal-info-row">
+              <div className="supplier-modal-info-item">
+                <label>Contact Person</label>
+                <p>{supplier.contact_person_name || "N/A"}</p>
+              </div>
+            </div>
+
+            <div className="supplier-modal-info-row">
+              <div className="supplier-modal-info-item supplier-modal-full-width">
                 <label>Address</label>
-                <p>{supplier.address}</p>
+                <p>{supplier.address || "N/A"}</p>
               </div>
             </div>
 
-            <div className="info-row">
-              <div className="info-item">
-                <label>Total Orders</label>
-                <p>{supplier.orders}</p>
+            {supplier.note && (
+              <div className="supplier-modal-info-row">
+                <div className="supplier-modal-info-item supplier-modal-full-width">
+                  <label>Notes</label>
+                  <p>{supplier.note}</p>
+                </div>
               </div>
-              <div className="info-item">
-                <label>Last Order Date</label>
-                <p>{supplier.lastOrder}</p>
-              </div>
-            </div>
+            )}
           </div>
         </div>
 
         {/* Modal Footer */}
-        <div className="modal-footer">
-          <div className="footer-buttons">
-            <button className="edit-supplier-btn" onClick={handleEditClick}>
-              <span>✏️</span>
-              Edit Supplier
-            </button>
-            <button className="place-order-btn" onClick={handlePlaceOrderClick}>
-              <span>🛒</span>
-              Place Order
-            </button>
-          </div>
+        <div className="supplier-modal-footer">
+          <button
+            className="supplier-modal-btn-edit"
+            onClick={handleEditClick}
+          >
+            ✏️ Edit Supplier
+          </button>
+          <button
+            className="supplier-modal-btn-close"
+            onClick={onClose}
+          >
+            Close
+          </button>
         </div>
       </div>
     </div>

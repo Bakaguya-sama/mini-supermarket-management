@@ -14,7 +14,7 @@ const ProductModal = ({ product, isOpen, onClose }) => {
 
   const handleEditClick = () => {
     onClose();
-    navigate(`/products/edit/${product.id}`);
+    navigate(`/products/edit/${product._id}`);
   };
 
   // Format price
@@ -22,9 +22,23 @@ const ProductModal = ({ product, isOpen, onClose }) => {
     return `$${parseFloat(price || 0).toFixed(2)}`;
   };
 
-  // Format barcode
-  const formatBarcode = (barcode) => {
-    return barcode || "890123456790";
+  // Get supplier name
+  const getSupplierName = () => {
+    if (typeof product.supplier_id === "object" && product.supplier_id.name) {
+      return product.supplier_id.name;
+    }
+    return "N/A";
+  };
+
+  // Get stock status
+  const getStockStatus = () => {
+    if (product.current_stock === 0) {
+      return "Out of Stock";
+    } else if (product.current_stock <= product.minimum_stock_level) {
+      return "Low Stock";
+    } else {
+      return "In Stock";
+    }
   };
 
   return (
@@ -44,7 +58,7 @@ const ProductModal = ({ product, isOpen, onClose }) => {
         {/* Product Image */}
         <div className="product-modal-image-section">
           <img
-            src={product.image || "https://placehold.co/400"}
+            src={product.image_link || "https://placehold.co/400"}
             alt={product.name}
             className="product-modal-image"
             onError={(e) => {
@@ -60,11 +74,11 @@ const ProductModal = ({ product, isOpen, onClose }) => {
             <div className="product-modal-info-row">
               <div className="product-modal-info-item">
                 <label>Product ID</label>
-                <p>{product.id || "001"}</p>
+                <p>{product._id || "N/A"}</p>
               </div>
               <div className="product-modal-info-item">
-                <label>Barcode</label>
-                <p>{formatBarcode(product.barcode)}</p>
+                <label>Unit</label>
+                <p>{product.unit || "N/A"}</p>
               </div>
             </div>
 
@@ -74,19 +88,19 @@ const ProductModal = ({ product, isOpen, onClose }) => {
                 <p>{formatPrice(product.price)}</p>
               </div>
               <div className="product-modal-info-item">
-                <label>Stock</label>
-                <p>{product.stock || "150kg"}</p>
+                <label>Current Stock</label>
+                <p>{product.current_stock || 0} {product.unit}</p>
               </div>
             </div>
 
             <div className="product-modal-info-row">
               <div className="product-modal-info-item">
                 <label>Supplier</label>
-                <p>{product.supplier || "Supplier 1"}</p>
+                <p>{getSupplierName()}</p>
               </div>
               <div className="product-modal-info-item">
-                <label>Last Restocked</label>
-                <p>{product.lastRestocked || "Oct 30, 2025"}</p>
+                <label>Minimum Stock</label>
+                <p>{product.minimum_stock_level || "N/A"}</p>
               </div>
             </div>
 
@@ -94,13 +108,11 @@ const ProductModal = ({ product, isOpen, onClose }) => {
               <div className="product-modal-info-item">
                 <label>Status</label>
                 <span
-                  className={`product-modal-status-badge ${(
-                    product.status || "in-stock"
-                  )
+                  className={`product-modal-status-badge ${getStockStatus()
                     .toLowerCase()
                     .replace(" ", "-")}`}
                 >
-                  {product.status || "In Stock"}
+                  {getStockStatus()}
                 </span>
               </div>
             </div>
@@ -108,10 +120,7 @@ const ProductModal = ({ product, isOpen, onClose }) => {
             <div className="product-modal-info-row">
               <div className="product-modal-info-item product-modal-full-width">
                 <label>Description</label>
-                <p>
-                  {product.description ||
-                    "Fresh organic tomatoes from local farms"}
-                </p>
+                <p>{product.description || "No description"}</p>
               </div>
             </div>
           </div>

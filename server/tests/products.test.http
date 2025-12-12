@@ -1,0 +1,291 @@
+### ========================================
+### PRODUCT API TESTS
+### Base URL: http://localhost:5000/api/products
+### ========================================
+
+### 1. Get all products (with pagination)
+GET http://localhost:5000/api/products?page=1&limit=10
+
+###
+
+### 2. Get product statistics
+GET http://localhost:5000/api/products/stats
+
+###
+
+### 3. Get low stock products
+GET http://localhost:5000/api/products/low-stock
+
+###
+
+### 4. Create new product (without supplier)
+POST http://localhost:5000/api/products
+Content-Type: application/json
+
+{
+  "name": "Coca Cola 330ml",
+  "description": "Carbonated soft drink",
+  "unit": "can",
+  "current_stock": 500,
+  "minimum_stock_level": 100,
+  "maximum_stock_level": 1000,
+  "storage_location": "Shelf A1",
+  "price": 12000,
+  "status": "active",
+  "category": "Beverages"
+}
+
+###
+
+### 5. Create product with supplier (replace {supplierId} with actual ID)
+POST http://localhost:5000/api/products
+Content-Type: application/json
+
+{
+  "name": "Fresh Milk 1L",
+  "description": "Pasteurized fresh milk",
+  "unit": "bottle",
+  "current_stock": 200,
+  "minimum_stock_level": 50,
+  "maximum_stock_level": 500,
+  "storage_location": "Cold Storage B2",
+  "price": 35000,
+  "status": "active",
+  "category": "Dairy",
+  "supplier_id": "674cf1234567890abcdef125"
+}
+
+###
+
+### 6. Create more sample products
+POST http://localhost:5000/api/products
+Content-Type: application/json
+
+{
+  "name": "White Rice 5kg",
+  "description": "Premium jasmine rice",
+  "unit": "bag",
+  "current_stock": 150,
+  "minimum_stock_level": 30,
+  "maximum_stock_level": 300,
+  "storage_location": "Warehouse Section C",
+  "price": 85000,
+  "status": "active",
+  "category": "Groceries"
+}
+
+###
+
+### 7. Create low stock product
+POST http://localhost:5000/api/products
+Content-Type: application/json
+
+{
+  "name": "Instant Noodles",
+  "description": "Chicken flavor instant noodles",
+  "unit": "pack",
+  "current_stock": 15,
+  "minimum_stock_level": 50,
+  "maximum_stock_level": 500,
+  "storage_location": "Shelf D3",
+  "price": 4500,
+  "status": "active",
+  "category": "Groceries"
+}
+
+###
+
+### 8. Get single product by ID (replace {productId} with actual ID)
+GET http://localhost:5000/api/products/674cf1234567890abcdef126
+
+###
+
+### 9. Update product
+PUT http://localhost:5000/api/products/674cf1234567890abcdef126
+Content-Type: application/json
+
+{
+  "name": "Coca Cola 330ml (Updated)",
+  "description": "Carbonated soft drink - Refreshing taste",
+  "price": 13000,
+  "current_stock": 450,
+  "minimum_stock_level": 120
+}
+
+###
+
+### 10. Update product price only
+PATCH http://localhost:5000/api/products/674cf1234567890abcdef126/price
+Content-Type: application/json
+
+{
+  "price": 14000
+}
+
+###
+
+### 11. Update product stock (set absolute value)
+PATCH http://localhost:5000/api/products/674cf1234567890abcdef126/stock
+Content-Type: application/json
+
+{
+  "current_stock": 600
+}
+
+###
+
+### 12. Update product stock (add quantity)
+PATCH http://localhost:5000/api/products/674cf1234567890abcdef126/stock
+Content-Type: application/json
+
+{
+  "adjustment_type": "add",
+  "adjustment_value": 100
+}
+
+###
+
+### 13. Update product stock (subtract quantity)
+PATCH http://localhost:5000/api/products/674cf1234567890abcdef126/stock
+Content-Type: application/json
+
+{
+  "adjustment_type": "subtract",
+  "adjustment_value": 50
+}
+
+###
+
+### 14. Search products by name
+GET http://localhost:5000/api/products?search=Coca
+
+###
+
+### 15. Filter products by category
+GET http://localhost:5000/api/products/category/Beverages
+
+###
+
+### 16. Filter products by status
+GET http://localhost:5000/api/products?status=active
+
+###
+
+### 17. Filter products by price range
+GET http://localhost:5000/api/products?minPrice=10000&maxPrice=50000
+
+###
+
+### 18. Get products by supplier (replace {supplierId} with actual ID)
+GET http://localhost:5000/api/products/supplier/674cf1234567890abcdef125
+
+###
+
+### 19. Get products with multiple filters
+GET http://localhost:5000/api/products?category=Groceries&status=active&minPrice=5000&maxPrice=100000
+
+###
+
+### 20. Sort products by price (ascending)
+GET http://localhost:5000/api/products?sort=price
+
+###
+
+### 21. Sort products by price (descending)
+GET http://localhost:5000/api/products?sort=-price
+
+###
+
+### 22. Sort products by stock level
+GET http://localhost:5000/api/products?sort=current_stock
+
+###
+
+### 23. Soft delete product (discontinue)
+DELETE http://localhost:5000/api/products/674cf1234567890abcdef126
+
+###
+
+### 24. Activate discontinued product
+PATCH http://localhost:5000/api/products/674cf1234567890abcdef126/activate
+
+###
+
+### 25. Permanently delete product (USE WITH CAUTION!)
+DELETE http://localhost:5000/api/products/674cf1234567890abcdef126/permanent
+
+###
+
+### ========================================
+### TEST SCENARIOS
+### ========================================
+
+### Scenario 1: Create product with minimal info
+POST http://localhost:5000/api/products
+Content-Type: application/json
+
+{
+  "name": "Minimal Product",
+  "unit": "piece"
+}
+
+###
+
+### Scenario 2: Try to create duplicate product (should fail)
+POST http://localhost:5000/api/products
+Content-Type: application/json
+
+{
+  "name": "Coca Cola 330ml",
+  "unit": "can",
+  "price": 12000
+}
+
+###
+
+### Scenario 3: Try to create product with invalid supplier (should fail)
+POST http://localhost:5000/api/products
+Content-Type: application/json
+
+{
+  "name": "Invalid Supplier Product",
+  "unit": "box",
+  "supplier_id": "000000000000000000000000"
+}
+
+###
+
+### Scenario 4: Create product without required fields (should fail)
+POST http://localhost:5000/api/products
+Content-Type: application/json
+
+{
+  "description": "No name or unit"
+}
+
+###
+
+### Scenario 5: Update product with invalid price (should work but set to 0)
+PATCH http://localhost:5000/api/products/674cf1234567890abcdef126/price
+Content-Type: application/json
+
+{
+  "price": -5000
+}
+
+###
+
+### Scenario 6: Get products sorted by name
+GET http://localhost:5000/api/products?sort=name&limit=20
+
+###
+
+### Scenario 7: Get inactive products only
+GET http://localhost:5000/api/products?status=inactive
+
+###
+
+### Scenario 8: Get discontinued products only
+GET http://localhost:5000/api/products?status=discontinued
+
+###

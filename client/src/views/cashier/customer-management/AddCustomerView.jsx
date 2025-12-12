@@ -1,26 +1,32 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { FaUser, FaTimes } from "react-icons/fa";
+import { customerService } from "../../../services/customerService";
+import { useNotification } from "../../../hooks/useNotification";
+import SuccessNotification from "../../../components/Notification/SuccessNotification";
+import ErrorNotification from "../../../components/Notification/ErrorNotification";
 import "./AddCustomerView.css";
-import SuccessMessage from "../../../components/Messages/SuccessMessage";
-import ErrorMessage from "../../../components/Messages/ErrorMessage";
 
 const AddCustomerView = () => {
   const navigate = useNavigate();
+  const { 
+    successNotification, 
+    errorNotification, 
+    showSuccess, 
+    showError, 
+    hideSuccess, 
+    hideError 
+  } = useNotification();
+
   const [formData, setFormData] = useState({
-    fullName: "",
+    username: "",
     email: "",
     phone: "",
-    dateOfBirth: "",
-    gender: "",
+    full_name: "",
     address: "",
-    membershipType: "",
-    status: "Active",
+    membership_type: "Standard",
     notes: "",
   });
-
-  const [successMessage, setSuccessMessage] = useState("");
-  const [errorMessage, setErrorMessage] = useState("");
 
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -45,8 +51,14 @@ const AddCustomerView = () => {
     const newErrors = {};
 
     // Required field validations
-    if (!formData.fullName.trim()) {
-      newErrors.fullName = "Full name is required";
+    if (!formData.username.trim()) {
+      newErrors.username = "Username is required";
+    } else if (formData.username.length < 3) {
+      newErrors.username = "Username must be at least 3 characters";
+    }
+
+    if (!formData.full_name.trim()) {
+      newErrors.full_name = "Full name is required";
     }
 
     if (!formData.email.trim()) {
@@ -57,12 +69,12 @@ const AddCustomerView = () => {
 
     if (!formData.phone.trim()) {
       newErrors.phone = "Phone number is required";
-    } else if (!/^\+?[\d\s-()]{10,}$/.test(formData.phone)) {
+    } else if (!/^[\d\s+\-()]+$/.test(formData.phone)) {
       newErrors.phone = "Phone format is invalid";
     }
 
-    if (!formData.membershipType) {
-      newErrors.membershipType = "Membership type is required";
+    if (!formData.membership_type) {
+      newErrors.membership_type = "Membership type is required";
     }
 
     setErrors(newErrors);
@@ -73,28 +85,39 @@ const AddCustomerView = () => {
     e.preventDefault();
 
     if (!validateForm()) {
+      showError('Validation Error', 'Please fix the form errors');
       return;
     }
 
     setIsSubmitting(true);
 
     try {
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      console.log('🛒 Submitting customer form:', formData);
 
-      console.log("Customer data to submit:", formData);
+      // Prepare payload with account information and membership
+      const customerData = {
+        username: formData.username,
+        email: formData.email,
+        full_name: formData.full_name,
+        phone: formData.phone,
+        address: formData.address,
+        membership_type: formData.membership_type,
+        notes: formData.notes
+      };
 
-      // Show success message and redirect
-      //TODO: Check if the entered email or phone of the customer has existed
-      setSuccessMessage("Customer added successfully!");
+      const response = await customerService.create(customerData);
 
-      // Wait for user to see the message before redirecting
-      setTimeout(() => {
-        navigate("/customer");
-      }, 2000);
+      if (response.success) {
+        showSuccess('Success!', 'Customer created successfully');
+        setTimeout(() => {
+          navigate('/customer');
+        }, 1500);
+      } else {
+        showError('Error!', response.message || 'Failed to create customer');
+      }
     } catch (error) {
-      console.error("Error adding customer:", error);
-      setErrorMessage("Error adding customer. Please try again.");
+      console.error("❌ Error adding customer:", error);
+      showError('Error!', error.message || 'Error adding customer');
     } finally {
       setIsSubmitting(false);
     }
@@ -102,26 +125,29 @@ const AddCustomerView = () => {
 
   const handleCancel = () => {
     console.log("Form cancelled");
-    navigate(-1); // Navigate back to previous page
+    navigate(-1);
   };
 
   return (
     <div className="add-customer-view">
-      <SuccessMessage
-        message={successMessage}
-        onClose={() => {
-          setSuccessMessage("");
-        }}
-      />
-      <ErrorMessage
-        message={errorMessage}
-        onClose={() => {
-          setErrorMessage("");
-        }}
-      />
       {/* Header */}
       <div className="customer-page-header">
         <h1 className="customer-page-title">Add New Customer</h1>
+      </div>
+
+      {/* Info Box */}
+      <div style={{
+        backgroundColor: '#e3f2fd',
+        border: '1px solid #2196f3',
+        borderRadius: '4px',
+        padding: '12px',
+        marginBottom: '20px',
+        marginLeft: '20px',
+        marginRight: '20px'
+      }}>
+        <p style={{ margin: 0, color: '#1976d2' }}>
+          💡 Info: Fill in the account and membership information below. An account will be created automatically when you add the customer.
+        </p>
       </div>
 
       {/* Main Content */}
@@ -129,36 +155,33 @@ const AddCustomerView = () => {
         {/* Form Container */}
         <div className="customer-form-container">
           <form id="customer-form" onSubmit={handleSubmit}>
-            {/* Basic Information Section */}
+            {/* Account Information Section */}
             <div className="customer-form-section">
-              <h2 className="customer-section-title">Basic Information</h2>
+              <h2 className="customer-section-title">Account Information</h2>
 
               <div className="customer-form-row">
-                <div className="customer-form-group customer-full-width">
-                  <label htmlFor="fullName" className="customer-form-label">
-                    Full Name
+                <div className="customer-form-group">
+                  <label htmlFor="username" className="customer-form-label">
+                    Username
                   </label>
                   <input
                     type="text"
-                    id="fullName"
-                    name="fullName"
-                    value={formData.fullName}
+                    id="username"
+                    name="username"
+                    value={formData.username}
                     onChange={handleInputChange}
-                    placeholder="Enter customer name"
+                    placeholder="Enter username"
                     className={`customer-form-input ${
-                      errors.fullName ? "error" : ""
+                      errors.username ? "error" : ""
                     }`}
                     required
                   />
-                  {errors.fullName && (
+                  {errors.username && (
                     <span className="add-customer-error">
-                      {errors.fullName}
+                      {errors.username}
                     </span>
                   )}
                 </div>
-              </div>
-
-              <div className="customer-form-row">
                 <div className="customer-form-group">
                   <label htmlFor="email" className="customer-form-label">
                     Email
@@ -177,6 +200,31 @@ const AddCustomerView = () => {
                   />
                   {errors.email && (
                     <span className="add-customer-error">{errors.email}</span>
+                  )}
+                </div>
+              </div>
+
+              <div className="customer-form-row">
+                <div className="customer-form-group">
+                  <label htmlFor="full_name" className="customer-form-label">
+                    Full Name
+                  </label>
+                  <input
+                    type="text"
+                    id="full_name"
+                    name="full_name"
+                    value={formData.full_name}
+                    onChange={handleInputChange}
+                    placeholder="Enter customer name"
+                    className={`customer-form-input ${
+                      errors.full_name ? "error" : ""
+                    }`}
+                    required
+                  />
+                  {errors.full_name && (
+                    <span className="add-customer-error">
+                      {errors.full_name}
+                    </span>
                   )}
                 </div>
                 <div className="customer-form-group">
@@ -202,52 +250,6 @@ const AddCustomerView = () => {
               </div>
 
               <div className="customer-form-row">
-                <div className="customer-form-group">
-                  <label htmlFor="dateOfBirth" className="customer-form-label">
-                    Date of Birth
-                  </label>
-                  <input
-                    type="date"
-                    id="dateOfBirth"
-                    name="dateOfBirth"
-                    value={formData.dateOfBirth}
-                    onChange={handleInputChange}
-                    placeholder="dd/mm/yyyy"
-                    className={`customer-form-input ${
-                      errors.dateOfBirth ? "error" : ""
-                    }`}
-                  />
-                  {errors.dateOfBirth && (
-                    <span className="add-customer-error">
-                      {errors.dateOfBirth}
-                    </span>
-                  )}
-                </div>
-                <div className="customer-form-group">
-                  <label htmlFor="gender" className="customer-form-label">
-                    Gender
-                  </label>
-                  <select
-                    id="gender"
-                    name="gender"
-                    value={formData.gender}
-                    onChange={handleInputChange}
-                    className={`customer-form-select ${
-                      errors.gender ? "error" : ""
-                    }`}
-                  >
-                    <option value="">Select gender</option>
-                    <option value="Male">Male</option>
-                    <option value="Female">Female</option>
-                    <option value="Other">Other</option>
-                  </select>
-                  {errors.gender && (
-                    <span className="add-customer-error">{errors.gender}</span>
-                  )}
-                </div>
-              </div>
-
-              <div className="customer-form-row">
                 <div className="customer-form-group customer-full-width">
                   <label htmlFor="address" className="customer-form-label">
                     Address
@@ -258,14 +260,9 @@ const AddCustomerView = () => {
                     value={formData.address}
                     onChange={handleInputChange}
                     placeholder="Enter complete address"
-                    className={`customer-form-textarea ${
-                      errors.address ? "error" : ""
-                    }`}
-                    rows="4"
+                    className="customer-form-textarea"
+                    rows="3"
                   />
-                  {errors.address && (
-                    <span className="add-customer-error">{errors.address}</span>
-                  )}
                 </div>
               </div>
             </div>
@@ -277,49 +274,31 @@ const AddCustomerView = () => {
               <div className="customer-form-row">
                 <div className="customer-form-group">
                   <label
-                    htmlFor="membershipType"
+                    htmlFor="membership_type"
                     className="customer-form-label"
                   >
                     Membership Type
                   </label>
                   <select
-                    id="membershipType"
-                    name="membershipType"
-                    value={formData.membershipType}
+                    id="membership_type"
+                    name="membership_type"
+                    value={formData.membership_type}
                     onChange={handleInputChange}
                     className={`customer-form-select ${
-                      errors.membershipType ? "error" : ""
+                      errors.membership_type ? "error" : ""
                     }`}
                     required
                   >
-                    <option value="">Select membership type</option>
-                    <option value="Regular">Regular</option>
+                    <option value="Standard">Standard</option>
                     <option value="Silver">Silver</option>
                     <option value="Gold">Gold</option>
                     <option value="Platinum">Platinum</option>
                   </select>
-                  {errors.membershipType && (
+                  {errors.membership_type && (
                     <span className="add-customer-error">
-                      {errors.membershipType}
+                      {errors.membership_type}
                     </span>
                   )}
-                </div>
-
-                <div className="customer-form-group">
-                  <label htmlFor="status" className="customer-form-label">
-                    Status
-                  </label>
-                  <select
-                    id="status"
-                    name="status"
-                    value={formData.status}
-                    onChange={handleInputChange}
-                    className="customer-form-select"
-                    required
-                  >
-                    <option value="Active">Active</option>
-                    <option value="Inactive">Inactive</option>
-                  </select>
                 </div>
               </div>
             </div>
@@ -365,6 +344,20 @@ const AddCustomerView = () => {
           </button>
         </div>
       </div>
+
+      {/* Notification Components */}
+      <SuccessNotification
+        isVisible={successNotification.isVisible}
+        title={successNotification.title}
+        message={successNotification.message}
+        onClose={hideSuccess}
+      />
+      <ErrorNotification
+        isVisible={errorNotification.isVisible}
+        title={errorNotification.title}
+        message={errorNotification.message}
+        onClose={hideError}
+      />
     </div>
   );
 };

@@ -1,391 +1,430 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { FaBuilding, FaSave } from "react-icons/fa";
 import "./EditSupplierView.css";
 import SuccessMessage from "../../../components/Messages/SuccessMessage";
 import ErrorMessage from "../../../components/Messages/ErrorMessage";
+import supplierService from "../../../services/supplierService";
 
-// Edit Supplier View Component
 const EditSupplierView = () => {
   const { id } = useParams();
-
-  const [errorMessage, setErrorMessage] = useState("");
-  const [successMessage, setSuccessMessage] = useState("");
-
   const navigate = useNavigate();
 
+  const [successMessage, setSuccessMessage] = useState("");
+  const [errorMessage, setErrorMessage] = useState("");
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   const [formData, setFormData] = useState({
-    supplierName: "Fresh Farm Produce Co.",
-    contactPerson: "John Anderson",
-    email: "supplier@gmail.com",
-    phone: "+1234567890",
-    website: "https://www.supplier.com",
-    address: "123 Farm Road, Green Valley, CA 94123",
-    category: "Fresh Produce",
-    status: "Active",
-    taxId: "TAX123456789",
-    paymentTerms: "Net 30",
-    bankName: "Valley Bank",
-    accountNumber: "1234567890123",
-    notes:
-      "Reliable supplier for fresh produce with excellent quality standards.",
-    supplierId: "SUP001",
-    lastOrderDate: "Oct 31, 2025",
-    createdAt: "Jan 10, 2023",
-    updatedAt: "Oct 31, 2025",
+    supplierName: "",
+    contactPerson: "",
+    email: "",
+    phone: "",
+    website: "",
+    address: "",
+    taxId: "",
+    note: "",
+    isActive: true,
   });
 
+  const [supplierImage, setSupplierImage] = useState(null);
+  const [imagePreview, setImagePreview] = useState(null);
+
+  // Load supplier on mount
+  useEffect(() => {
+    loadSupplier();
+  }, [id]);
+
+  const loadSupplier = async () => {
+    try {
+      setIsLoading(true);
+      const response = await supplierService.getById(id);
+      
+      if (response.success && response.data) {
+        const supplier = response.data;
+        setFormData({
+          supplierName: supplier.name || "",
+          contactPerson: supplier.contact_person_name || "",
+          email: supplier.email || "",
+          phone: supplier.phone || "",
+          website: supplier.website || "",
+          address: supplier.address || "",
+          taxId: supplier.tax_id || "",
+          note: supplier.note || "",
+          isActive: supplier.is_active !== false,
+        });
+        if (supplier.image_link) {
+          setImagePreview(supplier.image_link);
+        }
+      } else {
+        setErrorMessage("Failed to load supplier");
+      }
+    } catch (error) {
+      console.error("Error loading supplier:", error);
+      setErrorMessage(error.message || "Failed to load supplier");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const handleInputChange = (e) => {
-    const { name, value } = e.target;
+    const { name, value, type, checked } = e.target;
     setFormData((prev) => ({
       ...prev,
-      [name]: value,
+      [name]: type === "checkbox" ? checked : value,
     }));
   };
 
-  const handleSubmit = (e) => {
+  const handleImageChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      if (file.size > 2 * 1024 * 1024) {
+        setErrorMessage("Image size must be less than 2MB");
+        return;
+      }
+      if (!file.type.startsWith("image/")) {
+        setErrorMessage("Please select a valid image file");
+        return;
+      }
+      setSupplierImage(file);
+      
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          let width = img.width;
+          let height = img.height;
+          
+          const maxSize = 800;
+          if (width > height) {
+            if (width > maxSize) {
+              height = (height * maxSize) / width;
+              width = maxSize;
+            }
+          } else {
+            if (height > maxSize) {
+              width = (width * maxSize) / height;
+              height = maxSize;
+            }
+          }
+          
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, width, height);
+          
+          const compressedImage = canvas.toDataURL('image/jpeg', 0.8);
+          setImagePreview(compressedImage);
+        };
+        img.src = reader.result;
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const validateForm = () => {
+    if (!formData.supplierName.trim()) {
+      setErrorMessage("Supplier name is required");
+      return false;
+    }
+    if (!formData.contactPerson.trim()) {
+      setErrorMessage("Contact person is required");
+      return false;
+    }
+    if (!formData.email.trim()) {
+      setErrorMessage("Email is required");
+      return false;
+    }
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(formData.email)) {
+      setErrorMessage("Please enter a valid email address");
+      return false;
+    }
+    if (!formData.phone.trim()) {
+      setErrorMessage("Phone number is required");
+      return false;
+    }
+    return true;
+  };
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log("Form updated:", formData);
-    // Add your form submission logic here
-    // TODO: Implement success message here
+    setErrorMessage("");
+
+    if (!validateForm()) {
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      const payload = {
+        name: formData.supplierName,
+        contact_person_name: formData.contactPerson,
+        email: formData.email,
+        phone: formData.phone,
+        website: formData.website || "",
+        address: formData.address || "",
+        tax_id: formData.taxId || "",
+        note: formData.note || "",
+        is_active: formData.isActive,
+      };
+
+      if (imagePreview && imagePreview.startsWith('data:')) {
+        payload.image_link = imagePreview;
+      }
+
+      const response = await supplierService.update(id, payload);
+
+      if (response.success) {
+        setSuccessMessage("Supplier updated successfully!");
+        setTimeout(() => {
+          navigate("/suppliers");
+        }, 1500);
+      } else {
+        setErrorMessage(response.message || "Failed to update supplier");
+      }
+    } catch (error) {
+      console.error("Error updating supplier:", error);
+      setErrorMessage(error.message || "Failed to update supplier");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleCancel = () => {
-    navigate(-1);
+    navigate("/suppliers");
   };
 
+  if (isLoading) {
+    return (
+      <div className="edit-supplier-container">
+        <div style={{ padding: "40px", textAlign: "center" }}>Loading...</div>
+      </div>
+    );
+  }
+
   return (
-    <div className="edit-supplier-view">
+    <div className="edit-supplier-container">
       <SuccessMessage
         message={successMessage}
-        onClose={() => {
-          setSuccessMessage("");
-        }}
+        onClose={() => setSuccessMessage("")}
       />
       <ErrorMessage
         message={errorMessage}
-        onClose={() => {
-          setErrorMessage("");
-        }}
+        onClose={() => setErrorMessage("")}
       />
-      {/* Header */}
-      <div className="supplier-edit-page-header">
-        <h1 className="supplier-edit-page-title">Edit Supplier</h1>
+
+      <div className="edit-supplier-header">
+        <div>
+          <h1 className="edit-supplier-title">Edit Supplier</h1>
+          <p className="edit-supplier-breadcrumb">
+            <span onClick={handleCancel} style={{ cursor: "pointer", color: "#667eea" }}>
+              ← Back to Suppliers
+            </span>
+          </p>
+        </div>
       </div>
 
-      {/* Main Content */}
-      <div className="edit-supplier-content">
-        {/* Form Container */}
-        <div className="supplier-edit-form-container">
-          <form id="supplier-form" onSubmit={handleSubmit}>
-            {/* Basic Information Section */}
-            <div className="supplier-edit-form-section">
-              <h2 className="supplier-edit-section-title">Basic Information</h2>
+      <div className="edit-supplier-content-wrapper">
+        <div className="edit-supplier-form-wrapper">
+          <form onSubmit={handleSubmit} className="edit-supplier-form">
+            <div className="edit-supplier-form-section">
+              <h2 className="edit-supplier-section-title">Basic Information</h2>
 
-              <div className="supplier-edit-form-row">
-                <div className="supplier-edit-form-group supplier-edit-full-width">
-                  <label
-                    htmlFor="supplierName"
-                    className="supplier-edit-form-label"
-                  >
-                    Supplier Name
-                  </label>
-                  <input
-                    type="text"
-                    id="supplierName"
-                    name="supplierName"
-                    value={formData.supplierName}
-                    onChange={handleInputChange}
-                    placeholder="Enter supplier name"
-                    className="supplier-edit-form-input"
-                    required
-                  />
-                </div>
+              <div className="edit-supplier-form-group edit-supplier-form-group-full">
+                <label className="edit-supplier-form-label edit-supplier-form-label-required">
+                  Supplier Name
+                </label>
+                <input
+                  type="text"
+                  name="supplierName"
+                  value={formData.supplierName}
+                  onChange={handleInputChange}
+                  placeholder="Enter supplier name"
+                  className="edit-supplier-form-input"
+                  required
+                />
               </div>
 
-              <div className="supplier-edit-form-row">
-                <div className="supplier-edit-form-group">
-                  <label
-                    htmlFor="contactPerson"
-                    className="supplier-edit-form-label"
-                  >
-                    Contact Person
-                  </label>
-                  <input
-                    type="text"
-                    id="contactPerson"
-                    name="contactPerson"
-                    value={formData.contactPerson}
-                    onChange={handleInputChange}
-                    placeholder="Enter contact person name"
-                    className="supplier-edit-form-input"
-                    required
-                  />
-                </div>
-                <div className="supplier-edit-form-group">
-                  <label
-                    htmlFor="category"
-                    className="supplier-edit-form-label"
-                  >
-                    Category
-                  </label>
-                  <select
-                    id="category"
-                    name="category"
-                    value={formData.category}
-                    onChange={handleInputChange}
-                    className="supplier-edit-form-select"
-                    required
-                  >
-                    <option value="">Select category</option>
-                    <option value="Fresh Produce">Fresh Produce</option>
-                    <option value="Food & Beverages">Food & Beverages</option>
-                    <option value="Personal Care">Personal Care</option>
-                    <option value="Household Items">Household Items</option>
-                    <option value="Electronics">Electronics</option>
-                    <option value="Office Supplies">Office Supplies</option>
-                  </select>
-                </div>
+              <div className="edit-supplier-form-group">
+                <label className="edit-supplier-form-label edit-supplier-form-label-required">
+                  Contact Person
+                </label>
+                <input
+                  type="text"
+                  name="contactPerson"
+                  value={formData.contactPerson}
+                  onChange={handleInputChange}
+                  placeholder="Enter contact person name"
+                  className="edit-supplier-form-input"
+                  required
+                />
               </div>
 
-              <div className="supplier-edit-form-row">
-                <div className="supplier-edit-form-group">
-                  <label htmlFor="email" className="supplier-edit-form-label">
-                    Email
-                  </label>
-                  <input
-                    type="email"
-                    id="email"
-                    name="email"
-                    value={formData.email}
-                    onChange={handleInputChange}
-                    placeholder="supplier@gmail.com"
-                    className="supplier-edit-form-input"
-                    required
-                  />
-                </div>
-                <div className="supplier-edit-form-group">
-                  <label htmlFor="phone" className="supplier-edit-form-label">
-                    Phone
-                  </label>
-                  <input
-                    type="tel"
-                    id="phone"
-                    name="phone"
-                    value={formData.phone}
-                    onChange={handleInputChange}
-                    placeholder="+1234567890"
-                    className="supplier-edit-form-input"
-                    required
-                  />
-                </div>
+              <div className="edit-supplier-form-group">
+                <label className="edit-supplier-form-label edit-supplier-form-label-required">
+                  Email
+                </label>
+                <input
+                  type="email"
+                  name="email"
+                  value={formData.email}
+                  onChange={handleInputChange}
+                  placeholder="Enter email address"
+                  className="edit-supplier-form-input"
+                  required
+                />
               </div>
 
-              <div className="supplier-edit-form-row">
-                <div className="supplier-edit-form-group supplier-edit-full-width">
-                  <label htmlFor="website" className="supplier-edit-form-label">
-                    Website
-                  </label>
-                  <input
-                    type="url"
-                    id="website"
-                    name="website"
-                    value={formData.website}
-                    onChange={handleInputChange}
-                    placeholder="https://www.supplier.com"
-                    className="supplier-edit-form-input"
-                  />
-                </div>
+              <div className="edit-supplier-form-group">
+                <label className="edit-supplier-form-label edit-supplier-form-label-required">
+                  Phone
+                </label>
+                <input
+                  type="text"
+                  name="phone"
+                  value={formData.phone}
+                  onChange={handleInputChange}
+                  placeholder="Enter phone number"
+                  className="edit-supplier-form-input"
+                  required
+                />
               </div>
 
-              <div className="supplier-edit-form-row">
-                <div className="supplier-edit-form-group supplier-edit-full-width">
-                  <label htmlFor="address" className="supplier-edit-form-label">
-                    Address
-                  </label>
-                  <textarea
-                    id="address"
-                    name="address"
-                    value={formData.address}
-                    onChange={handleInputChange}
-                    placeholder="Enter complete address"
-                    className="supplier-edit-form-textarea"
-                    rows="4"
-                  />
-                </div>
+              <div className="edit-supplier-form-group">
+                <label className="edit-supplier-form-label">
+                  Website
+                </label>
+                <input
+                  type="url"
+                  name="website"
+                  value={formData.website}
+                  onChange={handleInputChange}
+                  placeholder="Enter website URL"
+                  className="edit-supplier-form-input"
+                />
+              </div>
+
+              <div className="edit-supplier-form-group edit-supplier-form-group-full">
+                <label className="edit-supplier-form-label">
+                  Address
+                </label>
+                <textarea
+                  name="address"
+                  value={formData.address}
+                  onChange={handleInputChange}
+                  placeholder="Enter supplier address"
+                  className="edit-supplier-form-textarea"
+                  rows="3"
+                />
+              </div>
+
+              <div className="edit-supplier-form-group">
+                <label className="edit-supplier-form-label">
+                  Tax ID
+                </label>
+                <input
+                  type="text"
+                  name="taxId"
+                  value={formData.taxId}
+                  onChange={handleInputChange}
+                  placeholder="Enter tax ID"
+                  className="edit-supplier-form-input"
+                />
+              </div>
+
+              <div className="edit-supplier-form-group edit-supplier-form-group-full">
+                <label className="edit-supplier-form-label">
+                  Notes
+                </label>
+                <textarea
+                  name="note"
+                  value={formData.note}
+                  onChange={handleInputChange}
+                  placeholder="Enter additional notes"
+                  className="edit-supplier-form-textarea"
+                  rows="3"
+                />
+              </div>
+
+              <div className="edit-supplier-form-checkbox-group">
+                <input
+                  type="checkbox"
+                  id="isActive"
+                  name="isActive"
+                  checked={formData.isActive}
+                  onChange={handleInputChange}
+                  className="edit-supplier-form-checkbox-input"
+                />
+                <label htmlFor="isActive" className="edit-supplier-form-checkbox-label">
+                  Active Supplier
+                </label>
               </div>
             </div>
 
-            {/* Business & Payment Details Section */}
-            <div className="supplier-edit-form-section">
-              <h2 className="supplier-edit-section-title">
-                Business & Payment Details
-              </h2>
-
-              <div className="supplier-edit-form-row">
-                <div className="supplier-edit-form-group">
-                  <label htmlFor="taxId" className="supplier-edit-form-label">
-                    Tax ID / Business Number
-                  </label>
-                  <input
-                    type="text"
-                    id="taxId"
-                    name="taxId"
-                    value={formData.taxId}
-                    onChange={handleInputChange}
-                    placeholder="Enter tax ID"
-                    className="supplier-edit-form-input"
-                  />
-                </div>
-                <div className="supplier-edit-form-group">
-                  <label
-                    htmlFor="paymentTerms"
-                    className="supplier-edit-form-label"
-                  >
-                    Payment Terms
-                  </label>
-                  <select
-                    id="paymentTerms"
-                    name="paymentTerms"
-                    value={formData.paymentTerms}
-                    onChange={handleInputChange}
-                    className="supplier-edit-form-select"
-                  >
-                    <option value="">Select payment terms</option>
-                    <option value="Net 30">Net 30</option>
-                    <option value="Net 15">Net 15</option>
-                    <option value="Net 7">Net 7</option>
-                    <option value="Due on Receipt">Due on Receipt</option>
-                    <option value="2/10 Net 30">2/10 Net 30</option>
-                  </select>
-                </div>
-              </div>
-
-              <div className="supplier-edit-form-row">
-                <div className="supplier-edit-form-group">
-                  <label
-                    htmlFor="bankName"
-                    className="supplier-edit-form-label"
-                  >
-                    Bank Name
-                  </label>
-                  <input
-                    type="text"
-                    id="bankName"
-                    name="bankName"
-                    value={formData.bankName}
-                    onChange={handleInputChange}
-                    placeholder="Enter bank name"
-                    className="supplier-edit-form-input"
-                  />
-                </div>
-                <div className="supplier-edit-form-group">
-                  <label
-                    htmlFor="accountNumber"
-                    className="supplier-edit-form-label"
-                  >
-                    Account Number
-                  </label>
-                  <input
-                    type="text"
-                    id="accountNumber"
-                    name="accountNumber"
-                    value={formData.accountNumber}
-                    onChange={handleInputChange}
-                    placeholder="Enter account number"
-                    className="supplier-edit-form-input"
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* Additional Information Section */}
-            <div className="supplier-edit-form-section">
-              <h2 className="supplier-edit-section-title">
-                Additional Information
-              </h2>
-
-              <div className="supplier-edit-form-row">
-                <div className="supplier-edit-form-group supplier-edit-full-width">
-                  <label htmlFor="notes" className="supplier-edit-form-label">
-                    Notes
-                  </label>
-                  <textarea
-                    id="notes"
-                    name="notes"
-                    value={formData.notes}
-                    onChange={handleInputChange}
-                    placeholder="Add any additional notes about the supplier"
-                    className="supplier-edit-form-textarea"
-                    rows="6"
-                  />
-                </div>
-              </div>
+            <div className="edit-supplier-form-actions">
+              <button
+                type="submit"
+                className="edit-supplier-btn-submit"
+                disabled={isSubmitting}
+              >
+                {isSubmitting ? "Updating..." : "Update Supplier"}
+              </button>
+              <button
+                type="button"
+                className="edit-supplier-btn-cancel"
+                onClick={handleCancel}
+                disabled={isSubmitting}
+              >
+                Cancel
+              </button>
             </div>
           </form>
         </div>
 
-        {/* Supplier Stats Panel */}
-        <div className="supplier-stats-panel">
-          <h2 className="supplier-stats-title">Supplier Stats</h2>
-
-          <div className="supplier-stats-item">
-            <label className="supplier-stats-label">Supplier ID</label>
-            <span className="supplier-stats-value">{formData.supplierId}</span>
+        <div className="edit-supplier-image-section">
+          <h2 className="edit-supplier-section-title">Supplier Image</h2>
+          
+          <div
+            className="edit-supplier-image-upload-area"
+            onClick={() => document.getElementById("supplierImage").click()}
+          >
+            {imagePreview ? (
+              <img src={imagePreview} alt="Supplier preview" className="edit-supplier-image-preview-img" />
+            ) : (
+              <div className="edit-supplier-image-upload-placeholder">
+                <div className="edit-supplier-image-upload-icon">📸</div>
+                <p>Click to upload</p>
+                <span className="edit-supplier-image-upload-hint">PNG, JPG up to 2MB</span>
+              </div>
+            )}
           </div>
 
-          <div className="supplier-stats-item">
-            <label className="supplier-stats-label">Last Updated Date</label>
-            <span className="supplier-stats-value">{formData.updatedAt}</span>
-          </div>
+          <input
+            type="file"
+            id="supplierImage"
+            name="supplierImage"
+            onChange={handleImageChange}
+            accept="image/*"
+            style={{ display: "none" }}
+          />
 
-          <div className="supplier-stats-item">
-            <label className="supplier-stats-label">Last Order Date</label>
-            <span className="supplier-stats-value">
-              {formData.lastOrderDate}
-            </span>
-          </div>
-
-          <div className="supplier-stats-item">
-            <label className="supplier-stats-label">Current Status</label>
-            <span className="supplier-stats-value status-active">
-              {formData.status}
-            </span>
-          </div>
-
-          <div className="supplier-status-settings">
-            <h3 className="supplier-status-settings-title">
-              Status & Settings
-            </h3>
-            <div className="supplier-status-group">
-              <label htmlFor="status" className="supplier-status-label">
-                Status
-              </label>
-              <select
-                id="status"
-                name="status"
-                value={formData.status}
-                onChange={handleInputChange}
-                className="supplier-status-select"
-              >
-                <option value="Active">Active</option>
-                <option value="Inactive">Inactive</option>
-              </select>
-            </div>
-          </div>
-
-          <div className="supplier-stats-actions">
+          {imagePreview && (
             <button
-              type="submit"
-              form="supplier-form"
-              className="update-supplier-btn"
+              type="button"
+              className="edit-supplier-image-remove-btn"
+              onClick={() => {
+                setImagePreview(null);
+                setSupplierImage(null);
+              }}
             >
-              Update Supplier
+              Remove Image
             </button>
-            <button onClick={handleCancel} className="supplier-cancel-btn">
-              Cancel
-            </button>
-          </div>
+          )}
+
+          <p className="edit-supplier-image-info">
+            Max file size: 2MB. Recommended: 800x800px
+          </p>
         </div>
       </div>
     </div>

@@ -1,20 +1,25 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { FaBox, FaUpload } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 import "./AddProductView.css";
 import SuccessMessage from "../../../components/Messages/SuccessMessage";
 import ErrorMessage from "../../../components/Messages/ErrorMessage";
+import productService from "../../../services/productService";
+import supplierService from "../../../services/supplierService";
 
 const AddProductView = () => {
   const navigate = useNavigate();
 
   const [successMessage, setSuccessMessage] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [suppliers, setSuppliers] = useState([]);
+  const [isLoadingSuppliers, setIsLoadingSuppliers] = useState(true);
 
   const [formData, setFormData] = useState({
     productName: "",
     category: "",
-    supplier: "",
+    supplier_id: "",
     origin: "",
     description: "",
     price: "",
@@ -30,6 +35,25 @@ const AddProductView = () => {
   const [productImage, setProductImage] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
 
+  // Load suppliers on component mount
+  useEffect(() => {
+    const loadSuppliers = async () => {
+      try {
+        setIsLoadingSuppliers(true);
+        const response = await supplierService.getAll({ limit: 100 });
+        if (response.success && response.data) {
+          setSuppliers(response.data);
+        }
+      } catch (error) {
+        console.error("Error loading suppliers:", error);
+        setErrorMessage("Failed to load suppliers");
+      } finally {
+        setIsLoadingSuppliers(false);
+      }
+    };
+    loadSuppliers();
+  }, []);
+
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({
@@ -41,10 +65,52 @@ const AddProductView = () => {
   const handleImageChange = (e) => {
     const file = e.target.files[0];
     if (file) {
+      // Validate file size (max 2MB for original)
+      if (file.size > 2 * 1024 * 1024) {
+        setErrorMessage("Image size must be less than 2MB");
+        return;
+      }
+      // Validate file type
+      if (!file.type.startsWith("image/")) {
+        setErrorMessage("Please select a valid image file");
+        return;
+      }
       setProductImage(file);
+      
+      // Read and compress image
       const reader = new FileReader();
       reader.onloadend = () => {
-        setImagePreview(reader.result);
+        // Compress image using canvas
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          let width = img.width;
+          let height = img.height;
+          
+          // Resize if too large
+          const maxSize = 800;
+          if (width > height) {
+            if (width > maxSize) {
+              height = (height * maxSize) / width;
+              width = maxSize;
+            }
+          } else {
+            if (height > maxSize) {
+              width = (width * maxSize) / height;
+              height = maxSize;
+            }
+          }
+          
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, width, height);
+          
+          // Convert to base64 with compression
+          const compressedImage = canvas.toDataURL('image/jpeg', 0.8);
+          setImagePreview(compressedImage);
+        };
+        img.src = reader.result;
       };
       reader.readAsDataURL(file);
     }
@@ -58,17 +124,109 @@ const AddProductView = () => {
     }));
   };
 
-  const handleSubmit = (e) => {
+  const validateForm = () => {
+    // Validate required fields
+    if (!formData.productName.trim()) {
+      setErrorMessage("Product name is required");
+      return false;
+    }
+    if (!formData.category) {
+      setErrorMessage("Category is required");
+      return false;
+    }
+    if (!formData.supplier_id) {
+      setErrorMessage("Supplier is required");
+      return false;
+    }
+    if (!formData.price || parseFloat(formData.price) <= 0) {
+      setErrorMessage("Valid price is required");
+      return false;
+    }
+    if (!formData.unit) {
+      setErrorMessage("Unit is required");
+      return false;
+    }
+    if (formData.currentStock === "" || parseInt(formData.currentStock) < 0) {
+      setErrorMessage("Valid current stock is required");
+      return false;
+    }
+
+    // Validate stock levels
+    const currentStock = parseInt(formData.currentStock);
+    const minStock = parseInt(formData.minimumStockLevel) || 0;
+    const maxStock = parseInt(formData.maximumStockLevel) || 0;
+
+    if (maxStock > 0 && minStock > maxStock) {
+      setErrorMessage("Minimum stock level cannot be greater than maximum");
+      return false;
+    }
+
+    return true;
+  };
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log("Form submitted:", formData);
-    console.log("Product image:", productImage);
-    // Add your form submission logic here
-    // TODO: Implement success message here
+
+    if (!validateForm()) {
+      return;
+    }
+
+    setIsLoading(true);
+    setErrorMessage("");
+    setSuccessMessage("");
+
+    try {
+      // Convert image to base64 if exists
+      let image_link = null;
+      if (imagePreview) {
+        image_link = imagePreview; // Already in base64 format from FileReader
+      }
+
+      // Prepare payload
+      const payload = {
+        name: formData.productName,
+        category: formData.category,
+        supplier_id: formData.supplier_id,
+        description: formData.description,
+        price: formData.price,
+        unit: formData.unit,
+        currentStock: formData.currentStock,
+        minimumStockLevel: formData.minimumStockLevel,
+        maximumStockLevel: formData.maximumStockLevel,
+        storageLocation: formData.storageLocation,
+        image_link: image_link
+      };
+
+      console.log("Submitting product with name:", formData.productName);
+
+      const response = await productService.create(payload);
+
+      console.log("✅ Create response received:", response.success);
+
+      if (response.success) {
+        setSuccessMessage(`Product "${formData.productName}" created successfully!`);
+        // Reset form
+        setTimeout(() => {
+          navigate("/products");
+        }, 2000);
+      } else {
+        console.error("❌ Create failed:", response.message);
+        setErrorMessage(response.message || "Failed to create product");
+      }
+    } catch (error) {
+      console.error("❌ Error creating product:", error.message);
+      setErrorMessage(
+        error.response?.data?.message || 
+        error.message || 
+        "Failed to create product. Please try again."
+      );
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleCancel = () => {
-    console.log("Form cancelled");
-    navigate(-1); // Navigate back to previous page
+    navigate("/products");
   };
 
   return (
@@ -154,20 +312,21 @@ const AddProductView = () => {
                   </label>
                   <select
                     id="supplier"
-                    name="supplier"
-                    value={formData.supplier}
+                    name="supplier_id"
+                    value={formData.supplier_id}
                     onChange={handleInputChange}
                     className="add-product-form-select"
                     required
+                    disabled={isLoadingSuppliers}
                   >
-                    <option value="">Select supplier</option>
-                    <option value="FreshMart Suppliers">
-                      FreshMart Suppliers
+                    <option value="">
+                      {isLoadingSuppliers ? "Loading suppliers..." : "Select supplier"}
                     </option>
-                    <option value="GreenField Co.">GreenField Co.</option>
-                    <option value="Ocean Fresh">Ocean Fresh</option>
-                    <option value="Daily Dairy">Daily Dairy</option>
-                    <option value="Global Foods Inc.">Global Foods Inc.</option>
+                    {suppliers.map((supplier) => (
+                      <option key={supplier._id} value={supplier._id}>
+                        {supplier.name}
+                      </option>
+                    ))}
                   </select>
                 </div>
               </div>
@@ -429,11 +588,16 @@ const AddProductView = () => {
               type="submit"
               form="product-form"
               className="add-product-btn"
+              disabled={isLoading || isLoadingSuppliers}
             >
               <FaBox className="add-product-add-icon" />
-              Add Product
+              {isLoading ? "Creating..." : "Add Product"}
             </button>
-            <button onClick={handleCancel} className="add-product-cancel-btn">
+            <button 
+              onClick={handleCancel} 
+              className="add-product-cancel-btn"
+              disabled={isLoading}
+            >
               Cancel
             </button>
           </div>

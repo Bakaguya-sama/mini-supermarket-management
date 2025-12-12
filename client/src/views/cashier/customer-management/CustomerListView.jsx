@@ -1,201 +1,134 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { FaSearch, FaEye, FaEdit, FaTrash, FaPlus } from "react-icons/fa";
+import { customerService } from "../../../services/customerService";
+import { useNotification } from "../../../hooks/useNotification";
+import SuccessNotification from "../../../components/Notification/SuccessNotification";
+import ErrorNotification from "../../../components/Notification/ErrorNotification";
 import CustomerModal from "../../../components/CustomerModal/CustomerModal";
 import DeleteCustomerConfirmationModal from "../../../components/CustomerModal/DeleteCustomerConfirmationModal";
 import "./CustomerListView.css";
 
 const CustomerListView = () => {
   const navigate = useNavigate();
+  const { 
+    successNotification, 
+    errorNotification, 
+    showSuccess, 
+    showError, 
+    hideSuccess, 
+    hideError 
+  } = useNotification();
+
+  // State for data and loading
+  const [customers, setCustomers] = useState([]);
+  const [filteredCustomers, setFilteredCustomers] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  // State for filters
   const [searchTerm, setSearchTerm] = useState("");
-  const [membershipFilter, setMembershipFilter] = useState("All Memberships");
-  const [statusFilter, setStatusFilter] = useState("All Status");
+  const [membershipFilter, setMembershipFilter] = useState("All");
   const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage] = useState(10);
+
+  // State for modals
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedCustomer, setSelectedCustomer] = useState(null);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [customerToDelete, setCustomerToDelete] = useState(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
-  // Sample customer data - matching the design structure
-  const customerData = [
-    {
-      id: "001",
-      name: "John Smith",
-      email: "john@gmail.com",
-      phone: "+1234567890",
-      membership: "Regular",
-      joinDate: "Jan 15, 2024",
-      status: "Active",
-      totalPurchases: "$2200.00",
-      points: 100,
-      address: "123 Main St, City, CA 94001",
-    },
-    {
-      id: "002",
-      name: "John Smith",
-      email: "john@gmail.com",
-      phone: "+1234567890",
-      membership: "Silver",
-      joinDate: "Jan 15, 2024",
-      status: "Inactive",
-      totalPurchases: "$2200.00",
-      points: 100,
-    },
-    {
-      id: "003",
-      name: "John Smith",
-      email: "john@gmail.com",
-      phone: "+1234567890",
-      membership: "Platinum",
-      joinDate: "Jan 15, 2024",
-      status: "Inactive",
-      totalPurchases: "$2200.00",
-      points: 100,
-    },
-    {
-      id: "004",
-      name: "John Smith",
-      email: "john@gmail.com",
-      phone: "+1234567890",
-      membership: "Gold",
-      joinDate: "Jan 15, 2024",
-      status: "Inactive",
-      totalPurchases: "$2200.00",
-      points: 100,
-    },
-    {
-      id: "005",
-      name: "Emma Wilson",
-      email: "emma@gmail.com",
-      phone: "+1 234 567-8902",
-      membership: "Silver",
-      joinDate: "Feb 20, 2024",
-      status: "Active",
-      totalPurchases: "$1850.00",
-      points: 75,
-    },
-    {
-      id: "006",
-      name: "Michael Brown",
-      email: "michael@gmail.com",
-      phone: "+1 234 567-8903",
-      membership: "Gold",
-      joinDate: "Mar 10, 2024",
-      status: "Active",
-      totalPurchases: "$3200.00",
-      points: 160,
-    },
-    {
-      id: "007",
-      name: "Sarah Davis",
-      email: "sarah@gmail.com",
-      phone: "+1 234 567-8904",
-      membership: "Regular",
-      joinDate: "Apr 05, 2024",
-      status: "Inactive",
-      totalPurchases: "$950.00",
-      points: 45,
-    },
-    {
-      id: "008",
-      name: "James Johnson",
-      email: "james@gmail.com",
-      phone: "+1 234 567-8905",
-      membership: "Platinum",
-      joinDate: "May 15, 2024",
-      status: "Active",
-      totalPurchases: "$4500.00",
-      points: 225,
-    },
-    {
-      id: "009",
-      name: "Lisa Anderson",
-      email: "lisa@gmail.com",
-      phone: "+1 234 567-8906",
-      membership: "Regular",
-      joinDate: "Jun 01, 2024",
-      status: "Active",
-      totalPurchases: "$1200.00",
-      points: 60,
-    },
-    {
-      id: "010",
-      name: "Robert Taylor",
-      email: "robert@gmail.com",
-      phone: "+1 234 567-8907",
-      membership: "Silver",
-      joinDate: "Jul 20, 2024",
-      status: "Inactive",
-      totalPurchases: "$1750.00",
-      points: 85,
-    },
-    {
-      id: "011",
-      name: "Jennifer White",
-      email: "jennifer@gmail.com",
-      phone: "+1 234 567-8908",
-      membership: "Gold",
-      joinDate: "Aug 10, 2024",
-      status: "Active",
-      totalPurchases: "$2800.00",
-      points: 140,
-    },
-    {
-      id: "012",
-      name: "David Miller",
-      email: "david@gmail.com",
-      phone: "+1 234 567-8909",
-      membership: "Regular",
-      joinDate: "Sep 05, 2024",
-      status: "Active",
-      totalPurchases: "$890.00",
-      points: 44,
-    },
-  ];
+  // Fetch customers on component mount
+  useEffect(() => {
+    fetchCustomers();
+  }, []);
 
-  const itemsPerPage = 10;
+  // Filter customers when search term or membership filter changes
+  useEffect(() => {
+    applyFilters();
+    setCurrentPage(1);
+  }, [searchTerm, membershipFilter, customers]);
 
-  // Calculate stats for header cards
-  const totalCustomers = customerData.length;
-  const premiumMembers = customerData.filter(
-    (c) => c.membership === "Gold" || c.membership === "Platinum"
-  ).length;
-  const activeCustomers = customerData.filter(
-    (c) => c.status === "Active"
+  const fetchCustomers = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      const response = await customerService.getAll({
+        page: 1,
+        limit: 100 // Get all customers for client-side filtering
+      });
+
+      if (response.success) {
+        console.log('✅ Customers loaded:', response.data);
+        setCustomers(response.data || []);
+        applyFilters();
+      } else {
+        setError(response.message || 'Failed to fetch customers');
+        setCustomers([]);
+        showError('Error!', 'Failed to load customers: ' + response.message);
+      }
+    } catch (err) {
+      console.error('❌ Error fetching customers:', err);
+      setError(err.message);
+      showError('Error!', 'Error loading customers');
+      setCustomers([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const applyFilters = () => {
+    let filtered = customers;
+
+    // Apply search filter
+    if (searchTerm) {
+      filtered = filtered.filter(customer => {
+        const searchLower = searchTerm.toLowerCase();
+        const fullName = customer.account_id?.full_name || '';
+        const email = customer.account_id?.email || '';
+        const phone = customer.account_id?.phone || '';
+        const customerId = customer._id || '';
+
+        return (
+          fullName.toLowerCase().includes(searchLower) ||
+          email.toLowerCase().includes(searchLower) ||
+          phone.includes(searchLower) ||
+          customerId.includes(searchLower)
+        );
+      });
+    }
+
+    // Apply membership filter
+    if (membershipFilter !== 'All') {
+      filtered = filtered.filter(customer => customer.membership_type === membershipFilter);
+    }
+
+    setFilteredCustomers(filtered);
+  };
+
+  // Placeholder for old customer data - no longer used
+  // const customerData = [
+  //   // Old mock data removed - now fetching from API
+  // ];
+
+  // Calculate stats for header cards - ONLY count active customers (not deleted)
+  const activeCustomers = customers.filter(c => !c.isDelete);
+  const totalCustomers = activeCustomers.length;
+  const premiumMembers = activeCustomers.filter(
+    (c) => c.membership_type === 'Gold' || c.membership_type === 'Platinum'
   ).length;
 
   // Filter data first
-  const filteredData = customerData.filter((customer) => {
-    const matchesSearch =
-      customer.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      customer.id.includes(searchTerm) ||
-      customer.email.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesMembership =
-      membershipFilter === "All Memberships" ||
-      customer.membership === membershipFilter;
-    const matchesStatus =
-      statusFilter === "All Status" || customer.status === statusFilter;
-    return matchesSearch && matchesMembership && matchesStatus;
-  });
-
-  // Calculate pagination based on filtered data
-  const totalItems = filteredData.length;
+  const totalItems = filteredCustomers.length;
   const totalPages = Math.ceil(totalItems / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
-  const paginatedData = filteredData.slice(startIndex, endIndex);
-
-  // Reset to first page when filters change
-  React.useEffect(() => {
-    setCurrentPage(1);
-  }, [searchTerm, membershipFilter, statusFilter]);
+  const paginatedData = filteredCustomers.slice(startIndex, endIndex);
 
   const handleMembershipFilterChange = (membership) => {
     setMembershipFilter(membership);
-  };
-
-  const handleStatusFilterChange = (status) => {
-    setStatusFilter(status);
   };
 
   const handleAddCustomer = () => {
@@ -203,27 +136,48 @@ const CustomerListView = () => {
     navigate("/customer/add");
   };
 
-  const handleEdit = (customerId) => {
+  const handleEdit = (customerId, customer) => {
+    if (customer && customer.isDelete) {
+      showError('Error!', 'Cannot edit deleted customer');
+      return;
+    }
     console.log("Edit customer:", customerId);
     navigate(`/customer/edit/${customerId}`);
   };
 
-  const handleDelete = (customerId) => {
-    const customer = customerData.find((c) => c.id === customerId);
-    if (customer) {
-      setCustomerToDelete(customer);
-      setIsDeleteModalOpen(true);
+  const handleDelete = (customer) => {
+    if (customer.isDelete) {
+      showError('Error!', 'This customer is already deleted');
+      return;
     }
+    setCustomerToDelete(customer);
+    setIsDeleteModalOpen(true);
   };
 
-  const handleConfirmDelete = () => {
-    if (customerToDelete) {
-      console.log("Deleting customer:", customerToDelete.id);
-      // Add your actual delete logic here
+  const handleConfirmDelete = async () => {
+    if (!customerToDelete) return;
 
-      // Reset state
-      setCustomerToDelete(null);
-      setIsDeleteModalOpen(false);
+    try {
+      setIsDeleting(true);
+      const response = await customerService.delete(customerToDelete._id);
+
+      if (response.success) {
+        showSuccess('Success!', 'Customer deleted successfully');
+        // Refresh the customer list and reset to page 1
+        setTimeout(() => {
+          setCurrentPage(1); // Reset to page 1 to see deleted customer
+          fetchCustomers();
+          setCustomerToDelete(null);
+          setIsDeleteModalOpen(false);
+        }, 500);
+      } else {
+        showError('Error!', response.message || 'Failed to delete customer');
+      }
+    } catch (err) {
+      console.error('❌ Error deleting customer:', err);
+      showError('Error!', 'Error deleting customer');
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -232,12 +186,22 @@ const CustomerListView = () => {
     setIsDeleteModalOpen(false);
   };
 
-  const handleView = (customerId) => {
-    const customer = customerData.find((c) => c.id === customerId);
-    if (customer) {
-      setSelectedCustomer(customer);
-      setIsModalOpen(true);
-    }
+  const handleView = (customer) => {
+    setSelectedCustomer({
+      id: customer._id,
+      name: customer.account_id?.full_name || 'N/A',
+      email: customer.account_id?.email || 'N/A',
+      phone: customer.account_id?.phone || 'N/A',
+      address: customer.account_id?.address || 'N/A',
+      membership: customer.membership_type,
+      totalPurchases: `₫${customer.total_spent?.toLocaleString() || 0}`,
+      loyaltyPoints: customer.points_balance || 0,
+      registeredAt: customer.registered_at,
+      username: customer.account_id?.username,
+      _id: customer._id,
+      isDelete: customer.isDelete || false
+    });
+    setIsModalOpen(true);
   };
 
   const handleCloseModal = () => {
@@ -258,22 +222,40 @@ const CustomerListView = () => {
 
   const getMembershipBadgeClass = (membership) => {
     switch (membership) {
-      case "Regular":
-        return "customer-membership-regular";
-      case "Silver":
-        return "customer-membership-silver";
-      case "Gold":
-        return "customer-membership-gold";
-      case "Platinum":
-        return "customer-membership-platinum";
+      case 'Standard':
+        return 'customer-membership-regular';
+      case 'Silver':
+        return 'customer-membership-silver';
+      case 'Gold':
+        return 'customer-membership-gold';
+      case 'Platinum':
+        return 'customer-membership-platinum';
       default:
-        return "customer-membership-default";
+        return 'customer-membership-default';
     }
   };
 
+  const formatDate = (date) => {
+    if (!date) return 'N/A';
+    return new Date(date).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
+    });
+  };
+
+  if (loading) {
+    return (
+      <div className="customer-list-view">
+        <div style={{ textAlign: 'center', padding: '40px' }}>
+          <p>Loading customers...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="customer-list-view">
-      {/* Header */}
       <div className="customer-page-header">
         <h1 className="customer-page-title">Customers</h1>
       </div>
@@ -285,7 +267,7 @@ const CustomerListView = () => {
             <div className="customer-stat-content">
               <div className="customer-stat-label">Total Customers</div>
               <div className="customer-stat-number">{totalCustomers}</div>
-              <div className="customer-stat-sublabel-grey ">Active</div>
+              <div className="customer-stat-sublabel-grey">Active</div>
             </div>
           </div>
 
@@ -306,7 +288,7 @@ const CustomerListView = () => {
             <FaSearch className="customer-search-icon" />
             <input
               type="text"
-              placeholder="Search customers"
+              placeholder="Search by name, email, phone..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="customer-search-input"
@@ -316,26 +298,14 @@ const CustomerListView = () => {
           <div className="customer-dropdown">
             <select
               value={membershipFilter}
-              onChange={(e) => handleMembershipFilterChange(e.target.value)}
+              onChange={(e) => setMembershipFilter(e.target.value)}
               className="customer-filter-select"
             >
-              <option value="All Memberships">All Memberships</option>
-              <option value="Regular">Regular</option>
+              <option value="All">All Memberships</option>
+              <option value="Standard">Standard</option>
               <option value="Silver">Silver</option>
               <option value="Gold">Gold</option>
               <option value="Platinum">Platinum</option>
-            </select>
-          </div>
-
-          <div className="customer-dropdown">
-            <select
-              value={statusFilter}
-              onChange={(e) => handleStatusFilterChange(e.target.value)}
-              className="customer-filter-select"
-            >
-              <option value="All Status">All Status</option>
-              <option value="Active">Active</option>
-              <option value="Inactive">Inactive</option>
             </select>
           </div>
         </div>
@@ -346,144 +316,167 @@ const CustomerListView = () => {
         </button>
       </div>
 
+      {/* Error Message */}
+      {error && (
+        <div style={{ color: 'red', padding: '10px', textAlign: 'center' }}>
+          {error}
+        </div>
+      )}
+
       {/* Table */}
       <div className="customer-table-container">
-        <table className="customer-table">
-          <thead>
-            <tr>
-              <th>Customer ID</th>
-              <th>Customer Name</th>
-              <th>Contact</th>
-              <th>Membership</th>
-              <th>Total purchases</th>
-              <th>Points</th>
-              <th>Status</th>
-              <th>Action</th>
-            </tr>
-          </thead>
-          <tbody>
-            {paginatedData.map((customer, index) => (
-              <tr key={`page-${currentPage}-${customer.id}-${index}`}>
-                <td className="customer-id">{customer.id}</td>
-                <td className="customer-info">
-                  <div className="customer-name">{customer.name}</div>
-                  <div className="customer-join-date">
-                    Member since {customer.joinDate}
-                  </div>
-                </td>
-                <td className="customer-contact">
-                  <div className="customer-email">{customer.email}</div>
-                  <div className="customer-phone">{customer.phone}</div>
-                </td>
-                <td>
-                  <span
-                    className={`customer-membership-badge ${getMembershipBadgeClass(
-                      customer.membership
-                    )}`}
-                  >
-                    {customer.membership}
-                  </span>
-                </td>
-                <td className="customer-purchases">
-                  {customer.totalPurchases}
-                </td>
-                <td className="customer-points">{customer.points}</td>
-                <td>
-                  <span
-                    className={`customer-status-badge ${getStatusBadgeClass(
-                      customer.status
-                    )}`}
-                  >
-                    {customer.status}
-                  </span>
-                </td>
-                <td className="customer-action-buttons">
-                  <button
-                    className="customer-action-btn customer-view-btn"
-                    onClick={() => handleView(customer.id)}
-                    title="View Details"
-                  >
-                    <FaEye />
-                  </button>
-                  <button
-                    className="customer-action-btn customer-edit-btn"
-                    onClick={() => handleEdit(customer.id)}
-                    title="Edit Customer"
-                  >
-                    <FaEdit />
-                  </button>
-                  <button
-                    style={{ display: "none" }}
-                    className="customer-action-btn customer-delete-btn"
-                    onClick={() => handleDelete(customer.id)}
-                    title="Delete Customer"
-                  >
-                    <FaTrash />
-                  </button>
-                </td>
+        {paginatedData.length === 0 ? (
+          <div style={{ textAlign: 'center', padding: '40px' }}>
+            <p>No customers found</p>
+          </div>
+        ) : (
+          <table className="customer-table">
+            <thead>
+              <tr>
+                <th>Customer ID</th>
+                <th>Customer Name</th>
+                <th>Contact</th>
+                <th>Membership</th>
+                <th>Total Purchases</th>
+                <th>Points</th>
+                <th>Joined</th>
+                <th>Action</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {paginatedData.map((customer) => (
+                <tr 
+                  key={customer._id}
+                  style={{
+                    opacity: customer.isDelete ? 0.6 : 1,
+                    textDecoration: customer.isDelete ? 'line-through' : 'none',
+                    backgroundColor: customer.isDelete ? '#f5f5f5' : 'transparent'
+                  }}
+                >
+                  <td className="customer-id">{customer._id?.substring(0, 8)}</td>
+                  <td className="customer-info">
+                    <div className="customer-name">{customer.account_id?.full_name || 'N/A'}</div>
+                    <div className="customer-join-date">
+                      Joined {formatDate(customer.registered_at)}
+                    </div>
+                  </td>
+                  <td className="customer-contact">
+                    <div className="customer-email">{customer.account_id?.email || 'N/A'}</div>
+                    <div className="customer-phone">{customer.account_id?.phone || 'N/A'}</div>
+                  </td>
+                  <td>
+                    <span
+                      className={`customer-membership-badge ${getMembershipBadgeClass(
+                        customer.membership_type
+                      )}`}
+                    >
+                      {customer.membership_type}
+                    </span>
+                  </td>
+                  <td className="customer-purchases">
+                    ₫{customer.total_spent?.toLocaleString() || 0}
+                  </td>
+                  <td className="customer-points">{customer.points_balance || 0}</td>
+                  <td>{formatDate(customer.registered_at)}</td>
+                  <td className="customer-action-buttons">
+                    <button
+                      className="customer-action-btn customer-view-btn"
+                      onClick={() => handleView(customer)}
+                      title="View Details"
+                    >
+                      <FaEye />
+                    </button>
+                    <button
+                      className="customer-action-btn customer-edit-btn"
+                      onClick={() => handleEdit(customer._id, customer)}
+                      title={customer.isDelete ? "Cannot edit deleted customer" : "Edit Customer"}
+                      disabled={customer.isDelete}
+                      style={{ 
+                        opacity: customer.isDelete ? 0.5 : 1,
+                        cursor: customer.isDelete ? 'not-allowed' : 'pointer'
+                      }}
+                    >
+                      <FaEdit />
+                    </button>
+                    <button
+                      className="customer-action-btn customer-delete-btn"
+                      onClick={() => handleDelete(customer)}
+                      title={customer.isDelete ? "Already deleted" : "Delete Customer"}
+                      disabled={customer.isDelete}
+                      style={{ 
+                        opacity: customer.isDelete ? 0.5 : 1,
+                        cursor: customer.isDelete ? 'not-allowed' : 'pointer'
+                      }}
+                    >
+                      <FaTrash />
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
       </div>
 
       {/* Pagination */}
-      <div className="customer-pagination-section">
-        <div className="customer-pagination-info">
-          Showing {totalItems > 0 ? startIndex + 1 : 0}-
-          {Math.min(endIndex, totalItems)} of {totalItems}
-        </div>
-        <div className="customer-pagination-controls">
-          <button
-            className="customer-pagination-btn"
-            onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
-            disabled={currentPage === 1}
-            title="Previous page"
-          >
-            ‹
-          </button>
-
-          {/* Page numbers */}
-          <div className="customer-page-numbers">
-            {Array.from({ length: Math.min(3, totalPages) }, (_, i) => {
-              let pageNum;
-
-              if (totalPages <= 3) {
-                pageNum = i + 1;
-              } else if (currentPage === 1) {
-                pageNum = i + 1;
-              } else if (currentPage === totalPages) {
-                pageNum = totalPages - 2 + i;
-              } else {
-                pageNum = currentPage - 1 + i;
-              }
-
-              return (
-                <button
-                  key={pageNum}
-                  className={`customer-page-number ${
-                    currentPage === pageNum ? "active" : ""
-                  }`}
-                  onClick={() => setCurrentPage(pageNum)}
-                >
-                  {pageNum}
-                </button>
-              );
-            })}
+      {totalPages > 1 && (
+        <div className="customer-pagination-section">
+          <div className="customer-pagination-info">
+            Showing {totalItems > 0 ? startIndex + 1 : 0}-
+            {Math.min(endIndex, totalItems)} of {totalItems}
           </div>
+          <div className="customer-pagination-controls">
+            <button
+              className="customer-pagination-btn"
+              onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+              disabled={currentPage === 1}
+              title="Previous page"
+            >
+              ‹
+            </button>
 
-          <button
-            className="customer-pagination-btn"
-            onClick={() =>
-              setCurrentPage(Math.min(totalPages, currentPage + 1))
-            }
-            disabled={currentPage === totalPages}
-            title="Next page"
-          >
-            ›
-          </button>
+            {/* Page numbers */}
+            <div className="customer-page-numbers">
+              {Array.from({ length: Math.min(3, totalPages) }, (_, i) => {
+                let pageNum;
+
+                if (totalPages <= 3) {
+                  pageNum = i + 1;
+                } else if (currentPage === 1) {
+                  pageNum = i + 1;
+                } else if (currentPage === totalPages) {
+                  pageNum = totalPages - 2 + i;
+                } else {
+                  pageNum = currentPage - 1 + i;
+                }
+
+                return (
+                  <button
+                    key={pageNum}
+                    className={`customer-page-number ${
+                      currentPage === pageNum ? "active" : ""
+                    }`}
+                    onClick={() => setCurrentPage(pageNum)}
+                  >
+                    {pageNum}
+                  </button>
+                );
+              })}
+            </div>
+
+            <button
+              className="customer-pagination-btn"
+              onClick={() =>
+                setCurrentPage(Math.min(totalPages, currentPage + 1))
+              }
+              disabled={currentPage === totalPages}
+              title="Next page"
+            >
+              ›
+            </button>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Customer Details Modal */}
       <CustomerModal
@@ -497,6 +490,21 @@ const CustomerListView = () => {
         isOpen={isDeleteModalOpen}
         onClose={handleCancelDelete}
         onConfirm={handleConfirmDelete}
+        isLoading={isDeleting}
+      />
+
+      {/* Notification Components */}
+      <SuccessNotification
+        isVisible={successNotification.isVisible}
+        title={successNotification.title}
+        message={successNotification.message}
+        onClose={hideSuccess}
+      />
+      <ErrorNotification
+        isVisible={errorNotification.isVisible}
+        title={errorNotification.title}
+        message={errorNotification.message}
+        onClose={hideError}
       />
     </div>
   );
