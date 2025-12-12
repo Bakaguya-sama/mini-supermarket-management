@@ -1,0 +1,217 @@
+### ========================================
+### ORDER API TESTS
+### Base URL: http://localhost:5000/api/orders
+### ========================================
+
+### Variables
+@baseUrl = http://localhost:5000/api
+@orderId = 
+@customerId = 
+@productId = 
+
+### 1. Get all orders (with pagination)
+GET {{baseUrl}}/orders?page=1&limit=10
+
+###
+
+### 2. Get order statistics
+GET {{baseUrl}}/orders/stats
+
+###
+
+### 3. Get all orders with status filter
+GET {{baseUrl}}/orders?status=pending&page=1&limit=10
+
+###
+
+### 4. Get all orders for a customer (replace customerId)
+GET {{baseUrl}}/orders/customer/YOUR_CUSTOMER_ID?page=1&limit=10
+
+###
+
+### 5. Get single order by ID (replace orderId)
+GET {{baseUrl}}/orders/YOUR_ORDER_ID
+
+###
+
+### 6. Get orders filtered by date range
+GET {{baseUrl}}/orders?startDate=2024-01-01&endDate=2024-12-31
+
+###
+
+### 7. Get orders filtered by amount range
+GET {{baseUrl}}/orders?minAmount=100000&maxAmount=5000000
+
+###
+
+### 8. Get orders with search (search in notes)
+GET {{baseUrl}}/orders?search=urgent&page=1&limit=10
+
+###
+
+### 9. Create new order from cart
+POST {{baseUrl}}/orders
+Content-Type: application/json
+
+{
+  "cart_id": "YOUR_CART_ID",
+  "customer_id": "YOUR_CUSTOMER_ID",
+  "notes": "Please deliver in the morning"
+}
+
+###
+
+### 10. Update order (change status and tracking number)
+PUT {{baseUrl}}/orders/YOUR_ORDER_ID
+Content-Type: application/json
+
+{
+  "status": "confirmed",
+  "tracking_number": "TRACK123456789"
+}
+
+###
+
+### 11. Update order with delivery date
+PUT {{baseUrl}}/orders/YOUR_ORDER_ID
+Content-Type: application/json
+
+{
+  "status": "shipped",
+  "delivery_date": "2024-12-25",
+  "notes": "Updated delivery address"
+}
+
+###
+
+### 12. Update specific order item status
+PATCH {{baseUrl}}/orders/YOUR_ORDER_ID/items/YOUR_ITEM_ID/status
+Content-Type: application/json
+
+{
+  "status": "picked"
+}
+
+###
+
+### 13. Update order item to packed
+PATCH {{baseUrl}}/orders/YOUR_ORDER_ID/items/YOUR_ITEM_ID/status
+Content-Type: application/json
+
+{
+  "status": "packed"
+}
+
+###
+
+### 14. Update order item to shipped
+PATCH {{baseUrl}}/orders/YOUR_ORDER_ID/items/YOUR_ITEM_ID/status
+Content-Type: application/json
+
+{
+  "status": "shipped"
+}
+
+###
+
+### 15. Cancel an order (must be pending)
+PATCH {{baseUrl}}/orders/YOUR_ORDER_ID/cancel
+Content-Type: application/json
+
+{
+  "reason": "Customer requested cancellation"
+}
+
+###
+
+### 16. Soft delete order
+DELETE {{baseUrl}}/orders/YOUR_ORDER_ID
+
+###
+
+### ========================================
+### TEST SCENARIOS
+### ========================================
+
+### Scenario 1: Create order with minimal data
+POST {{baseUrl}}/orders
+Content-Type: application/json
+
+{
+  "cart_id": "YOUR_CART_ID",
+  "customer_id": "YOUR_CUSTOMER_ID"
+}
+
+###
+
+### Scenario 2: Try to create order with non-existent cart (should fail)
+POST {{baseUrl}}/orders
+Content-Type: application/json
+
+{
+  "cart_id": "INVALID_CART_ID",
+  "customer_id": "YOUR_CUSTOMER_ID"
+}
+
+###
+
+### Scenario 3: Try to cancel delivered order (should fail)
+PATCH {{baseUrl}}/orders/YOUR_DELIVERED_ORDER_ID/cancel
+Content-Type: application/json
+
+{
+  "reason": "Customer changed mind"
+}
+
+###
+
+### Scenario 4: Get orders sorted by total amount (highest first)
+GET {{baseUrl}}/orders?sort=-total_amount&page=1&limit=10
+
+###
+
+### Scenario 5: Get orders sorted by creation date (oldest first)
+GET {{baseUrl}}/orders?sort=createdAt&page=1&limit=10
+
+###
+
+### Scenario 6: Get pending orders for processing
+GET {{baseUrl}}/orders?status=pending&sort=createdAt&page=1&limit=20
+
+###
+
+### Scenario 7: Check order with all details and items
+GET {{baseUrl}}/orders/YOUR_ORDER_ID
+
+###
+
+### Scenario 8: Get orders for specific customer with pagination
+GET {{baseUrl}}/orders/customer/YOUR_CUSTOMER_ID?page=1&limit=10&sort=-createdAt
+
+###
+
+### Scenario 9: Get high-value orders
+GET {{baseUrl}}/orders?minAmount=1000000&sort=-total_amount&page=1&limit=10
+
+###
+
+### Scenario 10: Complete workflow - Create and update order
+# Step 1: Create order
+POST {{baseUrl}}/orders
+Content-Type: application/json
+
+{
+  "cart_id": "YOUR_CART_ID",
+  "customer_id": "YOUR_CUSTOMER_ID",
+  "notes": "Complete workflow test"
+}
+
+# Step 2: Confirm order (use returned order ID)
+# PUT {{baseUrl}}/orders/RETURNED_ORDER_ID
+# Content-Type: application/json
+# {
+#   "status": "confirmed",
+#   "tracking_number": "TRACK123456789"
+# }
+
+###

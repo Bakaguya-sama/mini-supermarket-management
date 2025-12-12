@@ -1,82 +1,137 @@
-// controllers/cartController.js - VIẾT LẠI HOÀN TOÀN
-const { Cart, CartItem, Product, Customer, Promotion } = require('../models');
+// controllers/cartController.js - SHOPPING CART API HOÀN CHỈNH
+const { Cart, CartItem, Product, Customer } = require('../models');
 const mongoose = require('mongoose');
 
 /**
- * @desc    Get cart by customer ID (hoặc tạo mới nếu chưa có)
- * @route   GET /api/carts/:customerId
+ * @desc    Get cart for customer (auto-create if not exists)
+ * @route   GET /api/carts/customer/:customerId
  * @access  Public
  */
-exports.getCart = async (req, res) => {
+exports.getCartByCustomer = async (req, res) => {
   try {
-    const { customerId } = req.params;
+    console.log(`🛒 Fetching cart for customer: ${req.params.customerId}`);
+    
+    let cart = await Cart.findOne({
+      customer_id: req.params.customerId,
+      status: 'active'
+    }).populate({
+      path: 'cartItems',
+      populate: { path: 'product_id', select: 'name price sku unit' }
+    }).populate('customer_id', 'account_id');
 
-    // Validate customerId
-    if (!mongoose.Types.ObjectId.isValid(customerId)) {
-      return res.status(400).json({
-        success: false,
-        message: 'Invalid customer ID'
-      });
-    }
-
-    // Check if customer exists
-    const customer = await Customer.findById(customerId);
-    if (!customer) {
-      return res.status(404).json({
-        success: false,
-        message: 'Customer not found'
-      });
-    }
-
-    // Find active cart
-    let cart = await Cart.findOne({ 
-      customer_id: customerId, 
-      status: 'active',
-      isDelete: false 
-    });
-
-    // Nếu chưa có cart, tạo mới
+    // Auto-create cart if not exists
     if (!cart) {
+      console.log(`📝 Creating new cart for customer: ${req.params.customerId}`);
       cart = await Cart.create({
-        customer_id: customerId,
+        customer_id: req.params.customerId,
+        cartItems: [],
         status: 'active',
-        currency: 'VND',
         subtotal: 0,
         discounts: 0,
         total: 0
       });
+      
+      // Re-fetch to get proper population
+      cart = await Cart.findById(cart._id)
+        .populate({
+          path: 'cartItems',
+          populate: { path: 'product_id', select: 'name price sku unit' }
+        })
+        .populate('customer_id', 'account_id');
     }
 
-    // Get cart items with product details
-    const cartItems = await CartItem.find({ 
-      cart_id: cart._id, 
-      status: 'active',
-      isDelete: false 
-    }).populate('product_id', 'name price unit image_link current_stock');
+    console.log(`✅ Cart fetched with ${cart.cartItems.length} items`);
+    
+    res.status(200).json({
+      success: true,
+      data: cart
+    });
+  } catch (error) {
+    console.error('❌ Error fetching cart:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching cart',
+      error: error.message
+    });
+  }
+};
 
-    // Calculate totals
-    const subtotal = cartItems.reduce((sum, item) => sum + item.line_total, 0);
-    const total = subtotal - cart.discounts;
+/**
+ * @desc    Get all carts with filters
+ * @route   GET /api/carts
+ * @access  Public
+ */
+exports.getAllCarts = async (req, res) => {
+  try {
+    const { page = 1, limit = 10, status, search, minAmount, maxAmount } = req.query;
+    const skip = (parseInt(page) - 1) * parseInt(limit);
 
-    // Update cart totals
-    cart.subtotal = subtotal;
-    cart.total = total;
-    cart.last_activity_at = new Date();
-    await cart.save();
+    const query = {};
+    if (status) query.status = status;
+    if (minAmount || maxAmount) {
+      query.total = {};
+      if (minAmount) query.total.$gte = parseFloat(minAmount);
+      if (maxAmount) query.total.$lte = parseFloat(maxAmount);
+    }
+
+    const carts = await Cart.find(query)
+      .populate({
+        path: 'customer_id',
+        select: 'account_id email'
+      })
+      .skip(skip)
+      .limit(parseInt(limit))
+      .sort('-createdAt');
+
+    const total = await Cart.countDocuments(query);
 
     res.status(200).json({
       success: true,
-      data: {
-        cart,
-        items: cartItems,
-        itemCount: cartItems.length
-      }
+      count: carts.length,
+      total,
+      page: parseInt(page),
+      pages: Math.ceil(total / parseInt(limit)),
+      data: carts
     });
   } catch (error) {
-    console.error('Error in getCart:', error);
     res.status(500).json({
       success: false,
-      message: 'Failed to get cart',
+      message: 'Error fetching carts',
+      error: error.message
+    });
+  }
+};
+
+/**
+ * @desc    Get single cart by ID
+ * @route   GET /api/carts/:id
+ * @access  Public
+ */
+exports.getCartById = async (req, res) => {
+  try {
+    const cart = await Cart.findById(req.params.id)
+      .populate({
+        path: 'cartItems',
+        populate: { path: 'product_id', select: 'name price sku unit description' }
+      })
+      .populate('customer_id', 'account_id')
+      .populate('applied_promo_id', 'name discount_value');
+
+    if (!cart) {
+      return res.status(404).json({
+        success: false,
+        message: 'Cart not found'
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      data: cart
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching cart',
       error: error.message
     });
   }
@@ -84,49 +139,29 @@ exports.getCart = async (req, res) => {
 
 /**
  * @desc    Add item to cart
- * @route   POST /api/carts/:customerId/items
+ * @route   POST /api/carts/:cartId/items
  * @access  Public
  */
 exports.addItemToCart = async (req, res) => {
   try {
-    const { customerId } = req.params;
     const { product_id, quantity } = req.body;
-
-    // Validate input
-    if (!mongoose.Types.ObjectId.isValid(customerId)) {
-      return res.status(400).json({
-        success: false,
-        message: 'Invalid customer ID'
-      });
-    }
 
     if (!product_id || !quantity) {
       return res.status(400).json({
         success: false,
-        message: 'Product ID and quantity are required'
+        message: 'Please provide product ID and quantity'
       });
     }
 
-    if (!mongoose.Types.ObjectId.isValid(product_id)) {
-      return res.status(400).json({
+    const cart = await Cart.findById(req.params.cartId);
+    if (!cart) {
+      return res.status(404).json({
         success: false,
-        message: 'Invalid product ID'
+        message: 'Cart not found'
       });
     }
 
-    if (quantity <= 0) {
-      return res.status(400).json({
-        success: false,
-        message: 'Quantity must be greater than 0'
-      });
-    }
-
-    // Check product exists and available
-    const product = await Product.findOne({ 
-      _id: product_id, 
-      isDelete: false 
-    });
-    
+    const product = await Product.findById(product_id);
     if (!product) {
       return res.status(404).json({
         success: false,
@@ -134,145 +169,82 @@ exports.addItemToCart = async (req, res) => {
       });
     }
 
-    if (product.status !== 'active') {
-      return res.status(400).json({
-        success: false,
-        message: 'Product is not available'
-      });
-    }
-
-    // Check stock
-    if (product.current_stock < quantity) {
-      return res.status(400).json({
-        success: false,
-        message: `Insufficient stock. Available: ${product.current_stock}`,
-        available_stock: product.current_stock
-      });
-    }
-
-    // Get or create cart
-    let cart = await Cart.findOne({ 
-      customer_id: customerId, 
-      status: 'active',
-      isDelete: false 
-    });
-
-    if (!cart) {
-      cart = await Cart.create({
-        customer_id: customerId,
-        status: 'active'
-      });
-    }
-
     // Check if item already in cart
     let cartItem = await CartItem.findOne({
-      cart_id: cart._id,
-      product_id: product_id,
-      status: 'active',
-      isDelete: false
+      cart_id: req.params.cartId,
+      product_id,
+      status: { $ne: 'removed' }  // Don't count removed items
     });
 
     if (cartItem) {
-      // Update existing item
-      const newQuantity = cartItem.quantity + quantity;
-      
-      // Check stock for new quantity
-      if (product.current_stock < newQuantity) {
-        return res.status(400).json({
-          success: false,
-          message: `Cannot add more. Maximum available: ${product.current_stock}`,
-          current_in_cart: cartItem.quantity,
-          available_stock: product.current_stock
-        });
-      }
-
-      cartItem.quantity = newQuantity;
-      cartItem.line_total = newQuantity * product.price;
+      // Update quantity
+      cartItem.quantity += parseInt(quantity);
+      cartItem.line_total = cartItem.quantity * cartItem.unit_price;
       await cartItem.save();
+      console.log(`📈 Updated existing item quantity to ${cartItem.quantity}`);
     } else {
       // Create new cart item
       cartItem = await CartItem.create({
-        cart_id: cart._id,
-        product_id: product_id,
+        cart_id: req.params.cartId,
+        product_id,
         product_name: product.name,
-        quantity: quantity,
+        sku: product.sku,
+        quantity: parseInt(quantity),
         unit: product.unit,
         unit_price: product.price,
-        line_total: quantity * product.price,
+        line_total: parseInt(quantity) * product.price,
         status: 'active'
       });
+      console.log(`➕ Created new cart item`);
+      
+      // Add item to cart's cartItems array if not already present
+      if (!cart.cartItems.includes(cartItem._id)) {
+        cart.cartItems.push(cartItem._id);
+        await cart.save();
+      }
     }
 
-    // Update cart totals
-    const allItems = await CartItem.find({ 
-      cart_id: cart._id, 
-      status: 'active',
-      isDelete: false 
-    });
-    
-    const subtotal = allItems.reduce((sum, item) => sum + item.line_total, 0);
-    cart.subtotal = subtotal;
-    cart.total = subtotal - cart.discounts;
-    cart.last_activity_at = new Date();
-    await cart.save();
+    // Recalculate cart totals
+    await calculateCartTotals(req.params.cartId);
 
-    // Populate product details
-    await cartItem.populate('product_id', 'name price unit image_link current_stock');
+    const updatedCart = await Cart.findById(req.params.cartId)
+      .populate({
+        path: 'cartItems',
+        populate: { path: 'product_id', select: 'name price sku unit' }
+      });
 
     res.status(200).json({
       success: true,
-      message: 'Item added to cart successfully',
-      data: {
-        cartItem,
-        cart: {
-          subtotal: cart.subtotal,
-          discounts: cart.discounts,
-          total: cart.total,
-          itemCount: allItems.length
-        }
-      }
+      message: 'Item added to cart',
+      data: updatedCart
     });
   } catch (error) {
-    console.error('Error in addItemToCart:', error);
+    console.error('❌ Error adding item to cart:', error);
     res.status(500).json({
       success: false,
-      message: 'Failed to add item to cart',
+      message: 'Error adding item to cart',
       error: error.message
     });
   }
 };
 
 /**
- * @desc    Update cart item quantity
- * @route   PUT /api/carts/items/:cartItemId
+ * @desc    Update item quantity in cart
+ * @route   PUT /api/carts/items/:itemId/quantity
  * @access  Public
  */
-exports.updateCartItem = async (req, res) => {
+exports.updateItemQuantity = async (req, res) => {
   try {
-    const { cartItemId } = req.params;
     const { quantity } = req.body;
 
-    // Validate input
-    if (!mongoose.Types.ObjectId.isValid(cartItemId)) {
+    if (quantity === undefined || quantity < 0) {
       return res.status(400).json({
         success: false,
-        message: 'Invalid cart item ID'
+        message: 'Invalid quantity'
       });
     }
 
-    if (!quantity || quantity <= 0) {
-      return res.status(400).json({
-        success: false,
-        message: 'Quantity must be greater than 0'
-      });
-    }
-
-    // Find cart item
-    const cartItem = await CartItem.findOne({ 
-      _id: cartItemId, 
-      isDelete: false 
-    }).populate('product_id');
-
+    const cartItem = await CartItem.findById(req.params.itemId);
     if (!cartItem) {
       return res.status(404).json({
         success: false,
@@ -280,51 +252,45 @@ exports.updateCartItem = async (req, res) => {
       });
     }
 
-    // Check stock
-    if (cartItem.product_id.current_stock < quantity) {
-      return res.status(400).json({
-        success: false,
-        message: `Insufficient stock. Available: ${cartItem.product_id.current_stock}`,
-        available_stock: cartItem.product_id.current_stock
+    const cartId = cartItem.cart_id;
+
+    if (quantity === 0) {
+      // Remove item if quantity is 0
+      cartItem.status = 'removed';
+      await cartItem.save();
+      console.log(`🗑️  Item marked as removed`);
+      
+      // Remove from cart's cartItems array
+      await Cart.findByIdAndUpdate(cartId, {
+        $pull: { cartItems: cartItem._id }
       });
+    } else {
+      cartItem.quantity = parseInt(quantity);
+      cartItem.line_total = parseInt(quantity) * cartItem.unit_price;
+      cartItem.status = 'active';
+      await cartItem.save();
+      console.log(`📝 Item quantity updated to ${quantity}`);
     }
 
-    // Update quantity
-    cartItem.quantity = quantity;
-    cartItem.line_total = quantity * cartItem.unit_price;
-    await cartItem.save();
+    // Recalculate cart totals
+    await calculateCartTotals(cartId);
 
-    // Update cart totals
-    const cart = await Cart.findById(cartItem.cart_id);
-    const allItems = await CartItem.find({ 
-      cart_id: cart._id, 
-      status: 'active',
-      isDelete: false 
-    });
-    
-    const subtotal = allItems.reduce((sum, item) => sum + item.line_total, 0);
-    cart.subtotal = subtotal;
-    cart.total = subtotal - cart.discounts;
-    cart.last_activity_at = new Date();
-    await cart.save();
+    const updatedCart = await Cart.findById(cartId)
+      .populate({
+        path: 'cartItems',
+        populate: { path: 'product_id', select: 'name price sku unit' }
+      });
 
     res.status(200).json({
       success: true,
-      message: 'Cart item updated successfully',
-      data: {
-        cartItem,
-        cart: {
-          subtotal: cart.subtotal,
-          discounts: cart.discounts,
-          total: cart.total
-        }
-      }
+      message: 'Item quantity updated',
+      data: updatedCart
     });
   } catch (error) {
-    console.error('Error in updateCartItem:', error);
+    console.error('❌ Error updating item quantity:', error);
     res.status(500).json({
       success: false,
-      message: 'Failed to update cart item',
+      message: 'Error updating item quantity',
       error: error.message
     });
   }
@@ -332,26 +298,12 @@ exports.updateCartItem = async (req, res) => {
 
 /**
  * @desc    Remove item from cart
- * @route   DELETE /api/carts/items/:cartItemId
+ * @route   DELETE /api/carts/items/:itemId
  * @access  Public
  */
-exports.removeCartItem = async (req, res) => {
+exports.removeItemFromCart = async (req, res) => {
   try {
-    const { cartItemId } = req.params;
-
-    // Validate input
-    if (!mongoose.Types.ObjectId.isValid(cartItemId)) {
-      return res.status(400).json({
-        success: false,
-        message: 'Invalid cart item ID'
-      });
-    }
-
-    // Find and delete cart item
-    const cartItem = await CartItem.findOne({ 
-      _id: cartItemId, 
-      isDelete: false 
-    });
+    const cartItem = await CartItem.findById(req.params.itemId);
 
     if (!cartItem) {
       return res.status(404).json({
@@ -362,70 +314,140 @@ exports.removeCartItem = async (req, res) => {
 
     const cartId = cartItem.cart_id;
 
-    // Soft delete
-    cartItem.isDelete = true;
+    // Mark as removed
     cartItem.status = 'removed';
     await cartItem.save();
+    console.log(`🗑️  Item removed from cart`);
 
-    // Update cart totals
-    const cart = await Cart.findById(cartId);
-    const remainingItems = await CartItem.find({ 
-      cart_id: cartId, 
-      status: 'active',
-      isDelete: false 
+    // Remove from cart's cartItems array
+    await Cart.findByIdAndUpdate(cartId, {
+      $pull: { cartItems: cartItem._id }
     });
-    
-    const subtotal = remainingItems.reduce((sum, item) => sum + item.line_total, 0);
-    cart.subtotal = subtotal;
-    cart.total = subtotal - cart.discounts;
-    cart.last_activity_at = new Date();
-    await cart.save();
+
+    // Recalculate cart totals
+    await calculateCartTotals(cartId);
+
+    const updatedCart = await Cart.findById(cartId)
+      .populate({
+        path: 'cartItems',
+        populate: { path: 'product_id', select: 'name price sku unit' }
+      });
 
     res.status(200).json({
       success: true,
-      message: 'Item removed from cart successfully',
-      data: {
-        cart: {
-          subtotal: cart.subtotal,
-          discounts: cart.discounts,
-          total: cart.total,
-          itemCount: remainingItems.length
-        }
-      }
+      message: 'Item removed from cart',
+      data: updatedCart
     });
   } catch (error) {
-    console.error('Error in removeCartItem:', error);
+    console.error('❌ Error removing item from cart:', error);
     res.status(500).json({
       success: false,
-      message: 'Failed to remove cart item',
+      message: 'Error removing item from cart',
       error: error.message
     });
   }
 };
 
 /**
- * @desc    Clear all items from cart
- * @route   DELETE /api/carts/:customerId/clear
+ * @desc    Apply promo code to cart
+ * @route   POST /api/carts/:cartId/apply-promo
+ * @access  Public
+ */
+exports.applyPromo = async (req, res) => {
+  try {
+    const { promo_id } = req.body;
+
+    if (!promo_id) {
+      return res.status(400).json({
+        success: false,
+        message: 'Please provide promo ID'
+      });
+    }
+
+    const cart = await Cart.findById(req.params.cartId);
+    if (!cart) {
+      return res.status(404).json({
+        success: false,
+        message: 'Cart not found'
+      });
+    }
+
+    // In real scenario, verify promo code exists and is valid
+    cart.applied_promo_id = promo_id;
+
+    // Recalculate with discount
+    await calculateCartTotals(req.params.cartId);
+
+    const updatedCart = await Cart.findById(req.params.cartId)
+      .populate({
+        path: 'cartItems',
+        populate: { path: 'product_id' }
+      })
+      .populate('applied_promo_id');
+
+    res.status(200).json({
+      success: true,
+      message: 'Promo code applied',
+      data: updatedCart
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Error applying promo',
+      error: error.message
+    });
+  }
+};
+
+/**
+ * @desc    Remove promo code from cart
+ * @route   DELETE /api/carts/:cartId/remove-promo
+ * @access  Public
+ */
+exports.removePromo = async (req, res) => {
+  try {
+    const cart = await Cart.findById(req.params.cartId);
+
+    if (!cart) {
+      return res.status(404).json({
+        success: false,
+        message: 'Cart not found'
+      });
+    }
+
+    cart.applied_promo_id = null;
+    cart.discounts = 0;
+
+    await calculateCartTotals(req.params.cartId);
+
+    const updatedCart = await Cart.findById(req.params.cartId)
+      .populate({
+        path: 'cartItems',
+        populate: { path: 'product_id' }
+      });
+
+    res.status(200).json({
+      success: true,
+      message: 'Promo code removed',
+      data: updatedCart
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Error removing promo',
+      error: error.message
+    });
+  }
+};
+
+/**
+ * @desc    Clear cart (remove all items)
+ * @route   DELETE /api/carts/:cartId/clear
  * @access  Public
  */
 exports.clearCart = async (req, res) => {
   try {
-    const { customerId } = req.params;
-
-    // Validate customerId
-    if (!mongoose.Types.ObjectId.isValid(customerId)) {
-      return res.status(400).json({
-        success: false,
-        message: 'Invalid customer ID'
-      });
-    }
-
-    // Find cart
-    const cart = await Cart.findOne({ 
-      customer_id: customerId, 
-      status: 'active',
-      isDelete: false 
-    });
+    const cart = await Cart.findById(req.params.cartId);
 
     if (!cart) {
       return res.status(404).json({
@@ -434,164 +456,77 @@ exports.clearCart = async (req, res) => {
       });
     }
 
-    // Soft delete all cart items
+    // Mark all items as removed
     await CartItem.updateMany(
-      { cart_id: cart._id, isDelete: false },
-      { $set: { isDelete: true, status: 'removed' } }
+      { cart_id: req.params.cartId },
+      { status: 'removed' }
     );
 
-    // Reset cart totals
+    // Reset cart
     cart.subtotal = 0;
     cart.discounts = 0;
     cart.total = 0;
     cart.applied_promo_id = null;
-    cart.last_activity_at = new Date();
     await cart.save();
 
     res.status(200).json({
       success: true,
-      message: 'Cart cleared successfully',
-      data: { cart }
+      message: 'Cart cleared',
+      data: cart
     });
   } catch (error) {
-    console.error('Error in clearCart:', error);
     res.status(500).json({
       success: false,
-      message: 'Failed to clear cart',
+      message: 'Error clearing cart',
       error: error.message
     });
   }
 };
 
 /**
- * @desc    Apply promotion to cart
- * @route   POST /api/carts/:customerId/apply-promo
+ * @desc    Get cart statistics
+ * @route   GET /api/carts/stats
  * @access  Public
  */
-exports.applyPromotion = async (req, res) => {
+exports.getCartStats = async (req, res) => {
   try {
-    const { customerId } = req.params;
-    const { promo_code } = req.body;
+    const totalCarts = await Cart.countDocuments();
+    const activeCarts = await Cart.countDocuments({ status: 'active' });
+    const abandonedCarts = await Cart.countDocuments({ status: 'abandoned' });
+    const checkedOutCarts = await Cart.countDocuments({ status: 'checked_out' });
 
-    // Validate input
-    if (!mongoose.Types.ObjectId.isValid(customerId)) {
-      return res.status(400).json({
-        success: false,
-        message: 'Invalid customer ID'
-      });
-    }
-
-    if (!promo_code) {
-      return res.status(400).json({
-        success: false,
-        message: 'Promo code is required'
-      });
-    }
-
-    // Find cart
-    const cart = await Cart.findOne({ 
-      customer_id: customerId, 
-      status: 'active',
-      isDelete: false 
-    });
-
-    if (!cart) {
-      return res.status(404).json({
-        success: false,
-        message: 'Cart not found'
-      });
-    }
-
-    // Find promotion
-    const promotion = await Promotion.findOne({ 
-      promo_code: promo_code,
-      is_active: true,
-      isDelete: false
-    });
-
-    if (!promotion) {
-      return res.status(404).json({
-        success: false,
-        message: 'Invalid or inactive promo code'
-      });
-    }
-
-    // Check if promotion is valid (dates)
-    const now = new Date();
-    if (now < promotion.start_date || now > promotion.end_date) {
-      return res.status(400).json({
-        success: false,
-        message: 'Promo code has expired or not yet active'
-      });
-    }
-
-    // Check minimum purchase amount
-    if (cart.subtotal < promotion.minimum_purchase_amount) {
-      return res.status(400).json({
-        success: false,
-        message: `Minimum purchase amount is ${promotion.minimum_purchase_amount}. Current: ${cart.subtotal}`
-      });
-    }
-
-    // Calculate discount
-    let discount = 0;
-    if (promotion.promotion_type === 'percentage') {
-      discount = (cart.subtotal * promotion.discount_value) / 100;
-    } else if (promotion.promotion_type === 'fixed') {
-      discount = promotion.discount_value;
-    }
-
-    // Apply discount
-    cart.applied_promo_id = promotion._id;
-    cart.discounts = discount;
-    cart.total = cart.subtotal - discount;
-    cart.last_activity_at = new Date();
-    await cart.save();
+    const avgCartValue = await Cart.aggregate([
+      { $match: { status: 'active' } },
+      { $group: { _id: null, avgTotal: { $avg: '$total' } } }
+    ]);
 
     res.status(200).json({
       success: true,
-      message: 'Promotion applied successfully',
       data: {
-        cart,
-        promotion: {
-          code: promotion.promo_code,
-          name: promotion.name,
-          discount: discount
-        }
+        totalCarts,
+        activeCarts,
+        abandonedCarts,
+        checkedOutCarts,
+        avgCartValue: avgCartValue[0]?.avgTotal || 0
       }
     });
   } catch (error) {
-    console.error('Error in applyPromotion:', error);
     res.status(500).json({
       success: false,
-      message: 'Failed to apply promotion',
+      message: 'Error fetching cart statistics',
       error: error.message
     });
   }
 };
 
 /**
- * @desc    Get cart by ID (for admin)
- * @route   GET /api/carts/admin/:cartId
- * @access  Private/Admin
+ * @desc    Checkout cart (transition to checked_out)
+ * @route   PATCH /api/carts/:cartId/checkout
+ * @access  Public
  */
-exports.getCartById = async (req, res) => {
+exports.checkoutCart = async (req, res) => {
   try {
-    const { cartId } = req.params;
-
-    // Validate cartId
-    if (!mongoose.Types.ObjectId.isValid(cartId)) {
-      return res.status(400).json({
-        success: false,
-        message: 'Invalid cart ID'
-      });
-    }
-
-    // Find cart
-    const cart = await Cart.findOne({ 
-      _id: cartId, 
-      isDelete: false 
-    }).populate('customer_id', 'account_id membership_type points_balance');
+    const cart = await Cart.findById(req.params.cartId);
 
     if (!cart) {
       return res.status(404).json({
@@ -600,26 +535,96 @@ exports.getCartById = async (req, res) => {
       });
     }
 
-    // Get cart items
-    const cartItems = await CartItem.find({ 
-      cart_id: cart._id, 
-      isDelete: false 
-    }).populate('product_id', 'name price unit image_link current_stock');
+    if (cart.status !== 'active') {
+      return res.status(400).json({
+        success: false,
+        message: 'Only active carts can be checked out'
+      });
+    }
+
+    // Verify cart has items
+    const activeItems = await CartItem.countDocuments({
+      cart_id: req.params.cartId,
+      status: 'active'
+    });
+
+    if (activeItems === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Cart is empty'
+      });
+    }
+
+    cart.status = 'checked_out';
+    await cart.save();
+
+    const updatedCart = await Cart.findById(req.params.cartId)
+      .populate({
+        path: 'cartItems',
+        populate: { path: 'product_id' }
+      });
 
     res.status(200).json({
       success: true,
-      data: {
-        cart,
-        items: cartItems,
-        itemCount: cartItems.length
-      }
+      message: 'Cart checked out successfully',
+      data: updatedCart
     });
   } catch (error) {
-    console.error('Error in getCartById:', error);
     res.status(500).json({
       success: false,
-      message: 'Failed to get cart',
+      message: 'Error checking out cart',
       error: error.message
     });
   }
 };
+
+// ========== HELPER FUNCTIONS ==========
+
+/**
+ * Calculate and update cart totals
+ */
+async function calculateCartTotals(cartId) {
+  try {
+    // Get all ACTIVE cart items (exclude removed, saved_for_later, purchased)
+    const cartItems = await CartItem.find({
+      cart_id: cartId,
+      status: 'active'
+    }).populate('product_id');
+
+    console.log(`📊 Calculating totals for ${cartItems.length} active items`);
+
+    // Calculate subtotal from active items only
+    let subtotal = 0;
+    cartItems.forEach(item => {
+      subtotal += item.line_total;
+    });
+
+    // Get cart and apply discount if promo exists
+    const cart = await Cart.findById(cartId).populate('applied_promo_id');
+    let discounts = 0;
+
+    if (cart.applied_promo_id) {
+      // Calculate discount based on promo type
+      const promo = cart.applied_promo_id;
+      if (promo.promotion_type === 'percentage') {
+        discounts = subtotal * (promo.discount_value / 100);
+      } else if (promo.promotion_type === 'fixed') {
+        discounts = promo.discount_value;
+      }
+      console.log(`🏷️  Promo applied: ${discounts}`);
+    }
+
+    const total = Math.max(0, subtotal - discounts);
+
+    // Update cart
+    cart.subtotal = subtotal;
+    cart.discounts = discounts;
+    cart.total = total;
+    cart.last_activity_at = new Date();
+    await cart.save();
+    
+    console.log(`✅ Cart totals: subtotal=${subtotal}, discount=${discounts}, total=${total}`);
+  } catch (error) {
+    console.error('❌ Error calculating cart totals:', error);
+  }
+}

@@ -14,7 +14,7 @@ const CustomerModal = ({ customer, isOpen, onClose }) => {
 
   const handleEditClick = () => {
     onClose();
-    navigate(`/customer/edit/${customer.id}`);
+    navigate(`/customer/edit/${customer._id || customer.id}`);
   };
 
   return (
@@ -38,22 +38,22 @@ const CustomerModal = ({ customer, isOpen, onClose }) => {
             <div className="customer-info-row">
               <div className="customer-info-item">
                 <label>Customer ID</label>
-                <p>{customer.id}</p>
+                <p>{customer.id?.substring(0, 8) || 'N/A'}</p>
               </div>
               <div className="customer-info-item">
                 <label>Username</label>
-                <p>{customer.username || "johnsmith"}</p>
+                <p>{customer.username || "N/A"}</p>
               </div>
             </div>
 
             <div className="customer-info-row">
               <div className="customer-info-item">
                 <label>Email</label>
-                <p>{customer.email}</p>
+                <p>{customer.email || 'N/A'}</p>
               </div>
               <div className="customer-info-item">
                 <label>Phone</label>
-                <p>{customer.phone}</p>
+                <p>{customer.phone || 'N/A'}</p>
               </div>
             </div>
 
@@ -61,7 +61,7 @@ const CustomerModal = ({ customer, isOpen, onClose }) => {
               <div className="customer-info-item customer-full-width">
                 <label>Address</label>
                 <p>
-                  {customer.address || "123 Main Street, Springfield, CA 94001"}
+                  {customer.address || "N/A"}
                 </p>
               </div>
             </div>
@@ -69,44 +69,42 @@ const CustomerModal = ({ customer, isOpen, onClose }) => {
             <div className="customer-info-row">
               <div className="customer-info-item">
                 <label>Total Purchases</label>
-                <p>{customer.totalPurchases || "$2200.00"}</p>
+                <p>{customer.totalPurchases || "₫0"}</p>
               </div>
               <div className="customer-info-item">
                 <label>Loyalty Points</label>
-                <p>{customer.loyaltyPoints || "245"}</p>
+                <p>{customer.loyaltyPoints || 0} points</p>
               </div>
             </div>
 
             <div className="customer-info-row">
               <div className="customer-info-item">
-                <label>Last Purchase</label>
-                <p>{customer.lastPurchase || "Nov 01, 2025"}</p>
+                <label>Registered At</label>
+                <p>
+                  {customer.registeredAt
+                    ? new Date(customer.registeredAt).toLocaleDateString('en-US', {
+                        year: 'numeric',
+                        month: 'short',
+                        day: 'numeric'
+                      })
+                    : "N/A"}
+                </p>
               </div>
-              <div className="customer-info-item">
-                <label>Join Date</label>
-                <p>{customer.joinDate || "Jan 15, 2024"}</p>
-              </div>
-            </div>
-
-            <div className="customer-info-row">
               <div className="customer-info-item">
                 <label>Membership Type</label>
+                <p>{customer.membership || "Standard"}</p>
+              </div>
+            </div>
+
+            <div className="customer-info-row">
+              <div className="customer-info-item customer-full-width">
+                <label>Membership Status</label>
                 <span
                   className={`customer-membership-badge ${
-                    customer.membership?.toLowerCase() || "gold"
+                    customer.membership?.toLowerCase() || "standard"
                   }`}
                 >
-                  {customer.membership || "Gold"}
-                </span>
-              </div>
-              <div className="customer-info-item">
-                <label>Status</label>
-                <span
-                  className={`customer-status-badge ${
-                    customer.status?.toLowerCase() || "active"
-                  }`}
-                >
-                  {customer.status || "Active"}
+                  {customer.membership || "Standard"}
                 </span>
               </div>
             </div>
@@ -115,10 +113,22 @@ const CustomerModal = ({ customer, isOpen, onClose }) => {
 
         {/* Modal Footer */}
         <div className="customer-modal-footer">
-          <button className="edit-customer-btn" onClick={handleEditClick}>
-            <span>✏️</span>
-            Edit Customer
-          </button>
+          {customer.isDelete ? (
+            <div style={{
+              padding: '12px 16px',
+              textAlign: 'center',
+              color: '#999',
+              fontSize: '14px',
+              fontWeight: '500'
+            }}>
+              ⚠️ This customer has been deleted and cannot be edited
+            </div>
+          ) : (
+            <button className="edit-customer-btn" onClick={handleEditClick}>
+              <span>✏️</span>
+              Edit Customer
+            </button>
+          )}
         </div>
       </div>
     </div>

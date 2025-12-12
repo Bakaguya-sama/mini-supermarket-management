@@ -43,11 +43,23 @@ export const useNotification = () => {
     setErrorNotification((prev) => ({ ...prev, isVisible: false }));
   }, []);
 
+  const showNotification = useCallback(
+    (type = 'success', message = 'Operation completed successfully.') => {
+      if (type === 'error' || type === 'err') {
+        showError('Error!', message);
+      } else {
+        showSuccess('Success!', message);
+      }
+    },
+    [showSuccess, showError]
+  );
+
   return {
     successNotification,
     errorNotification,
     showSuccess,
     showError,
+    showNotification,
     hideSuccess,
     hideError,
   };
