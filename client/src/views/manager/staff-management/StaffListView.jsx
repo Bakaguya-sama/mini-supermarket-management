@@ -1,264 +1,108 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { FaSearch, FaEye, FaEdit, FaTrash, FaPlus } from "react-icons/fa";
 import StaffModal from "../../../components/StaffModal/StaffModal";
 import DeleteConfirmationModal from "../../../components/StaffModal/DeleteConfirmationModal";
+import SuccessMessage from "../../../components/Messages/SuccessMessage";
+import ErrorMessage from "../../../components/Messages/ErrorMessage";
+import staffService from "../../../services/staffService";
 import "./StaffListView.css";
 
 const StaffListView = () => {
   const navigate = useNavigate();
+  const [staffData, setStaffData] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
-  const [statusFilter, setStatusFilter] = useState("All positions");
-  const [monthFilter, setMonthFilter] = useState("All Status");
+  const [positionFilter, setPositionFilter] = useState("all");
+  const [statusFilter, setStatusFilter] = useState("all");
   const [currentPage, setCurrentPage] = useState(1);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedStaff, setSelectedStaff] = useState(null);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [staffToDelete, setStaffToDelete] = useState(null);
-
-  // Sample staff data - matching the design structure
-  const staffData = [
-    {
-      id: "001",
-      name: "Alice Johnson",
-      email: "alice@gmail.com",
-      phone: "+1234567890",
-      position: "Store Manager",
-      joinDate: "Jan 10, 2023",
-      status: "Active",
-      address: "123 Manager St, City, CA 94001",
-      employmentType: "Full-time",
-      salary: "$65,000/year",
-    },
-    {
-      id: "002",
-      name: "John Smith",
-      email: "staff@gmail.com",
-      phone: "+1 234 567-8901",
-      position: "Store manager",
-      joinDate: "Jan 15, 2024",
-      status: "Active",
-    },
-    {
-      id: "003",
-      name: "John Smith",
-      email: "staff@gmail.com",
-      phone: "+1 234 567-8901",
-      position: "Store manager",
-      joinDate: "Jan 15, 2024",
-      status: "Inactive",
-    },
-    {
-      id: "004",
-      name: "John Smith",
-      email: "staff@gmail.com",
-      phone: "+1 234 567-8901",
-      position: "Store manager",
-      joinDate: "Jan 15, 2024",
-      status: "Active",
-    },
-    {
-      id: "005",
-      name: "Emma Wilson",
-      email: "emma@gmail.com",
-      phone: "+1 234 567-8902",
-      position: "Cashier",
-      joinDate: "Feb 20, 2024",
-      status: "Active",
-    },
-    {
-      id: "006",
-      name: "Michael Brown",
-      email: "michael@gmail.com",
-      phone: "+1 234 567-8903",
-      position: "Stock Manager",
-      joinDate: "Mar 10, 2024",
-      status: "Active",
-    },
-    {
-      id: "007",
-      name: "Sarah Davis",
-      email: "sarah@gmail.com",
-      phone: "+1 234 567-8904",
-      position: "Security",
-      joinDate: "Apr 05, 2024",
-      status: "Inactive",
-    },
-    {
-      id: "008",
-      name: "James Johnson",
-      email: "james@gmail.com",
-      phone: "+1 234 567-8905",
-      position: "Cleaner",
-      joinDate: "May 15, 2024",
-      status: "Active",
-    },
-    {
-      id: "009",
-      name: "Lisa Anderson",
-      email: "lisa@gmail.com",
-      phone: "+1 234 567-8906",
-      position: "Cashier",
-      joinDate: "Jun 01, 2024",
-      status: "Active",
-    },
-    {
-      id: "010",
-      name: "Robert Taylor",
-      email: "robert@gmail.com",
-      phone: "+1 234 567-8907",
-      position: "Stock Manager",
-      joinDate: "Jul 20, 2024",
-      status: "Inactive",
-    },
-    {
-      id: "011",
-      name: "Jennifer White",
-      email: "jennifer@gmail.com",
-      phone: "+1 234 567-8908",
-      position: "Cashier",
-      joinDate: "Aug 10, 2024",
-      status: "Active",
-    },
-    {
-      id: "012",
-      name: "David Miller",
-      email: "david@gmail.com",
-      phone: "+1 234 567-8909",
-      position: "Security",
-      joinDate: "Sep 05, 2024",
-      status: "Active",
-    },
-    {
-      id: "013",
-      name: "Jessica Garcia",
-      email: "jessica@gmail.com",
-      phone: "+1 234 567-8910",
-      position: "Store manager",
-      joinDate: "Oct 12, 2024",
-      status: "Inactive",
-    },
-    {
-      id: "014",
-      name: "Matthew Wilson",
-      email: "matthew@gmail.com",
-      phone: "+1 234 567-8911",
-      position: "Cleaner",
-      joinDate: "Nov 01, 2024",
-      status: "Active",
-    },
-    {
-      id: "015",
-      name: "Amanda Rodriguez",
-      email: "amanda@gmail.com",
-      phone: "+1 234 567-8912",
-      position: "Cashier",
-      joinDate: "Nov 15, 2024",
-      status: "Active",
-    },
-    {
-      id: "016",
-      name: "Christopher Lee",
-      email: "christopher@gmail.com",
-      phone: "+1 234 567-8913",
-      position: "Stock Manager",
-      joinDate: "Dec 01, 2024",
-      status: "Inactive",
-    },
-    {
-      id: "017",
-      name: "Ashley Martinez",
-      email: "ashley@gmail.com",
-      phone: "+1 234 567-8914",
-      position: "Security",
-      joinDate: "Dec 10, 2024",
-      status: "Active",
-    },
-    {
-      id: "018",
-      name: "Joshua Thompson",
-      email: "joshua@gmail.com",
-      phone: "+1 234 567-8915",
-      position: "Cashier",
-      joinDate: "Jan 05, 2025",
-      status: "Active",
-    },
-    {
-      id: "019",
-      name: "Nicole Clark",
-      email: "nicole@gmail.com",
-      phone: "+1 234 567-8916",
-      position: "Cleaner",
-      joinDate: "Jan 20, 2025",
-      status: "Inactive",
-    },
-    {
-      id: "020",
-      name: "Ryan Hall",
-      email: "ryan@gmail.com",
-      phone: "+1 234 567-8917",
-      position: "Store manager",
-      joinDate: "Feb 01, 2025",
-      status: "Active",
-    },
-    {
-      id: "021",
-      name: "Stephanie Adams",
-      email: "stephanie@gmail.com",
-      phone: "+1 234 567-8918",
-      position: "Cashier",
-      joinDate: "Feb 15, 2025",
-      status: "Inactive",
-    },
-    {
-      id: "022",
-      name: "Kevin Wright",
-      email: "kevin@gmail.com",
-      phone: "+1 234 567-8919",
-      position: "Security",
-      joinDate: "Mar 01, 2025",
-      status: "Active",
-    },
-    {
-      id: "023",
-      name: "Rachel Green",
-      email: "rachel@gmail.com",
-      phone: "+1 234 567-8920",
-      position: "Cleaner",
-      joinDate: "Mar 10, 2025",
-      status: "Active",
-    },
-    {
-      id: "024",
-      name: "Brandon Scott",
-      email: "brandon@gmail.com",
-      phone: "+1 234 567-8921",
-      position: "Stock Manager",
-      joinDate: "Mar 20, 2025",
-      status: "Inactive",
-    },
-    {
-      id: "025",
-      name: "Melissa Turner",
-      email: "melissa@gmail.com",
-      phone: "+1 234 567-8922",
-      position: "Store manager",
-      joinDate: "Apr 01, 2025",
-      status: "Active",
-    },
-  ];
+  const [successMessage, setSuccessMessage] = useState("");
+  const [errorMessage, setErrorMessage] = useState("");
 
   const itemsPerPage = 10;
+
+  // Load staff data on mount
+  useEffect(() => {
+    loadStaff();
+  }, []);
+
+  const loadStaff = async () => {
+    try {
+      setIsLoading(true);
+      const result = await staffService.getAll();
+      
+      console.log("Raw result from staffService.getAll():", result);
+      
+      // Check if result has data - could be directly an array or wrapped in response object
+      let dataArray = [];
+      
+      if (Array.isArray(result)) {
+        // Result is directly an array
+        dataArray = result;
+      } else if (result && result.data && Array.isArray(result.data)) {
+        // Result is an object with data property
+        dataArray = result.data;
+      } else if (result && result.success === false) {
+        // API returned error
+        setErrorMessage(result.message || "Failed to load staff");
+        return;
+      }
+      
+      if (dataArray.length > 0) {
+        // Transform API response to match expected format
+        const transformedData = dataArray.map((staff) => {
+          const account = staff.account_id || {};
+          return {
+            _id: staff._id,
+            id: staff._id,
+            name: account.full_name || "N/A",
+            email: account.email || "N/A",
+            phone: account.phone || "N/A",
+            position: staff.position || "N/A",
+            joinDate: staff.hire_date 
+              ? new Date(staff.hire_date).toLocaleDateString('en-US', { 
+                  year: 'numeric', 
+                  month: 'short', 
+                  day: 'numeric' 
+                })
+              : "N/A",
+            status: staff.is_active ? "ACTIVE" : "INACTIVE",
+            is_active: staff.is_active,
+            isDelete: staff.isDelete || false,
+            address: account.address || "N/A",
+            employmentType: staff.employment_type || "N/A",
+            salary: staff.annual_salary ? `$${staff.annual_salary.toLocaleString()}/year` : "N/A",
+            avatar: account.avatar_link,
+          };
+        });
+        console.log("Transformed data:", transformedData);
+        setStaffData(transformedData);
+      } else {
+        console.log("No staff data received");
+        setStaffData([]);
+      }
+    } catch (error) {
+      console.error("Error loading staff:", error);
+      setErrorMessage(error.message || "Error loading staff");
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   // Filter data first
   const filteredData = staffData.filter((staff) => {
     const matchesSearch =
       staff.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      staff.id.includes(searchTerm);
+      staff.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      staff.phone.includes(searchTerm);
     const matchesPosition =
-      statusFilter === "All positions" || staff.position === statusFilter;
+      positionFilter === "all" || staff.position.toLowerCase() === positionFilter.toLowerCase();
     const matchesStatus =
-      monthFilter === "All Status" || staff.status === monthFilter;
+      statusFilter === "all" || staff.status.toLowerCase() === statusFilter.toLowerCase();
     return matchesSearch && matchesPosition && matchesStatus;
   });
 
@@ -276,27 +120,15 @@ const StaffListView = () => {
   console.log("Paginated Data:", paginatedData);
 
   // Reset to first page when filters change
-  React.useEffect(() => {
+  useEffect(() => {
     setCurrentPage(1);
-  }, [searchTerm, statusFilter, monthFilter]);
-
-  const handleStatusFilterChange = (status) => {
-    setStatusFilter(status);
-  };
-
-  const handleMonthFilterChange = (month) => {
-    setMonthFilter(month);
-  };
-
-  const handleAddStaff = () => {
-    navigate("/staff/add");
-  };
+  }, [searchTerm, positionFilter, statusFilter]);
 
   const handleEdit = (staffId) => {
     navigate(`/staff/edit/${staffId}`);
   };
 
-  const handleDelete = (staffId) => {
+  const handleDelete = async (staffId) => {
     const staff = staffData.find((s) => s.id === staffId);
     if (staff) {
       setStaffToDelete(staff);
@@ -304,15 +136,23 @@ const StaffListView = () => {
     }
   };
 
-  const handleConfirmDelete = () => {
+  const handleConfirmDelete = async () => {
     if (staffToDelete) {
-      console.log("Deleting staff:", staffToDelete.id);
-      // Add your actual delete logic here
-      // Example: Remove from staffData or call API
-
-      // Reset state
-      setStaffToDelete(null);
-      setIsDeleteModalOpen(false);
+      try {
+        const result = await staffService.delete(staffToDelete.id);
+        if (result.success || result.data) {
+          setSuccessMessage("Staff marked as deleted successfully!");
+          // Reload staff data to get updated list with isDelete = true
+          await loadStaff();
+        } else {
+          setErrorMessage(result.message || "Failed to delete staff");
+        }
+      } catch (error) {
+        setErrorMessage(error.message || "Error deleting staff");
+      } finally {
+        setStaffToDelete(null);
+        setIsDeleteModalOpen(false);
+      }
     }
   };
 
@@ -335,23 +175,37 @@ const StaffListView = () => {
   };
 
   const getStatusBadgeClass = (status) => {
-    switch (status) {
-      case "Active":
-        return "status-approved";
-      case "Inactive":
-        return "status-declined";
-      default:
-        return "status-default";
-    }
+    return status && status.toUpperCase() === "ACTIVE" ? "status-approved" : "status-declined";
   };
 
   return (
     <div className="staff-report-view">
+      {/* Messages */}
+      <SuccessMessage
+        message={successMessage}
+        onClose={() => setSuccessMessage("")}
+      />
+      <ErrorMessage
+        message={errorMessage}
+        onClose={() => setErrorMessage("")}
+      />
+
       {/* Header */}
       <div className="page-header">
         <h1 className="page-title">Staffs</h1>
       </div>
 
+      {/* Loading State */}
+      {isLoading ? (
+        <div style={{ textAlign: "center", padding: "40px" }}>
+          <p>Loading staff data...</p>
+        </div>
+      ) : staffData.length === 0 ? (
+        <div style={{ textAlign: "center", padding: "40px" }}>
+          <p>No staff data found. Please add staff members.</p>
+        </div>
+      ) : (
+        <>
       {/* Filters and Actions */}
       <div className="filters-section">
         <div className="left-filters">
@@ -368,33 +222,32 @@ const StaffListView = () => {
 
           <div className="dropdown">
             <select
-              value={statusFilter}
-              onChange={(e) => handleStatusFilterChange(e.target.value)}
+              value={positionFilter}
+              onChange={(e) => setPositionFilter(e.target.value)}
               className="filter-select"
             >
-              <option value="All positions">All positions</option>
-              <option value="Store manager">Store manager</option>
-              <option value="Cashier">Cashier</option>
-              <option value="Stock Manager">Stock Manager</option>
-              <option value="Security">Security</option>
-              <option value="Cleaner">Cleaner</option>
+              <option value="all">All positions</option>
+              <option value="delivery">Delivery</option>
+              <option value="merchandise">Merchandise</option>
+              <option value="warehouse">Warehouse</option>
+              <option value="cashier">Cashier</option>
             </select>
           </div>
 
           <div className="dropdown">
             <select
-              value={monthFilter}
-              onChange={(e) => handleMonthFilterChange(e.target.value)}
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
               className="filter-select"
             >
-              <option value="All Status">All Status</option>
-              <option value="Active">Active</option>
-              <option value="Inactive">Inactive</option>
+              <option value="all">All Status</option>
+              <option value="active">Active</option>
+              <option value="inactive">Inactive</option>
             </select>
           </div>
         </div>
 
-        <button className="add-staff-btn" onClick={handleAddStaff}>
+        <button className="add-staff-btn" onClick={() => navigate("/staff/add")}>
           <FaPlus className="add-icon" />
           Add Staff
         </button>
@@ -405,6 +258,7 @@ const StaffListView = () => {
         <table className="staff-table">
           <thead>
             <tr>
+              <th>Avatar</th>
               <th>Staff ID</th>
               <th>Staff Name</th>
               <th>Contact</th>
@@ -415,7 +269,36 @@ const StaffListView = () => {
           </thead>
           <tbody>
             {paginatedData.map((staff, index) => (
-              <tr key={`page-${currentPage}-${staff.id}-${index}`}>
+              <tr key={`page-${currentPage}-${staff.id}-${index}`} style={{
+                textDecoration: staff.isDelete ? 'line-through' : 'none',
+                opacity: staff.isDelete ? 0.6 : 1
+              }}>
+                <td className="staff-avatar" style={{ textAlign: 'center' }}>
+                  {staff.avatar ? (
+                    <img 
+                      src={staff.avatar} 
+                      alt={staff.name}
+                      style={{
+                        width: '50px',
+                        height: '50px',
+                        objectFit: 'cover'
+                      }}
+                    />
+                  ) : (
+                    <div style={{
+                      width: '50px',
+                      height: '50px',
+                      backgroundColor: '#ddd',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      color: '#999',
+                      fontSize: '12px'
+                    }}>
+                      No Image
+                    </div>
+                  )}
+                </td>
                 <td className="staff-id">{staff.id}</td>
                 <td className="staff-info">
                   <div className="staff-name">{staff.name}</div>
@@ -432,7 +315,7 @@ const StaffListView = () => {
                       staff.status
                     )}`}
                   >
-                    {staff.status}
+                    {staff.isDelete ? 'DELETED' : staff.status}
                   </span>
                 </td>
                 <td className="action-buttons">
@@ -446,14 +329,24 @@ const StaffListView = () => {
                   <button
                     className="action-btn edit-btn"
                     onClick={() => handleEdit(staff.id)}
-                    title="Edit Staff"
+                    title={staff.isDelete ? "Cannot edit deleted item" : "Edit Staff"}
+                    disabled={staff.isDelete}
+                    style={{
+                      opacity: staff.isDelete ? 0.5 : 1,
+                      cursor: staff.isDelete ? 'not-allowed' : 'pointer'
+                    }}
                   >
                     <FaEdit />
                   </button>
                   <button
                     className="action-btn delete-btn"
                     onClick={() => handleDelete(staff.id)}
-                    title="Delete Staff"
+                    title={staff.isDelete ? "Already deleted" : "Delete Staff"}
+                    disabled={staff.isDelete}
+                    style={{
+                      opacity: staff.isDelete ? 0.5 : 1,
+                      cursor: staff.isDelete ? 'not-allowed' : 'pointer'
+                    }}
                   >
                     <FaTrash />
                   </button>
@@ -540,6 +433,8 @@ const StaffListView = () => {
         onConfirm={handleConfirmDelete}
         staffName={staffToDelete?.name}
       />
+        </>
+      )}
     </div>
   );
 };

@@ -12,7 +12,8 @@ const accountSchema = new mongoose.Schema({
   date_of_birth: { type: String },
   avatar_link: { type: String },
   is_active: { type: Boolean, default: true },
-  role: { type: String, required: true, enum: ['customer', 'staff', 'admin'] }
+  role: { type: String, required: true, enum: ['customer', 'staff', 'admin'] },
+  isDelete: { type: Boolean, default: false }
 }, { timestamps: true });
 
 // ==================== 2. STAFF ====================
@@ -23,7 +24,8 @@ const staffSchema = new mongoose.Schema({
   annual_salary: { type: Number },
   hire_date: { type: Date },
   notes: { type: String },
-  is_active: { type: Boolean, default: true }
+  is_active: { type: Boolean, default: true },
+  isDelete: { type: Boolean, default: false }
 }, { timestamps: true });
 
 // ==================== 3. MANAGERS ====================
@@ -35,7 +37,8 @@ const managerSchema = new mongoose.Schema({
   permissions: { type: mongoose.Schema.Types.Mixed },
   scope: { type: String },
   assigned_since: { type: Date },
-  bio: { type: String }
+  bio: { type: String },
+  isDelete: { type: Boolean, default: false }
 }, { timestamps: true });
 
 // ==================== 4. CUSTOMERS ====================
@@ -45,7 +48,8 @@ const customerSchema = new mongoose.Schema({
   notes: { type: String },
   points_balance: { type: Number, default: 0 },
   total_spent: { type: Number, default: 0 },
-  registered_at: { type: Date, default: Date.now }
+  registered_at: { type: Date, default: Date.now },
+  isDelete: { type: Boolean, default: false }
 }, { timestamps: true });
 
 // ==================== 2. SUPPLIERS ====================
@@ -59,7 +63,8 @@ const supplierSchema = new mongoose.Schema({
   tax_id: { type: String },
   note: { type: String },
   is_active: { type: Boolean, default: true },
-  image_link: { type: String }
+  image_link: { type: String },
+  isDelete: { type: Boolean, default: false }
 }, { timestamps: true });
 
 supplierSchema.index({ name: 1 });
@@ -77,7 +82,10 @@ const productSchema = new mongoose.Schema({
   status: { type: String, enum: ['active', 'inactive', 'discontinued'] },
   supplier_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Supplier' },
   category: { type: String },
-  image_link: { type: String }
+  image_link: { type: String },
+  sku: { type: String },
+  barcode: { type: String },
+  isDelete: { type: Boolean, default: false }
 }, { timestamps: true });
 
 productSchema.index({ name: 1, category: 1, supplier_id: 1 });
@@ -89,7 +97,8 @@ const shelfSchema = new mongoose.Schema({
   note: { type: String },
   capacity: { type: Number },
   isfull: { type: Boolean },
-  warehouse_id: { type: mongoose.Schema.Types.ObjectId }
+  warehouse_id: { type: mongoose.Schema.Types.ObjectId },
+  isDelete: { type: Boolean, default: false }
 }, { timestamps: true });
 
 shelfSchema.index({ shelf_number: 1 });
@@ -98,7 +107,8 @@ shelfSchema.index({ shelf_number: 1 });
 const productShelfSchema = new mongoose.Schema({
   product_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Product', required: true },
   shelf_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Shelf', required: true },
-  quantity: { type: Number, default: 0 }
+  quantity: { type: Number, default: 0 },
+  isDelete: { type: Boolean, default: false }
 }, { timestamps: true });
 
 productShelfSchema.index({ product_id: 1, shelf_id: 1 }, { unique: true });
@@ -114,7 +124,8 @@ const promotionSchema = new mongoose.Schema({
   start_date: { type: Date, required: true },
   end_date: { type: Date, required: true },
   status: { type: String, default: 'active', enum: ['active', 'inactive', 'expired'] },
-  terms: { type: String }
+  terms: { type: String },
+  isDelete: { type: Boolean, default: false }
 }, { timestamps: true });
 
 promotionSchema.index({ start_date: 1, end_date: 1 });
@@ -123,7 +134,8 @@ promotionSchema.index({ start_date: 1, end_date: 1 });
 const promotionProductSchema = new mongoose.Schema({
   promotion_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Promotion', required: true },
   product_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Product', required: true },
-  discount_override: { type: Number }
+  discount_override: { type: Number },
+  isDelete: { type: Boolean, default: false }
 }, { timestamps: true });
 
 promotionProductSchema.index({ promotion_id: 1, product_id: 1 }, { unique: true });
@@ -138,7 +150,8 @@ const orderSchema = new mongoose.Schema({
   delivery_date: { type: Date },
   total_amount: { type: Number, default: 0 },
   payment_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Payment' },
-  notes: { type: String }
+  notes: { type: String },
+  isDelete: { type: Boolean, default: false }
 }, { timestamps: true });
 
 orderSchema.index({ customer_id: 1, status: 1 });
@@ -150,7 +163,8 @@ const orderItemSchema = new mongoose.Schema({
   quantity: { type: Number, required: true },
   unit_price: { type: Number, required: true },
   warehouse_issued_by_staff_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Staff' },
-  status: { type: String, default: 'pending', enum: ['pending', 'picked', 'packed', 'shipped'] }
+  status: { type: String, default: 'pending', enum: ['pending', 'picked', 'packed', 'shipped'] },
+  isDelete: { type: Boolean, default: false }
 }, { timestamps: true });
 
 orderItemSchema.index({ order_id: 1, product_id: 1 });
@@ -163,7 +177,8 @@ const deliveryOrderSchema = new mongoose.Schema({
   delivery_date: { type: Date },
   status: { type: String, default: 'assigned', enum: ['assigned', 'in_transit', 'delivered', 'failed'] },
   tracking_number: { type: String },
-  notes: { type: String }
+  notes: { type: String },
+  isDelete: { type: Boolean, default: false }
 }, { timestamps: true });
 
 deliveryOrderSchema.index({ order_id: 1, staff_id: 1 });
@@ -176,7 +191,8 @@ const invoiceSchema = new mongoose.Schema({
   invoice_date: { type: Date, default: Date.now },
   total_amount: { type: Number, default: 0 },
   payment_status: { type: String, default: 'unpaid', enum: ['unpaid', 'paid', 'partial'] },
-  notes: { type: String }
+  notes: { type: String },
+  isDelete: { type: Boolean, default: false }
 }, { timestamps: true });
 
 invoiceSchema.index({ customer_id: 1 });
@@ -188,7 +204,8 @@ const invoiceItemSchema = new mongoose.Schema({
   description: { type: String },
   quantity: { type: Number, required: true },
   unit_price: { type: Number, required: true },
-  line_total: { type: Number, required: true }
+  line_total: { type: Number, required: true },
+  isDelete: { type: Boolean, default: false }
 }, { timestamps: true });
 
 invoiceItemSchema.index({ invoice_id: 1 });
@@ -203,7 +220,8 @@ const paymentSchema = new mongoose.Schema({
   items: { type: String },
   payment_method: { type: String, required: true, enum: ['Cash', 'Card', 'Bank Transfer'] },
   status: { type: String, default: 'completed', enum: ['completed', 'pending', 'failed'] },
-  reference: { type: String }
+  reference: { type: String },
+  isDelete: { type: Boolean, default: false }
 }, { timestamps: true });
 
 paymentSchema.index({ customer_id: 1 });
@@ -218,7 +236,8 @@ const reportSchema = new mongoose.Schema({
   hours_worked: { type: Number },
   sales_amount: { type: Number },
   tasks: { type: String },
-  rating: { type: Number, min: 1, max: 5 }
+  rating: { type: Number, min: 1, max: 5 },
+  isDelete: { type: Boolean, default: false }
 }, { timestamps: true });
 
 reportSchema.index({ staff_id: 1, report_date: 1 });
@@ -229,7 +248,8 @@ const instructionSchema = new mongoose.Schema({
   detail: { type: String },
   sent_date: { type: Date, default: Date.now },
   created_by_staff_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Staff' },
-  status: { type: String }
+  status: { type: String },
+  isDelete: { type: Boolean, default: false }
 }, { timestamps: true });
 
 instructionSchema.index({ created_by_staff_id: 1 });
@@ -241,7 +261,8 @@ const customerFeedbackSchema = new mongoose.Schema({
   detail: { type: String },
   customer_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Customer' },
   status: { type: String, default: 'open', enum: ['open', 'in_progress', 'resolved', 'closed'] },
-  assigned_to_staff_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Staff' }
+  assigned_to_staff_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Staff' },
+  isDelete: { type: Boolean, default: false }
 }, { timestamps: true });
 
 customerFeedbackSchema.index({ customer_id: 1, status: 1 });
@@ -257,7 +278,8 @@ const productStockSchema = new mongoose.Schema({
   damaged_quantity: { type: String },
   reason: { type: String },
   quantity: { type: Number, default: 0 },
-  last_updated: { type: Date, default: Date.now }
+  last_updated: { type: Date, default: Date.now },
+  isDelete: { type: Boolean, default: false }
 }, { timestamps: true });
 
 productStockSchema.index({ product_id: 1, warehouse_id: 1, shelf_id: 1 });
@@ -274,7 +296,8 @@ const cartSchema = new mongoose.Schema({
   applied_promo_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Promotion' },
   reserved: { type: Boolean, default: false },
   reserved_until: { type: Date },
-  notes: { type: String }
+  notes: { type: String },
+  isDelete: { type: Boolean, default: false }
 }, { timestamps: true });
 
 cartSchema.index({ customer_id: 1, status: 1 });
@@ -295,7 +318,8 @@ const cartItemSchema = new mongoose.Schema({
   backorder: { type: Boolean, default: false },
   status: { type: String, default: 'active', enum: ['active', 'saved_for_later', 'removed', 'purchased'] },
   added_at: { type: Date, default: Date.now },
-  notes: { type: String }
+  notes: { type: String },
+  isDelete: { type: Boolean, default: false }
 }, { timestamps: true });
 
 cartItemSchema.index({ cart_id: 1, product_id: 1 });
@@ -311,7 +335,8 @@ const damagedProductSchema = new mongoose.Schema({
   image_urls: [{ type: String }],
   resolution_action: { type: String, enum: ['discard', 'return_to_supplier', 'discount', 'destroy'] },
   inventory_adjusted: { type: Boolean, default: false },
-  notes: { type: String }
+  notes: { type: String },
+  isDelete: { type: Boolean, default: false }
 }, { timestamps: true });
 
 damagedProductSchema.index({ product_id: 1, status: 1 });

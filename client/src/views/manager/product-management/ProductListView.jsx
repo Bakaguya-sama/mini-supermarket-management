@@ -189,17 +189,10 @@ const ProductListView = () => {
       try {
         const response = await productService.delete(productToDelete._id);
         if (response.success) {
-          // Remove product from list
-          setProducts((prev) =>
-            prev.filter((p) => p._id !== productToDelete._id)
-          );
+          // Reload products to get updated data with isDelete = true
+          await loadProducts();
           setIsDeleteModalOpen(false);
           setProductToDelete(null);
-          // Recalculate stats
-          const updatedProducts = products.filter(
-            (p) => p._id !== productToDelete._id
-          );
-          calculateStats(updatedProducts);
         } else {
           setError(response.message || "Failed to delete product");
         }
@@ -368,6 +361,7 @@ const ProductListView = () => {
         <table className="product-table">
           <thead>
             <tr>
+              <th>Image</th>
               <th>Product ID</th>
               <th>Product Name</th>
               <th>Category & Brand</th>
@@ -379,7 +373,20 @@ const ProductListView = () => {
           </thead>
           <tbody>
             {currentProducts.map((product) => (
-              <tr key={product._id}>
+              <tr key={product._id} style={{
+                textDecoration: product.isDelete ? 'line-through' : 'none',
+                opacity: product.isDelete ? 0.6 : 1
+              }}>
+                <td>
+                  <img
+                    src={product.image_link || "https://via.placeholder.com/80x80?text=No+Image"}
+                    alt={product.name}
+                    className="product-image-cell"
+                    onError={(e) => {
+                      e.target.src = "https://via.placeholder.com/80x80?text=No+Image";
+                    }}
+                  />
+                </td>
                 <td className="product-id-cell">{product._id}</td>
                 <td className="product-name-cell">{product.name}</td>
                 <td>
@@ -411,7 +418,7 @@ const ProductListView = () => {
                       getStockStatus(product)
                     )}`}
                   >
-                    {getStockStatus(product)}
+                    {product.isDelete ? 'DELETED' : getStockStatus(product)}
                   </span>
                 </td>
                 <td>
@@ -426,14 +433,24 @@ const ProductListView = () => {
                     <button
                       className="action-btn edit-btn"
                       onClick={() => handleEdit(product._id)}
-                      title="Edit Product"
+                      title={product.isDelete ? "Cannot edit deleted item" : "Edit Product"}
+                      disabled={product.isDelete}
+                      style={{
+                        opacity: product.isDelete ? 0.5 : 1,
+                        cursor: product.isDelete ? 'not-allowed' : 'pointer'
+                      }}
                     >
                       <FaEdit />
                     </button>
                     <button
                       className="action-btn delete-btn"
                       onClick={() => handleDelete(product)}
-                      title="Delete Product"
+                      title={product.isDelete ? "Already deleted" : "Delete Product"}
+                      disabled={product.isDelete}
+                      style={{
+                        opacity: product.isDelete ? 0.5 : 1,
+                        cursor: product.isDelete ? 'not-allowed' : 'pointer'
+                      }}
                     >
                       <FaTrash />
                     </button>

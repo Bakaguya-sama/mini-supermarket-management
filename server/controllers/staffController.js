@@ -293,7 +293,7 @@ exports.updateStaff = async (req, res) => {
   }
 };
 
-// @desc    Soft delete staff (set is_active = false)
+// @desc    Soft delete staff (set isDelete = true)
 // @route   DELETE /api/staff/:id
 exports.deleteStaff = async (req, res) => {
   try {
@@ -306,18 +306,19 @@ exports.deleteStaff = async (req, res) => {
       });
     }
 
-    // Soft delete - set is_active to false
+    // Soft delete - set isDelete to true
+    staff.isDelete = true;
     staff.is_active = false;
     await staff.save();
 
-    // Also deactivate associated account
+    // Also mark associated account as deleted
     if (staff.account_id) {
-      await Account.findByIdAndUpdate(staff.account_id, { is_active: false });
+      await Account.findByIdAndUpdate(staff.account_id, { isDelete: true, is_active: false });
     }
 
     res.status(200).json({
       success: true,
-      message: 'Staff deactivated successfully',
+      message: 'Staff marked as deleted successfully',
       data: staff
     });
   } catch (error) {

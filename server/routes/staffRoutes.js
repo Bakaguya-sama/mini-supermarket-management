@@ -8,11 +8,18 @@ const staffController = require('../controllers/staffController');
 // @access  Public (should be protected in production)
 router.get('/', staffController.getAllStaff);
 
+// SPECIFIC ROUTES MUST COME BEFORE DYNAMIC ROUTES (:id)
 // @route   GET /api/staff/stats
 // @desc    Get staff statistics
 // @access  Public
 router.get('/stats', staffController.getStaffStats);
 
+// @route   GET /api/staff/account/:accountId
+// @desc    Get staff by account ID
+// @access  Public
+router.get('/account/:accountId', staffController.getStaffByAccountId);
+
+// DYNAMIC ROUTES - MUST BE LAST
 // @route   GET /api/staff/:id
 // @desc    Get single staff by ID
 // @access  Public
@@ -42,10 +49,5 @@ router.delete('/:id/permanent', staffController.permanentDeleteStaff);
 // @desc    Activate staff
 // @access  Public
 router.patch('/:id/activate', staffController.activateStaff);
-
-// @route   GET /api/staff/account/:accountId
-// @desc    Get staff by account ID
-// @access  Public
-router.get('/account/:accountId', staffController.getStaffByAccountId);
 
 module.exports = router;

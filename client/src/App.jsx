@@ -173,7 +173,7 @@ function App() {
 
           {/* Supplier Management  */}
           <Route
-            path="/supplier"
+            path="/suppliers"
             element={
               <Layout>
                 <SupplierListView />
@@ -182,7 +182,7 @@ function App() {
           />
 
           <Route
-            path="/supplier/add"
+            path="/suppliers/add"
             element={
               <Layout>
                 <AddSupplierView />
@@ -191,7 +191,7 @@ function App() {
           />
 
           <Route
-            path="/supplier/edit/:id"
+            path="/suppliers/edit/:id"
             element={
               <Layout>
                 <EditSupplierView />

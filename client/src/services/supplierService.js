@@ -105,8 +105,8 @@ export const supplierService = {
         contact_person_name: supplierData.contact_person_name || supplierData.contactPerson || '',
         email: supplierData.email,
         phone: supplierData.phone,
-        website: supplierData.website,
-        address: supplierData.address,
+        website: supplierData.website || '',
+        address: supplierData.address || '',
         tax_id: supplierData.tax_id || supplierData.taxId || '',
         note: supplierData.note || '',
         is_active: supplierData.is_active !== undefined ? supplierData.is_active : true,
@@ -115,11 +115,23 @@ export const supplierService = {
 
       const response = await apiClient.post(API_BASE_URL, payload);
       
-      console.log('✅ Supplier created successfully:', response.data);
-      return response.data;
+      console.log('✅ Supplier created response - success:', response?.success);
+      
+      // Ensure response has proper format
+      const formattedResponse = {
+        success: response?.success ?? true,
+        message: response?.message || 'Supplier created successfully',
+        data: response?.data || response
+      };
+      
+      return formattedResponse;
     } catch (error) {
-      console.error('❌ Error creating supplier:', error);
-      throw error;
+      console.error('❌ Error creating supplier:', error.message);
+      return {
+        success: false,
+        message: error.message || 'Failed to create supplier',
+        data: null
+      };
     }
   },
 
@@ -138,8 +150,8 @@ export const supplierService = {
         contact_person_name: supplierData.contact_person_name || supplierData.contactPerson || '',
         email: supplierData.email,
         phone: supplierData.phone,
-        website: supplierData.website,
-        address: supplierData.address,
+        website: supplierData.website || '',
+        address: supplierData.address || '',
         tax_id: supplierData.tax_id || supplierData.taxId || '',
         note: supplierData.note || '',
         is_active: supplierData.is_active !== undefined ? supplierData.is_active : true,
@@ -148,11 +160,23 @@ export const supplierService = {
 
       const response = await apiClient.put(`${API_BASE_URL}/${id}`, payload);
       
-      console.log('✅ Supplier updated successfully:', response.data);
-      return response.data;
+      console.log('✅ Supplier updated response - success:', response?.success);
+      
+      // Ensure response has proper format
+      const formattedResponse = {
+        success: response?.success ?? true,
+        message: response?.message || 'Supplier updated successfully',
+        data: response?.data || response
+      };
+      
+      return formattedResponse;
     } catch (error) {
-      console.error(`❌ Error updating supplier ${id}:`, error);
-      throw error;
+      console.error(`❌ Error updating supplier ${id}:`, error.message);
+      return {
+        success: false,
+        message: error.message || 'Failed to update supplier',
+        data: null
+      };
     }
   },
 
@@ -167,11 +191,22 @@ export const supplierService = {
       
       const response = await apiClient.delete(`${API_BASE_URL}/${id}`);
       
-      console.log('✅ Supplier deleted successfully:', response.data);
-      return response.data;
+      console.log('✅ Supplier deleted response - success:', response?.success);
+      
+      // Ensure response has success property
+      let formattedResponse = {
+        success: response?.success ?? true,
+        message: response?.message || 'Supplier deleted successfully',
+        data: response?.data || response
+      };
+      
+      return formattedResponse;
     } catch (error) {
-      console.error(`❌ Error deleting supplier ${id}:`, error);
-      throw error;
+      console.error(`❌ Error deleting supplier ${id}:`, error.message);
+      return {
+        success: false,
+        message: error.message || 'Failed to delete supplier'
+      };
     }
   },
 

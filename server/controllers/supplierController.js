@@ -382,7 +382,7 @@ exports.updateSupplier = async (req, res) => {
   }
 };
 
-// @desc    Soft delete supplier (set is_active = false)
+// @desc    Soft delete supplier (set isDelete = true)
 // @route   DELETE /api/suppliers/:id
 exports.deleteSupplier = async (req, res) => {
   try {
@@ -398,7 +398,8 @@ exports.deleteSupplier = async (req, res) => {
     // Check if supplier has active products
     const activeProducts = await Product.countDocuments({
       supplier_id: supplier._id,
-      status: 'active'
+      status: 'active',
+      isDelete: false
     });
 
     if (activeProducts > 0) {
@@ -408,12 +409,14 @@ exports.deleteSupplier = async (req, res) => {
       });
     }
 
+    // Soft delete - set isDelete to true
+    supplier.isDelete = true;
     supplier.is_active = false;
     await supplier.save();
 
     res.status(200).json({
       success: true,
-      message: 'Supplier deactivated successfully',
+      message: 'Supplier marked as deleted successfully',
       data: supplier
     });
   } catch (error) {

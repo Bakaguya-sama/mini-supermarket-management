@@ -280,6 +280,15 @@
     border-bottom: none;
 }
 
+/* Product Image */
+.product-image-cell {
+    width: 80px;
+    height: 80px;
+    object-fit: cover;
+    border-radius: 8px;
+    border: 1px solid #e5e7eb;
+}
+
 /* Product Info */
 .product-info .product-name {
     font-weight: 600;

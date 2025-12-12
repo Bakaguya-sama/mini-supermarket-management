@@ -352,7 +352,7 @@ exports.updateProduct = async (req, res) => {
   }
 };
 
-// @desc    Soft delete product (set status to discontinued)
+// @desc    Soft delete product (set isDelete = true)
 // @route   DELETE /api/products/:id
 exports.deleteProduct = async (req, res) => {
   try {
@@ -365,18 +365,20 @@ exports.deleteProduct = async (req, res) => {
       });
     }
 
+    // Soft delete - set isDelete to true
+    product.isDelete = true;
     product.status = 'discontinued';
     await product.save();
 
     res.status(200).json({
       success: true,
-      message: 'Product discontinued successfully',
+      message: 'Product marked as deleted successfully',
       data: product
     });
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: 'Error discontinuing product',
+      message: 'Error deleting product',
       error: error.message
     });
   }

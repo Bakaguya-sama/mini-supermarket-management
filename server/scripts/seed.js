@@ -44,186 +44,196 @@ async function seedDatabase() {
     // 1. ACCOUNTS
     console.log('1/24 👤 Tạo Accounts...');
     const accounts = await Account.insertMany([
-      { username: 'admin', password_hash: password, email: 'admin@mini.vn', full_name: 'Admin', role: 'admin', is_active: true },
-      { username: 'staff1', password_hash: password, email: 'staff1@mini.vn', full_name: 'Nguyễn Văn A', phone: '0987654321', role: 'staff' },
-      { username: 'staff2', password_hash: password, email: 'staff2@mini.vn', full_name: 'Trần Thị B', phone: '0987654322', role: 'staff' },
-      { username: 'customer1', password_hash: password, email: 'customer1@gmail.com', full_name: 'Phạm Văn C', phone: '0912345678', address: 'TP.HCM', role: 'customer' },
-      { username: 'customer2', password_hash: password, email: 'customer2@gmail.com', full_name: 'Lê Thị D', phone: '0912345679', address: 'Hà Nội', role: 'customer' }
+      { username: 'admin', password_hash: password, email: 'admin@mini.vn', full_name: 'Admin', role: 'admin', is_active: true, isDelete: false, avatar_link: 'https://i.pravatar.cc/150?img=1' },
+      { username: 'staff1', password_hash: password, email: 'staff1@mini.vn', full_name: 'Nguyễn Văn A', phone: '0987654321', role: 'staff', isDelete: false, avatar_link: 'https://i.pravatar.cc/150?img=12' },
+      { username: 'staff2', password_hash: password, email: 'staff2@mini.vn', full_name: 'Trần Thị B', phone: '0987654322', role: 'staff', isDelete: false, avatar_link: 'https://i.pravatar.cc/150?img=5' },
+      { username: 'staff3', password_hash: password, email: 'staff3@mini.vn', full_name: 'Lê Văn C', phone: '0987654323', role: 'staff', isDelete: false, avatar_link: 'https://i.pravatar.cc/150?img=13' },
+      { username: 'staff4', password_hash: password, email: 'staff4@mini.vn', full_name: 'Phạm Thị D', phone: '0987654324', role: 'staff', isDelete: false, avatar_link: 'https://i.pravatar.cc/150?img=9' },
+      { username: 'staff5', password_hash: password, email: 'staff5@mini.vn', full_name: 'Hoàng Văn E', phone: '0987654325', role: 'staff', isDelete: false, avatar_link: 'https://i.pravatar.cc/150?img=14' },
+      { username: 'customer1', password_hash: password, email: 'customer1@gmail.com', full_name: 'Phạm Văn F', phone: '0912345678', address: 'TP.HCM', role: 'customer', isDelete: false, avatar_link: 'https://i.pravatar.cc/150?img=7' },
+      { username: 'customer2', password_hash: password, email: 'customer2@gmail.com', full_name: 'Lê Thị G', phone: '0912345679', address: 'Hà Nội', role: 'customer', isDelete: false, avatar_link: 'https://i.pravatar.cc/150?img=8' }
     ]);
     console.log(`   ✅ ${accounts.length} accounts\n`);
 
     // 2. STAFF
     console.log('2/24 👥 Tạo Staff...');
     const staffs = await Staff.insertMany([
-      { account_id: accounts[1]._id, position: 'Cashier', employment_type: 'Full-time', annual_salary: 180000000, hire_date: new Date('2023-01-15'), is_active: true },
-      { account_id: accounts[2]._id, position: 'Warehouse', employment_type: 'Full-time', annual_salary: 200000000, hire_date: new Date('2023-03-01'), is_active: true }
+      { account_id: accounts[1]._id, position: 'Cashier', employment_type: 'Full-time', annual_salary: 180000000, hire_date: new Date('2023-01-15'), is_active: true, isDelete: false },
+      { account_id: accounts[2]._id, position: 'Warehouse', employment_type: 'Full-time', annual_salary: 200000000, hire_date: new Date('2023-03-01'), is_active: true, isDelete: false },
+      { account_id: accounts[3]._id, position: 'Delivery', employment_type: 'Full-time', annual_salary: 190000000, hire_date: new Date('2023-05-10'), is_active: true, isDelete: false },
+      { account_id: accounts[4]._id, position: 'Cashier', employment_type: 'Part-time', annual_salary: 120000000, hire_date: new Date('2023-07-20'), is_active: true, isDelete: false },
+      { account_id: accounts[5]._id, position: 'Merchandise Supervisor', employment_type: 'Full-time', annual_salary: 250000000, hire_date: new Date('2023-02-01'), is_active: true, isDelete: false }
     ]);
     console.log(`   ✅ ${staffs.length} staff\n`);
 
     // 3. MANAGERS
     console.log('3/24 👔 Tạo Managers...');
     const managers = await Manager.insertMany([
-      { staff_id: staffs[1]._id, account_id: accounts[2]._id, access_level: 'admin', is_superuser: false, permissions: { inventory: true, reports: true }, scope: 'all', assigned_since: new Date() }
+      { staff_id: staffs[1]._id, account_id: accounts[2]._id, access_level: 'admin', is_superuser: false, permissions: { inventory: true, reports: true }, scope: 'all', assigned_since: new Date(), isDelete: false }
     ]);
     console.log(`   ✅ ${managers.length} manager\n`);
 
     // 4. CUSTOMERS
     console.log('4/24 🛒 Tạo Customers...');
     const customers = await Customer.insertMany([
-      { account_id: accounts[3]._id, membership_type: 'Gold', points_balance: 1500, total_spent: 5000000 },
-      { account_id: accounts[4]._id, membership_type: 'Silver', points_balance: 500, total_spent: 2000000 }
+      { account_id: accounts[3]._id, membership_type: 'Gold', points_balance: 1500, total_spent: 5000000, isDelete: false },
+      { account_id: accounts[4]._id, membership_type: 'Silver', points_balance: 500, total_spent: 2000000, isDelete: false }
     ]);
     console.log(`   ✅ ${customers.length} customers\n`);
 
     // 5. SUPPLIERS
     console.log('5/24 🏢 Tạo Suppliers...');
     const suppliers = await Supplier.insertMany([
-      { name: 'Công ty Thực phẩm Sạch', contact_person_name: 'Nguyễn X', email: 'contact@tps.vn', phone: '0281234567', address: 'TP.HCM', tax_id: '0123456789', is_active: true, image_link: 'https://via.placeholder.com/300x200?text=Thuc+Pham+Sach' },
-      { name: 'Vinamilk', contact_person_name: 'Trần Y', email: 'b2b@vinamilk.vn', phone: '0283456789', address: 'TP.HCM', tax_id: '1122334455', is_active: true, image_link: 'https://via.placeholder.com/300x200?text=Vinamilk' }
+      { name: 'Công ty Thực phẩm Sạch', contact_person_name: 'Nguyễn X', email: 'contact@tps.vn', phone: '0281234567', address: 'TP.HCM', tax_id: '0123456789', is_active: true, image_link: 'https://via.placeholder.com/300x200?text=Thuc+Pham+Sach', isDelete: false },
+      { name: 'Vinamilk', contact_person_name: 'Trần Y', email: 'b2b@vinamilk.vn', phone: '0283456789', address: 'TP.HCM', tax_id: '1122334455', is_active: true, image_link: 'https://via.placeholder.com/300x200?text=Vinamilk', isDelete: false }
     ]);
     console.log(`   ✅ ${suppliers.length} suppliers\n`);
 
     // 6. PRODUCTS
     console.log('6/24 📦 Tạo Products...');
     const products = await Product.insertMany([
-      { name: 'Gạo ST25 5kg', description: 'Gạo thơm cao cấp', unit: 'túi', current_stock: 100, minimum_stock_level: 20, maximum_stock_level: 200, price: 145000, status: 'active', supplier_id: suppliers[0]._id, category: 'Lương thực', image_link: 'https://via.placeholder.com/300x200?text=Gao+ST25' },
-      { name: 'Sữa Vinamilk 1L', description: 'Sữa tươi tiệt trùng', unit: 'hộp', current_stock: 200, minimum_stock_level: 50, maximum_stock_level: 500, price: 32000, status: 'active', supplier_id: suppliers[1]._id, category: 'Sữa', image_link: 'https://via.placeholder.com/300x200?text=Sua+Vinamilk' },
-      { name: 'Coca Cola 330ml', description: 'Nước giải khát', unit: 'lon', current_stock: 500, minimum_stock_level: 100, maximum_stock_level: 1000, price: 10000, status: 'active', supplier_id: suppliers[0]._id, category: 'Đồ uống', image_link: 'https://via.placeholder.com/300x200?text=Coca+Cola' },
-      { name: 'Trứng gà', description: 'Trứng tươi sạch', unit: 'vỉ', current_stock: 80, minimum_stock_level: 20, maximum_stock_level: 150, price: 45000, status: 'active', supplier_id: suppliers[0]._id, category: 'Thực phẩm tươi', image_link: 'https://via.placeholder.com/300x200?text=Trung+Ga' }
+      { name: 'Gạo ST25 5kg', description: 'Gạo thơm cao cấp', unit: 'túi', current_stock: 100, minimum_stock_level: 20, maximum_stock_level: 200, price: 145000, status: 'active', supplier_id: suppliers[0]._id, category: 'Bakery', image_link: 'https://via.placeholder.com/300x200?text=Gao+ST25', sku: 'SKU-001', barcode: '8934567890123', isDelete: false },
+      { name: 'Sữa Vinamilk 1L', description: 'Sữa tươi tiệt trùng', unit: 'hộp', current_stock: 200, minimum_stock_level: 50, maximum_stock_level: 500, price: 32000, status: 'active', supplier_id: suppliers[1]._id, category: 'Dairy & Eggs', image_link: 'https://via.placeholder.com/300x200?text=Sua+Vinamilk', sku: 'SKU-002', barcode: '8934567890124', isDelete: false },
+      { name: 'Coca Cola 330ml', description: 'Nước giải khát', unit: 'lon', current_stock: 500, minimum_stock_level: 100, maximum_stock_level: 1000, price: 10000, status: 'active', supplier_id: suppliers[0]._id, category: 'Beverages', image_link: 'https://via.placeholder.com/300x200?text=Coca+Cola', sku: 'SKU-003', barcode: '8934567890125', isDelete: false },
+      { name: 'Trứng gà', description: 'Trứng tươi sạch', unit: 'vỉ', current_stock: 80, minimum_stock_level: 20, maximum_stock_level: 150, price: 45000, status: 'active', supplier_id: suppliers[0]._id, category: 'Dairy & Eggs', image_link: 'https://via.placeholder.com/300x200?text=Trung+Ga', sku: 'SKU-004', barcode: '8934567890126', isDelete: false },
+      { name: 'Mì gói Hảo Hảo', description: 'Mì ăn liền hương vị tôm', unit: 'gói', current_stock: 300, minimum_stock_level: 100, maximum_stock_level: 600, price: 4000, status: 'active', supplier_id: suppliers[0]._id, category: 'Snacks', image_link: 'https://via.placeholder.com/300x200?text=Mi+Hao+Hao', sku: 'SKU-005', barcode: '8934567890127', isDelete: false },
+      { name: 'Bánh mì Kinh Đô', description: 'Bánh mì sandwich', unit: 'gói', current_stock: 150, minimum_stock_level: 30, maximum_stock_level: 300, price: 28000, status: 'active', supplier_id: suppliers[0]._id, category: 'Bakery', image_link: 'https://via.placeholder.com/300x200?text=Banh+Mi', sku: 'SKU-006', barcode: '8934567890128', isDelete: false },
+      { name: 'Nước suối Lavie 500ml', description: 'Nước khoáng thiên nhiên', unit: 'chai', current_stock: 400, minimum_stock_level: 100, maximum_stock_level: 800, price: 5000, status: 'active', supplier_id: suppliers[0]._id, category: 'Beverages', image_link: 'https://via.placeholder.com/300x200?text=Lavie', sku: 'SKU-007', barcode: '8934567890129', isDelete: false },
+      { name: 'Dầu ăn Simply 1L', description: 'Dầu ăn cao cấp', unit: 'chai', current_stock: 120, minimum_stock_level: 30, maximum_stock_level: 250, price: 42000, status: 'active', supplier_id: suppliers[0]._id, category: 'Household', image_link: 'https://via.placeholder.com/300x200?text=Dau+An', sku: 'SKU-008', barcode: '8934567890130', isDelete: false }
     ]);
     console.log(`   ✅ ${products.length} products\n`);
 
     // 7. SHELVES
     console.log('7/24 📚 Tạo Shelves...');
     const shelves = await Shelf.insertMany([
-      { shelf_number: 'A1', category: 'Lương thực', capacity: 500, isfull: false },
-      { shelf_number: 'B1', category: 'Sữa', capacity: 300, isfull: false },
-      { shelf_number: 'C1', category: 'Đồ uống', capacity: 1000, isfull: false }
+      { shelf_number: 'A1', category: 'Lương thực', capacity: 500, isfull: false, isDelete: false },
+      { shelf_number: 'B1', category: 'Sữa', capacity: 300, isfull: false, isDelete: false },
+      { shelf_number: 'C1', category: 'Đồ uống', capacity: 1000, isfull: false, isDelete: false }
     ]);
     console.log(`   ✅ ${shelves.length} shelves\n`);
 
     // 8. PRODUCT SHELVES
     console.log('8/24 📍 Tạo ProductShelves...');
     const productShelves = await ProductShelf.insertMany([
-      { product_id: products[0]._id, shelf_id: shelves[0]._id, quantity: 100 },
-      { product_id: products[1]._id, shelf_id: shelves[1]._id, quantity: 200 },
-      { product_id: products[2]._id, shelf_id: shelves[2]._id, quantity: 500 }
+      { product_id: products[0]._id, shelf_id: shelves[0]._id, quantity: 100, isDelete: false },
+      { product_id: products[1]._id, shelf_id: shelves[1]._id, quantity: 200, isDelete: false },
+      { product_id: products[2]._id, shelf_id: shelves[2]._id, quantity: 500, isDelete: false }
     ]);
     console.log(`   ✅ ${productShelves.length} product-shelf links\n`);
 
     // 9. PROMOTIONS
     console.log('9/24 🎁 Tạo Promotions...');
     const promotions = await Promotion.insertMany([
-      { name: 'Khuyến mãi Tết', description: 'Giảm 20%', promotion_type: 'percentage', discount_value: 20, minimum_purchase_amount: 500000, promo_code: 'TET2024', start_date: new Date('2024-01-20'), end_date: new Date('2024-02-15'), status: 'active' },
-      { name: 'Flash Sale', description: 'Giảm 50k', promotion_type: 'fixed', discount_value: 50000, minimum_purchase_amount: 300000, promo_code: 'FLASH50', start_date: new Date(), end_date: new Date('2024-12-31'), status: 'active' }
+      { name: 'Khuyến mãi Tết', description: 'Giảm 20%', promotion_type: 'percentage', discount_value: 20, minimum_purchase_amount: 500000, promo_code: 'TET2024', start_date: new Date('2024-01-20'), end_date: new Date('2024-02-15'), status: 'active', isDelete: false },
+      { name: 'Flash Sale', description: 'Giảm 50k', promotion_type: 'fixed', discount_value: 50000, minimum_purchase_amount: 300000, promo_code: 'FLASH50', start_date: new Date(), end_date: new Date('2024-12-31'), status: 'active', isDelete: false }
     ]);
     console.log(`   ✅ ${promotions.length} promotions\n`);
 
     // 10. PROMOTION PRODUCTS
     console.log('10/24 🏷️  Tạo PromotionProducts...');
     const promotionProducts = await PromotionProduct.insertMany([
-      { promotion_id: promotions[0]._id, product_id: products[0]._id, discount_override: 25 },
-      { promotion_id: promotions[1]._id, product_id: products[2]._id, discount_override: null }
+      { promotion_id: promotions[0]._id, product_id: products[0]._id, discount_override: 25, isDelete: false },
+      { promotion_id: promotions[1]._id, product_id: products[2]._id, discount_override: null, isDelete: false }
     ]);
     console.log(`   ✅ ${promotionProducts.length} promotion-product links\n`);
 
     // 11. ORDERS
     console.log('11/24 📋 Tạo Orders...');
     const orders = await Order.insertMany([
-      { order_number: 'ORD-001', customer_id: customers[0]._id, order_date: new Date(), status: 'pending', total_amount: 500000, notes: 'Giao giờ hành chính' },
-      { order_number: 'ORD-002', customer_id: customers[1]._id, order_date: new Date(), status: 'confirmed', total_amount: 300000, tracking_number: 'TRACK-001' }
+      { order_number: 'ORD-001', customer_id: customers[0]._id, order_date: new Date(), status: 'pending', total_amount: 500000, notes: 'Giao giờ hành chính', isDelete: false },
+      { order_number: 'ORD-002', customer_id: customers[1]._id, order_date: new Date(), status: 'confirmed', total_amount: 300000, tracking_number: 'TRACK-001', isDelete: false }
     ]);
     console.log(`   ✅ ${orders.length} orders\n`);
 
     // 12. ORDER ITEMS
     console.log('12/24 📦 Tạo OrderItems...');
     const orderItems = await OrderItem.insertMany([
-      { order_id: orders[0]._id, product_id: products[0]._id, quantity: 2, unit_price: 145000, status: 'pending' },
-      { order_id: orders[0]._id, product_id: products[1]._id, quantity: 5, unit_price: 32000, status: 'pending' },
-      { order_id: orders[1]._id, product_id: products[2]._id, quantity: 10, unit_price: 10000, status: 'picked' }
+      { order_id: orders[0]._id, product_id: products[0]._id, quantity: 2, unit_price: 145000, status: 'pending', isDelete: false },
+      { order_id: orders[0]._id, product_id: products[1]._id, quantity: 5, unit_price: 32000, status: 'pending', isDelete: false },
+      { order_id: orders[1]._id, product_id: products[2]._id, quantity: 10, unit_price: 10000, status: 'picked', isDelete: false }
     ]);
     console.log(`   ✅ ${orderItems.length} order items\n`);
 
     // 13. DELIVERY ORDERS
     console.log('13/24 🚚 Tạo DeliveryOrders...');
     const deliveryOrders = await DeliveryOrder.insertMany([
-      { order_id: orders[1]._id, staff_id: staffs[0]._id, order_date: new Date(), status: 'assigned', tracking_number: 'TRACK-001', notes: 'Giao trước 5PM' }
+      { order_id: orders[1]._id, staff_id: staffs[0]._id, order_date: new Date(), status: 'assigned', tracking_number: 'TRACK-001', notes: 'Giao trước 5PM', isDelete: false }
     ]);
     console.log(`   ✅ ${deliveryOrders.length} delivery orders\n`);
 
     // 14. INVOICES
     console.log('14/24 🧾 Tạo Invoices...');
     const invoices = await Invoice.insertMany([
-      { invoice_number: 'INV-001', customer_id: customers[0]._id, order_id: orders[0]._id, invoice_date: new Date(), total_amount: 500000, payment_status: 'unpaid' },
-      { invoice_number: 'INV-002', customer_id: customers[1]._id, order_id: orders[1]._id, invoice_date: new Date(), total_amount: 300000, payment_status: 'paid' }
+      { invoice_number: 'INV-001', customer_id: customers[0]._id, order_id: orders[0]._id, invoice_date: new Date(), total_amount: 500000, payment_status: 'unpaid', isDelete: false },
+      { invoice_number: 'INV-002', customer_id: customers[1]._id, order_id: orders[1]._id, invoice_date: new Date(), total_amount: 300000, payment_status: 'paid', isDelete: false }
     ]);
     console.log(`   ✅ ${invoices.length} invoices\n`);
 
     // 15. INVOICE ITEMS
     console.log('15/24 📄 Tạo InvoiceItems...');
     const invoiceItems = await InvoiceItem.insertMany([
-      { invoice_id: invoices[0]._id, product_id: products[0]._id, description: 'Gạo ST25', quantity: 2, unit_price: 145000, line_total: 290000 },
-      { invoice_id: invoices[1]._id, product_id: products[2]._id, description: 'Coca Cola', quantity: 10, unit_price: 10000, line_total: 100000 }
+      { invoice_id: invoices[0]._id, product_id: products[0]._id, description: 'Gạo ST25', quantity: 2, unit_price: 145000, line_total: 290000, isDelete: false },
+      { invoice_id: invoices[1]._id, product_id: products[2]._id, description: 'Coca Cola', quantity: 10, unit_price: 10000, line_total: 100000, isDelete: false }
     ]);
     console.log(`   ✅ ${invoiceItems.length} invoice items\n`);
 
     // 16. PAYMENTS
     console.log('16/24 💳 Tạo Payments...');
     const payments = await Payment.insertMany([
-      { payment_number: 'PAY-001', payment_date: new Date(), customer_id: customers[1]._id, order_id: orders[1]._id, invoice_id: invoices[1]._id, payment_method: 'Card', status: 'completed', reference: 'CARD-12345' }
+      { payment_number: 'PAY-001', payment_date: new Date(), customer_id: customers[1]._id, order_id: orders[1]._id, invoice_id: invoices[1]._id, payment_method: 'Card', status: 'completed', reference: 'CARD-12345', isDelete: false }
     ]);
     console.log(`   ✅ ${payments.length} payments\n`);
 
     // 17. REPORTS
     console.log('17/24 📊 Tạo Reports...');
     const reports = await Report.insertMany([
-      { title: 'Báo cáo bán hàng tháng 11', staff_id: staffs[0]._id, description: 'Doanh thu tốt', report_date: new Date(), status: 'completed', hours_worked: 160, sales_amount: 50000000, rating: 5 }
+      { title: 'Báo cáo bán hàng tháng 11', staff_id: staffs[0]._id, description: 'Doanh thu tốt', report_date: new Date(), status: 'completed', hours_worked: 160, sales_amount: 50000000, rating: 5, isDelete: false }
     ]);
     console.log(`   ✅ ${reports.length} reports\n`);
 
     // 18. INSTRUCTIONS
     console.log('18/24 📢 Tạo Instructions...');
     const instructions = await Instruction.insertMany([
-      { title: 'Hướng dẫn đóng gói', detail: 'Đóng gói cẩn thận, dán tem đầy đủ', sent_date: new Date(), created_by_staff_id: staffs[1]._id, status: 'active' }
+      { title: 'Hướng dẫn đóng gói', detail: 'Đóng gói cẩn thận, dán tem đầy đủ', sent_date: new Date(), created_by_staff_id: staffs[1]._id, status: 'active', isDelete: false }
     ]);
     console.log(`   ✅ ${instructions.length} instructions\n`);
 
     // 19. CUSTOMER FEEDBACK
     console.log('19/24 💬 Tạo CustomerFeedback...');
     const feedbacks = await CustomerFeedback.insertMany([
-      { category: 'praise', subject: 'Dịch vụ tốt', detail: 'Giao hàng nhanh, nhân viên thân thiện', customer_id: customers[0]._id, status: 'open' },
-      { category: 'complaint', subject: 'Sản phẩm hỏng', detail: 'Trứng bị vỡ khi giao', customer_id: customers[1]._id, status: 'in_progress', assigned_to_staff_id: staffs[1]._id }
+      { category: 'praise', subject: 'Dịch vụ tốt', detail: 'Giao hàng nhanh, nhân viên thân thiện', customer_id: customers[0]._id, status: 'open', isDelete: false },
+      { category: 'complaint', subject: 'Sản phẩm hỏng', detail: 'Trứng bị vỡ khi giao', customer_id: customers[1]._id, status: 'in_progress', assigned_to_staff_id: staffs[1]._id, isDelete: false }
     ]);
     console.log(`   ✅ ${feedbacks.length} feedbacks\n`);
 
     // 20. PRODUCT STOCK
     console.log('20/24 📊 Tạo ProductStock...');
     const productStocks = await ProductStock.insertMany([
-      { product_id: products[0]._id, shelf_id: shelves[0]._id, quantity: 100, status: 'available', last_updated: new Date() },
-      { product_id: products[1]._id, shelf_id: shelves[1]._id, quantity: 200, status: 'available', last_updated: new Date() }
+      { product_id: products[0]._id, shelf_id: shelves[0]._id, quantity: 100, status: 'available', last_updated: new Date(), isDelete: false },
+      { product_id: products[1]._id, shelf_id: shelves[1]._id, quantity: 200, status: 'available', last_updated: new Date(), isDelete: false }
     ]);
     console.log(`   ✅ ${productStocks.length} stock records\n`);
 
     // 21. CARTS
     console.log('21/24 🛒 Tạo Carts...');
     const carts = await Cart.insertMany([
-      { customer_id: customers[0]._id, status: 'active', currency: 'VND', subtotal: 200000, discounts: 0, total: 200000, last_activity_at: new Date() },
-      { customer_id: customers[1]._id, status: 'checked_out', currency: 'VND', subtotal: 100000, discounts: 10000, total: 90000, applied_promo_id: promotions[1]._id }
+      { customer_id: customers[0]._id, status: 'active', currency: 'VND', subtotal: 200000, discounts: 0, total: 200000, last_activity_at: new Date(), isDelete: false },
+      { customer_id: customers[1]._id, status: 'checked_out', currency: 'VND', subtotal: 100000, discounts: 10000, total: 90000, applied_promo_id: promotions[1]._id, isDelete: false }
     ]);
     console.log(`   ✅ ${carts.length} carts\n`);
 
     // 22. CART ITEMS
     console.log('22/24 🛍️  Tạo CartItems...');
     const cartItems = await CartItem.insertMany([
-      { cart_id: carts[0]._id, product_id: products[0]._id, product_name: 'Gạo ST25 5kg', quantity: 1, unit: 'túi', unit_price: 145000, line_total: 145000, status: 'active', added_at: new Date() },
-      { cart_id: carts[0]._id, product_id: products[2]._id, product_name: 'Coca Cola', quantity: 5, unit: 'lon', unit_price: 10000, line_total: 50000, status: 'active', added_at: new Date() }
+      { cart_id: carts[0]._id, product_id: products[0]._id, product_name: 'Gạo ST25 5kg', quantity: 1, unit: 'túi', unit_price: 145000, line_total: 145000, status: 'active', added_at: new Date(), isDelete: false },
+      { cart_id: carts[0]._id, product_id: products[2]._id, product_name: 'Coca Cola', quantity: 5, unit: 'lon', unit_price: 10000, line_total: 50000, status: 'active', added_at: new Date(), isDelete: false }
     ]);
     console.log(`   ✅ ${cartItems.length} cart items\n`);
 
     // 23. DAMAGED PRODUCTS
     console.log('23/24 ⚠️  Tạo DamagedProducts...');
     const damagedProducts = await DamagedProduct.insertMany([
-      { product_id: products[3]._id, product_name: 'Trứng gà', damaged_quantity: 5, unit: 'vỉ', status: 'reported', description: 'Vỡ khi vận chuyển', resolution_action: 'discard', inventory_adjusted: false }
+      { product_id: products[3]._id, product_name: 'Trứng gà', damaged_quantity: 5, unit: 'vỉ', status: 'reported', description: 'Vỡ khi vận chuyển', resolution_action: 'discard', inventory_adjusted: false, isDelete: false }
     ]);
     console.log(`   ✅ ${damagedProducts.length} damaged products\n`);
 

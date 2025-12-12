@@ -20,8 +20,8 @@ export const staffService = {
       
       const response = await apiClient.get(API_BASE_URL, { params });
       
-      console.log('✅ Staff fetched successfully:', response.data);
-      return response.data;
+      console.log('✅ Staff fetched successfully:', response);
+      return response;
     } catch (error) {
       console.error('❌ Error fetching staff:', error);
       return {
@@ -43,8 +43,8 @@ export const staffService = {
       
       const response = await apiClient.get(`${API_BASE_URL}/${id}`);
       
-      console.log('✅ Staff fetched successfully:', response.data);
-      return response.data;
+      console.log('✅ Staff fetched successfully:', response);
+      return response;
     } catch (error) {
       console.error(`❌ Error fetching staff ${id}:`, error);
       throw error;
@@ -78,8 +78,8 @@ export const staffService = {
 
       const response = await apiClient.post(API_BASE_URL, payload);
       
-      console.log('✅ Staff created successfully:', response.data);
-      return response.data;
+      console.log('✅ Staff created successfully:', response);
+      return response;
     } catch (error) {
       console.error('❌ Error creating staff:', error);
       throw error;
@@ -112,8 +112,8 @@ export const staffService = {
 
       const response = await apiClient.put(`${API_BASE_URL}/${id}`, payload);
       
-      console.log('✅ Staff updated successfully:', response.data);
-      return response.data;
+      console.log('✅ Staff updated successfully:', response);
+      return response;
     } catch (error) {
       console.error(`❌ Error updating staff ${id}:`, error);
       throw error;
@@ -131,8 +131,8 @@ export const staffService = {
       
       const response = await apiClient.delete(`${API_BASE_URL}/${id}`);
       
-      console.log('✅ Staff deleted successfully:', response.data);
-      return response.data;
+      console.log('✅ Staff deleted successfully:', response);
+      return response;
     } catch (error) {
       console.error(`❌ Error deleting staff ${id}:`, error);
       throw error;
@@ -149,8 +149,8 @@ export const staffService = {
       
       const response = await apiClient.get(`${API_BASE_URL}/stats`);
       
-      console.log('✅ Staff stats fetched:', response.data);
-      return response.data;
+      console.log('✅ Staff stats fetched:', response);
+      return response;
     } catch (error) {
       console.error('❌ Error fetching staff stats:', error);
       return {
