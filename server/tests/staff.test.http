@@ -1,0 +1,178 @@
+### ========================================
+### STAFF API TESTS
+### Base URL: http://localhost:5000/api/staff
+### ========================================
+
+### 1. Get all staff (with pagination)
+GET http://localhost:5000/api/staff?page=1&limit=10
+
+###
+
+### 2. Get all staff with filters (position filter)
+GET http://localhost:5000/api/staff?position=Manager&is_active=true
+
+###
+
+### 3. Get staff statistics
+GET http://localhost:5000/api/staff/stats
+
+###
+
+### 4. Create new staff (with account)
+POST http://localhost:5000/api/staff
+Content-Type: application/json
+
+{
+  "username": "john_doe",
+  "password": "SecurePass123!",
+  "email": "john.doe@minimarket.com",
+  "full_name": "John Doe",
+  "phone": "+84901234567",
+  "address": "123 Main Street, District 1, HCMC",
+  "date_of_birth": "1990-05-15",
+  "position": "Sales Associate",
+  "employment_type": "Full-time",
+  "annual_salary": 180000000,
+  "hire_date": "2024-01-15",
+  "notes": "Experienced retail worker"
+}
+
+###
+
+### 5. Create another staff (Manager)
+POST http://localhost:5000/api/staff
+Content-Type: application/json
+
+{
+  "username": "jane_manager",
+  "password": "ManagerPass456!",
+  "email": "jane.manager@minimarket.com",
+  "full_name": "Jane Smith",
+  "phone": "+84907654321",
+  "address": "456 Business Ave, District 3, HCMC",
+  "date_of_birth": "1985-08-20",
+  "position": "Store Manager",
+  "employment_type": "Full-time",
+  "annual_salary": 360000000,
+  "hire_date": "2023-06-01",
+  "notes": "5 years management experience"
+}
+
+###
+
+### 6. Get single staff by ID (replace {staffId} with actual ID)
+GET http://localhost:5000/api/staff/674cf1234567890abcdef123
+
+###
+
+### 7. Get staff by account ID (replace {accountId} with actual ID)
+GET http://localhost:5000/api/staff/account/674cf1234567890abcdef124
+
+###
+
+### 8. Update staff
+PUT http://localhost:5000/api/staff/674cf1234567890abcdef123
+Content-Type: application/json
+
+{
+  "full_name": "John Doe Jr.",
+  "phone": "+84901234999",
+  "position": "Senior Sales Associate",
+  "annual_salary": 220000000,
+  "notes": "Promoted to senior position"
+}
+
+###
+
+### 9. Search staff by name
+GET http://localhost:5000/api/staff?search=John&page=1&limit=10
+
+###
+
+### 10. Filter staff by employment type
+GET http://localhost:5000/api/staff?employment_type=Full-time&is_active=true
+
+###
+
+### 11. Get staff sorted by creation date (newest first)
+GET http://localhost:5000/api/staff?sort=-createdAt&limit=5
+
+###
+
+### 12. Soft delete staff (deactivate)
+DELETE http://localhost:5000/api/staff/674cf1234567890abcdef123
+
+###
+
+### 13. Activate staff
+PATCH http://localhost:5000/api/staff/674cf1234567890abcdef123/activate
+
+###
+
+### 14. Permanently delete staff (USE WITH CAUTION!)
+DELETE http://localhost:5000/api/staff/674cf1234567890abcdef123/permanent
+
+###
+
+### ========================================
+### TEST SCENARIOS
+### ========================================
+
+### Scenario 1: Create staff with minimal info
+POST http://localhost:5000/api/staff
+Content-Type: application/json
+
+{
+  "username": "minimal_staff",
+  "password": "Pass123!",
+  "email": "minimal@minimarket.com",
+  "position": "Cashier"
+}
+
+###
+
+### Scenario 2: Try to create staff with duplicate username (should fail)
+POST http://localhost:5000/api/staff
+Content-Type: application/json
+
+{
+  "username": "john_doe",
+  "password": "AnotherPass123!",
+  "email": "another@minimarket.com",
+  "position": "Cashier"
+}
+
+###
+
+### Scenario 3: Try to create staff with duplicate email (should fail)
+POST http://localhost:5000/api/staff
+Content-Type: application/json
+
+{
+  "username": "unique_username",
+  "password": "Pass123!",
+  "email": "john.doe@minimarket.com",
+  "position": "Cashier"
+}
+
+###
+
+### Scenario 4: Create staff without required fields (should fail)
+POST http://localhost:5000/api/staff
+Content-Type: application/json
+
+{
+  "full_name": "No Username Staff"
+}
+
+###
+
+### Scenario 5: Get inactive staff only
+GET http://localhost:5000/api/staff?is_active=false
+
+###
+
+### Scenario 6: Get staff with pagination (page 2)
+GET http://localhost:5000/api/staff?page=2&limit=5
+
+###

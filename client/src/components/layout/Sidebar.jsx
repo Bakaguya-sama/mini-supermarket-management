@@ -202,7 +202,7 @@ const Sidebar = ({ activeItem, onItemClick, userRole = "manager" }) => {
             id: "supplier",
             label: "Supplier",
             icon: <FaTruck />,
-            path: "/supplier",
+            path: "/suppliers",
           },
           {
             id: "profile",
