@@ -2,21 +2,14 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { FaUser, FaTimes } from "react-icons/fa";
 import { customerService } from "../../../services/customerService";
-import { useNotification } from "../../../hooks/useNotification";
-import SuccessNotification from "../../../components/Notification/SuccessNotification";
-import ErrorNotification from "../../../components/Notification/ErrorNotification";
+import SuccessMessage from "../../../components/Messages/SuccessMessage";
+import ErrorMessage from "../../../components/Messages/ErrorMessage";
 import "./AddCustomerView.css";
 
 const AddCustomerView = () => {
   const navigate = useNavigate();
-  const { 
-    successNotification, 
-    errorNotification, 
-    showSuccess, 
-    showError, 
-    hideSuccess, 
-    hideError 
-  } = useNotification();
+  const [successMessage, setSuccessMessage] = useState("");
+  const [errorMessage, setErrorMessage] = useState("");
 
   const [formData, setFormData] = useState({
     username: "",
@@ -85,14 +78,14 @@ const AddCustomerView = () => {
     e.preventDefault();
 
     if (!validateForm()) {
-      showError('Validation Error', 'Please fix the form errors');
+      setErrorMessage("Validation Error", "Please fix the form errors");
       return;
     }
 
     setIsSubmitting(true);
 
     try {
-      console.log('🛒 Submitting customer form:', formData);
+      console.log("🛒 Submitting customer form:", formData);
 
       // Prepare payload with account information and membership
       const customerData = {
@@ -102,22 +95,22 @@ const AddCustomerView = () => {
         phone: formData.phone,
         address: formData.address,
         membership_type: formData.membership_type,
-        notes: formData.notes
+        notes: formData.notes,
       };
 
       const response = await customerService.create(customerData);
 
       if (response.success) {
-        showSuccess('Success!', 'Customer created successfully');
+        setSuccessMessage("Customer created successfully");
         setTimeout(() => {
-          navigate('/customer');
+          navigate("/customer");
         }, 1500);
       } else {
-        showError('Error!', response.message || 'Failed to create customer');
+        setErrorMessage(response.message || "Failed to create customer");
       }
     } catch (error) {
       console.error("❌ Error adding customer:", error);
-      showError('Error!', error.message || 'Error adding customer');
+      setErrorMessage(error.message || "Error adding customer");
     } finally {
       setIsSubmitting(false);
     }
@@ -136,17 +129,20 @@ const AddCustomerView = () => {
       </div>
 
       {/* Info Box */}
-      <div style={{
-        backgroundColor: '#e3f2fd',
-        border: '1px solid #2196f3',
-        borderRadius: '4px',
-        padding: '12px',
-        marginBottom: '20px',
-        marginLeft: '20px',
-        marginRight: '20px'
-      }}>
-        <p style={{ margin: 0, color: '#1976d2' }}>
-          💡 Info: Fill in the account and membership information below. An account will be created automatically when you add the customer.
+      <div
+        style={{
+          backgroundColor: "#e3f2fd",
+          border: "1px solid #2196f3",
+          borderRadius: "4px",
+          padding: "12px",
+          marginBottom: "20px",
+          marginLeft: "20px",
+          marginRight: "20px",
+        }}
+      >
+        <p style={{ margin: 0, color: "#1976d2" }}>
+          💡 Info: Fill in the account and membership information below. An
+          account will be created automatically when you add the customer.
         </p>
       </div>
 
@@ -345,18 +341,14 @@ const AddCustomerView = () => {
         </div>
       </div>
 
-      {/* Notification Components */}
-      <SuccessNotification
-        isVisible={successNotification.isVisible}
-        title={successNotification.title}
-        message={successNotification.message}
-        onClose={hideSuccess}
+      {/* Message Components */}
+      <SuccessMessage
+        message={successMessage}
+        onClose={() => setSuccessMessage("")}
       />
-      <ErrorNotification
-        isVisible={errorNotification.isVisible}
-        title={errorNotification.title}
-        message={errorNotification.message}
-        onClose={hideError}
+      <ErrorMessage
+        message={errorMessage}
+        onClose={() => setErrorMessage("")}
       />
     </div>
   );
