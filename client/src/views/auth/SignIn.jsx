@@ -268,7 +268,7 @@ const SignIn = () => {
         </div>
 
         {/* Demo Accounts Information */}
-        <div className="demo-accounts">
+        {/* <div className="demo-accounts">
           <h4>Demo Accounts:</h4>
 
           {activeTab === "staff" ? (
@@ -296,7 +296,7 @@ const SignIn = () => {
               </div>
             </div>
           )}
-        </div>
+        </div> */}
       </div>
     </div>
   );
