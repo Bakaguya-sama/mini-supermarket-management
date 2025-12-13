@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   FaPlus,
   FaMinus,
@@ -12,6 +12,10 @@ import { useNavigate, useLocation } from "react-router-dom";
 import "./CreateInvoice.css";
 import SuccessMessage from "../../../components/Messages/SuccessMessage";
 import ErrorMessage from "../../../components/Messages/ErrorMessage";
+import { productService } from "../../../services/productService";
+import { customerService } from "../../../services/customerService";
+import { cartService } from "../../../services/cartService";
+import { invoiceService } from "../../../services/invoiceService";
 
 const CreateInvoice = () => {
   const navigate = useNavigate();
@@ -32,503 +36,22 @@ const CreateInvoice = () => {
   // Product quantities in search results
   const [productQuantities, setProductQuantities] = useState({});
 
-  // Available customers for selection
-  const [availableCustomers] = useState([
-    {
-      id: "CUST-001",
-      name: "John Doe",
-      email: "john.doe@email.com",
-      phone: "+1 (555) 123-4567",
-      type: "Regular",
-    },
-    {
-      id: "CUST-002",
-      name: "Emma Wilson",
-      email: "emma.wilson@email.com",
-      phone: "+1 (555) 987-6543",
-      type: "VIP",
-    },
-    {
-      id: "CUST-003",
-      name: "Mike Johnson",
-      email: "mike.johnson@email.com",
-      phone: "+1 (555) 456-7890",
-      type: "Regular",
-    },
-    {
-      id: "CUST-004",
-      name: "Sarah Smith",
-      email: "sarah.smith@email.com",
-      phone: "+1 (555) 321-0987",
-      type: "VIP",
-    },
-    {
-      id: "CUST-005",
-      name: "David Lee",
-      email: "david.lee@email.com",
-      phone: "+1 (555) 654-3210",
-      type: "Regular",
-    },
-    {
-      id: "CUST-006",
-      name: "Maria Garcia",
-      email: "maria.garcia@email.com",
-      phone: "+1 (555) 789-0123",
-      type: "Premium",
-    },
-    {
-      id: "CUST-007",
-      name: "Robert Brown",
-      email: "robert.brown@email.com",
-      phone: "+1 (555) 234-5678",
-      type: "VIP",
-    },
-    {
-      id: "CUST-008",
-      name: "Alice Cooper",
-      email: "alice.cooper@email.com",
-      phone: "+1 (555) 345-6789",
-      type: "Regular",
-    },
-    {
-      id: "CUST-009",
-      name: "Tom Anderson",
-      email: "tom.anderson@email.com",
-      phone: "+1 (555) 456-7890",
-      type: "Premium",
-    },
-    {
-      id: "CUST-010",
-      name: "Lisa Wang",
-      email: "lisa.wang@email.com",
-      phone: "+1 (555) 567-8901",
-      type: "VIP",
-    },
-    {
-      id: "CUST-011",
-      name: "James Wilson",
-      email: "james.wilson@email.com",
-      phone: "+1 (555) 678-9012",
-      type: "Regular",
-    },
-    {
-      id: "CUST-012",
-      name: "Jennifer Martinez",
-      email: "jennifer.martinez@email.com",
-      phone: "+1 (555) 789-0123",
-      type: "Premium",
-    },
-    {
-      id: "CUST-013",
-      name: "Chris Taylor",
-      email: "chris.taylor@email.com",
-      phone: "+1 (555) 890-1234",
-      type: "Regular",
-    },
-    {
-      id: "CUST-014",
-      name: "Amanda Johnson",
-      email: "amanda.johnson@email.com",
-      phone: "+1 (555) 901-2345",
-      type: "VIP",
-    },
-    {
-      id: "CUST-015",
-      name: "Kevin Zhang",
-      email: "kevin.zhang@email.com",
-      phone: "+1 (555) 012-3456",
-      type: "Premium",
-    },
-    {
-      id: "CUST-016",
-      name: "Michelle Davis",
-      email: "michelle.davis@email.com",
-      phone: "+1 (555) 123-4567",
-      type: "Regular",
-    },
-    {
-      id: "CUST-017",
-      name: "Steven Miller",
-      email: "steven.miller@email.com",
-      phone: "+1 (555) 234-5678",
-      type: "VIP",
-    },
-    {
-      id: "CUST-018",
-      name: "Rachel Green",
-      email: "rachel.green@email.com",
-      phone: "+1 (555) 345-6789",
-      type: "Premium",
-    },
-    {
-      id: "CUST-019",
-      name: "Daniel Kim",
-      email: "daniel.kim@email.com",
-      phone: "+1 (555) 456-7890",
-      type: "Regular",
-    },
-    {
-      id: "CUST-020",
-      name: "Nicole Thompson",
-      email: "nicole.thompson@email.com",
-      phone: "+1 (555) 567-8901",
-      type: "VIP",
-    },
+  // Loading states
+  const [isLoadingProducts, setIsLoadingProducts] = useState(true);
+  const [isLoadingCustomers, setIsLoadingCustomers] = useState(true);
+  const [isLoadingCart, setIsLoadingCart] = useState(false);
+
+  // Demo customer ID (first customer from DB - simulating logged in user)
+  const [demoCustomerId, setDemoCustomerId] = useState(null);
+  const [currentCart, setCurrentCart] = useState(null);
+  const [currentCartId, setCurrentCartId] = useState(null);
+
+  // Available customers for selection (from API)
+  const [availableCustomers, setAvailableCustomers] = useState([
   ]);
 
-  // Available products for selection
-  const [availableProducts] = useState([
-    // Dairy Products
-    {
-      id: "P001",
-      name: "Fresh Milk 1L",
-      category: "Dairy",
-      price: 24.5,
-      stock: 50,
-    },
-    {
-      id: "P002",
-      name: "Greek Yogurt 500g",
-      category: "Dairy",
-      price: 16.3,
-      stock: 25,
-    },
-    {
-      id: "P003",
-      name: "Cheddar Cheese 200g",
-      category: "Dairy",
-      price: 28.0,
-      stock: 15,
-    },
-    {
-      id: "P004",
-      name: "Butter 250g",
-      category: "Dairy",
-      price: 32.5,
-      stock: 20,
-    },
-    {
-      id: "P005",
-      name: "Cream Cheese 150g",
-      category: "Dairy",
-      price: 22.0,
-      stock: 18,
-    },
-
-    // Bakery Products
-    {
-      id: "P006",
-      name: "Whole Wheat Bread",
-      category: "Bakery",
-      price: 18.0,
-      stock: 30,
-    },
-    {
-      id: "P007",
-      name: "Croissant 6pcs",
-      category: "Bakery",
-      price: 25.5,
-      stock: 12,
-    },
-    {
-      id: "P008",
-      name: "Bagel 4pcs",
-      category: "Bakery",
-      price: 20.0,
-      stock: 15,
-    },
-    {
-      id: "P009",
-      name: "Sourdough Bread",
-      category: "Bakery",
-      price: 22.5,
-      stock: 10,
-    },
-    {
-      id: "P010",
-      name: "Muffin Blueberry 4pcs",
-      category: "Bakery",
-      price: 28.0,
-      stock: 8,
-    },
-
-    // Beverages
-    {
-      id: "P011",
-      name: "Orange Juice 1L",
-      category: "Beverages",
-      price: 15.8,
-      stock: 35,
-    },
-    {
-      id: "P012",
-      name: "Coca Cola 330ml",
-      category: "Beverages",
-      price: 8.5,
-      stock: 60,
-    },
-    {
-      id: "P013",
-      name: "Pepsi 330ml",
-      category: "Beverages",
-      price: 8.0,
-      stock: 45,
-    },
-    {
-      id: "P014",
-      name: "Green Tea 500ml",
-      category: "Beverages",
-      price: 12.5,
-      stock: 28,
-    },
-    {
-      id: "P015",
-      name: "Energy Drink 250ml",
-      category: "Beverages",
-      price: 18.0,
-      stock: 22,
-    },
-    {
-      id: "P016",
-      name: "Mineral Water 1.5L",
-      category: "Beverages",
-      price: 6.5,
-      stock: 80,
-    },
-    {
-      id: "P017",
-      name: "Apple Juice 1L",
-      category: "Beverages",
-      price: 16.5,
-      stock: 25,
-    },
-    {
-      id: "P018",
-      name: "Coffee Latte 250ml",
-      category: "Beverages",
-      price: 14.0,
-      stock: 30,
-    },
-
-    // Snacks
-    {
-      id: "P019",
-      name: "Chocolate Chip Cookies",
-      category: "Snacks",
-      price: 12.5,
-      stock: 40,
-    },
-    {
-      id: "P020",
-      name: "Potato Chips 150g",
-      category: "Snacks",
-      price: 9.5,
-      stock: 55,
-    },
-    {
-      id: "P021",
-      name: "Peanuts 200g",
-      category: "Snacks",
-      price: 11.0,
-      stock: 35,
-    },
-    {
-      id: "P022",
-      name: "Chocolate Bar 100g",
-      category: "Snacks",
-      price: 15.5,
-      stock: 42,
-    },
-    {
-      id: "P023",
-      name: "Crackers 250g",
-      category: "Snacks",
-      price: 8.5,
-      stock: 38,
-    },
-    {
-      id: "P024",
-      name: "Popcorn 150g",
-      category: "Snacks",
-      price: 7.0,
-      stock: 48,
-    },
-    {
-      id: "P025",
-      name: "Granola Bar 6pcs",
-      category: "Snacks",
-      price: 18.5,
-      stock: 25,
-    },
-
-    // Fruits & Vegetables
-    {
-      id: "P026",
-      name: "Banana 1kg",
-      category: "Fruits",
-      price: 12.0,
-      stock: 45,
-    },
-    {
-      id: "P027",
-      name: "Apple 1kg",
-      category: "Fruits",
-      price: 18.5,
-      stock: 32,
-    },
-    {
-      id: "P028",
-      name: "Orange 1kg",
-      category: "Fruits",
-      price: 15.0,
-      stock: 28,
-    },
-    {
-      id: "P029",
-      name: "Grapes 500g",
-      category: "Fruits",
-      price: 22.0,
-      stock: 20,
-    },
-    {
-      id: "P030",
-      name: "Strawberry 250g",
-      category: "Fruits",
-      price: 25.5,
-      stock: 15,
-    },
-    {
-      id: "P031",
-      name: "Tomato 1kg",
-      category: "Vegetables",
-      price: 14.0,
-      stock: 35,
-    },
-    {
-      id: "P032",
-      name: "Carrot 1kg",
-      category: "Vegetables",
-      price: 10.5,
-      stock: 40,
-    },
-    {
-      id: "P033",
-      name: "Broccoli 500g",
-      category: "Vegetables",
-      price: 16.0,
-      stock: 22,
-    },
-    {
-      id: "P034",
-      name: "Lettuce 1pc",
-      category: "Vegetables",
-      price: 8.5,
-      stock: 25,
-    },
-    {
-      id: "P035",
-      name: "Bell Pepper 500g",
-      category: "Vegetables",
-      price: 18.5,
-      stock: 18,
-    },
-
-    // Meat & Seafood
-    {
-      id: "P036",
-      name: "Chicken Breast 1kg",
-      category: "Meat",
-      price: 45.0,
-      stock: 15,
-    },
-    {
-      id: "P037",
-      name: "Ground Beef 500g",
-      category: "Meat",
-      price: 38.5,
-      stock: 12,
-    },
-    {
-      id: "P038",
-      name: "Pork Chops 500g",
-      category: "Meat",
-      price: 42.0,
-      stock: 10,
-    },
-    {
-      id: "P039",
-      name: "Salmon Fillet 300g",
-      category: "Seafood",
-      price: 55.0,
-      stock: 8,
-    },
-    {
-      id: "P040",
-      name: "Shrimp 250g",
-      category: "Seafood",
-      price: 48.5,
-      stock: 6,
-    },
-
-    // Frozen Foods
-    {
-      id: "P041",
-      name: "Frozen Pizza 350g",
-      category: "Frozen",
-      price: 25.0,
-      stock: 20,
-    },
-    {
-      id: "P042",
-      name: "Ice Cream 1L",
-      category: "Frozen",
-      price: 22.5,
-      stock: 18,
-    },
-    {
-      id: "P043",
-      name: "Frozen Vegetables 500g",
-      category: "Frozen",
-      price: 15.5,
-      stock: 25,
-    },
-    {
-      id: "P044",
-      name: "Frozen Chicken Wings 1kg",
-      category: "Frozen",
-      price: 35.0,
-      stock: 12,
-    },
-
-    // Household Items
-    {
-      id: "P045",
-      name: "Dish Soap 500ml",
-      category: "Household",
-      price: 12.0,
-      stock: 30,
-    },
-    {
-      id: "P046",
-      name: "Toilet Paper 12rolls",
-      category: "Household",
-      price: 18.5,
-      stock: 25,
-    },
-    {
-      id: "P047",
-      name: "Laundry Detergent 1L",
-      category: "Household",
-      price: 28.0,
-      stock: 15,
-    },
-    {
-      id: "P048",
-      name: "Paper Towels 6rolls",
-      category: "Household",
-      price: 15.0,
-      stock: 20,
-    },
+  // Available products for selection (from API)
+  const [availableProducts, setAvailableProducts] = useState([
   ]);
 
   // Available payment methods
@@ -572,6 +95,123 @@ const CreateInvoice = () => {
     }
     return null;
   });
+
+  // ========== API FUNCTIONS ==========
+  
+  // Load products from API
+  const loadProducts = async () => {
+    try {
+      setIsLoadingProducts(true);
+      console.log('🛒 Loading products from API...');
+      
+      const response = await productService.getAll({ limit: 100 });
+      
+      if (response.success && response.data) {
+        // Transform API products to match frontend format
+        const transformedProducts = response.data.map(product => ({
+          id: product._id,
+          name: product.name,
+          category: product.category || 'Other',
+          price: product.price,
+          stock: product.stock_quantity || 0
+        }));
+        
+        setAvailableProducts(transformedProducts);
+        console.log('✅ Loaded products:', transformedProducts.length);
+      } else {
+        setErrorMessage('Failed to load products');
+      }
+    } catch (error) {
+      console.error('❌ Error loading products:', error);
+      setErrorMessage('Error loading products');
+    } finally {
+      setIsLoadingProducts(false);
+    }
+  };
+
+  // Load customers from API
+  const loadCustomers = async () => {
+    try {
+      setIsLoadingCustomers(true);
+      console.log('🛒 Loading customers from API...');
+      
+      const response = await customerService.getAll({ limit: 100 });
+      
+      if (response.success && response.data) {
+        // Transform API customers to match frontend format
+        const transformedCustomers = response.data.map(customer => ({
+          id: customer._id,
+          name: customer.account_id?.full_name || 'N/A',
+          email: customer.account_id?.email || 'N/A',
+          phone: customer.account_id?.phone || 'N/A',
+          type: customer.membership_type || 'Standard'
+        }));
+        
+        setAvailableCustomers(transformedCustomers);
+        
+        // Set first customer as demo customer
+        if (transformedCustomers.length > 0) {
+          const firstCustomer = response.data[0]; // Use original data
+          setDemoCustomerId(firstCustomer._id);
+          console.log('✅ Demo customer ID set:', firstCustomer._id);
+          
+          // Load cart for demo customer
+          loadCart(firstCustomer._id);
+        }
+        
+        console.log('✅ Loaded customers:', transformedCustomers.length);
+      } else {
+        setErrorMessage('Failed to load customers');
+      }
+    } catch (error) {
+      console.error('❌ Error loading customers:', error);
+      setErrorMessage('Error loading customers');
+    } finally {
+      setIsLoadingCustomers(false);
+    }
+  };
+
+  // Load cart for customer
+  const loadCart = async (customerId) => {
+    try {
+      setIsLoadingCart(true);
+      console.log('🛒 Loading cart for customer:', customerId);
+      
+      const response = await cartService.getCartByCustomer(customerId);
+      
+      if (response.success && response.data) {
+        setCurrentCart(response.data);
+        setCurrentCartId(response.data._id);
+        
+        // Load cart items into products array
+        if (response.data.cartItems && response.data.cartItems.length > 0) {
+          const cartProducts = response.data.cartItems.map(item => ({
+            id: item.product_id?._id,
+            name: item.product_id?.name,
+            category: item.product_id?.category || 'Other',
+            price: item.unit_price,
+            stock: item.product_id?.stock_quantity || 0,
+            quantity: item.quantity,
+            total: item.line_total,
+            cartItemId: item._id // Store cart item ID for updates
+          }));
+          
+          setProducts(cartProducts);
+          console.log('✅ Loaded cart items:', cartProducts.length);
+        }
+      }
+    } catch (error) {
+      console.error('❌ Error loading cart:', error);
+    } finally {
+      setIsLoadingCart(false);
+    }
+  };
+
+  // Load all data on mount
+  useEffect(() => {
+    loadProducts();
+    loadCustomers();
+  }, []);
 
   // Filter available products
   const filteredProducts = availableProducts.filter((product) => {
@@ -644,7 +284,7 @@ const CreateInvoice = () => {
   };
 
   // Add product with specified quantity
-  const handleAddProductWithQuantity = (product) => {
+  const handleAddProductWithQuantity = async (product) => {
     const quantity = productQuantities[product.id] || 1;
     if (quantity > 0) {
       const existingProduct = products.find((p) => p.id === product.id);
@@ -653,7 +293,7 @@ const CreateInvoice = () => {
 
       // Check if total quantity exceeds stock
       if (totalQuantity > product.stock) {
-        errorMessage(
+        setErrorMessage(
           `Cannot add ${quantity} items. Stock available: ${
             product.stock
           }, Current in cart: ${currentQuantity}, Maximum you can add: ${
@@ -663,16 +303,21 @@ const CreateInvoice = () => {
         return;
       }
 
-      if (existingProduct) {
-        handleQuantityChange(product.id, totalQuantity);
+      // Call Cart API
+      if (currentCartId) {
+        const response = await cartService.addItem(currentCartId, product.id, quantity);
+        
+        if (response.success && response.data) {
+          // Reload cart to get updated items
+          await loadCart(demoCustomerId);
+          setSuccessMessage('Product added to cart');
+        } else {
+          setErrorMessage(response.message || 'Failed to add product to cart');
+        }
       } else {
-        const newProduct = {
-          ...product,
-          quantity: quantity,
-          total: product.price * quantity,
-        };
-        setProducts([...products, newProduct]);
+        setErrorMessage('No active cart found');
       }
+      
       // Reset quantity after adding
       setProductQuantities((prev) => ({
         ...prev,
@@ -691,7 +336,7 @@ const CreateInvoice = () => {
     setDiscount(null);
   };
 
-  const handleAddProduct = (product) => {
+  const handleAddProduct = async (product) => {
     const existingProduct = products.find((p) => p.id === product.id);
     if (existingProduct) {
       if (existingProduct.quantity >= product.stock) {
@@ -700,22 +345,29 @@ const CreateInvoice = () => {
         );
         return;
       }
-      handleQuantityChange(product.id, existingProduct.quantity + 1);
+      await handleQuantityChange(product.id, existingProduct.quantity + 1);
     } else {
-      const newProduct = {
-        ...product,
-        quantity: 1,
-        total: product.price,
-      };
-      setProducts([...products, newProduct]);
+      // Call Cart API to add new product
+      if (currentCartId) {
+        const response = await cartService.addItem(currentCartId, product.id, 1);
+        
+        if (response.success && response.data) {
+          await loadCart(demoCustomerId);
+          setSuccessMessage('Product added to cart');
+        } else {
+          setErrorMessage(response.message || 'Failed to add product');
+        }
+      } else {
+        setErrorMessage('No active cart found');
+      }
     }
     setShowProductList(false);
     setProductSearchTerm("");
   };
 
-  const handleQuantityChange = (productId, newQuantity) => {
+  const handleQuantityChange = async (productId, newQuantity) => {
     if (newQuantity <= 0) {
-      handleRemoveProduct(productId);
+      await handleRemoveProduct(productId);
       return;
     }
 
@@ -728,50 +380,87 @@ const CreateInvoice = () => {
       return;
     }
 
-    setProducts(
-      products.map((product) => {
-        if (product.id === productId) {
-          return {
-            ...product,
-            quantity: newQuantity,
-            total: product.price * newQuantity,
-          };
-        }
-        return product;
-      })
-    );
+    // Find cart item ID
+    const cartProduct = products.find((p) => p.id === productId);
+    if (cartProduct && cartProduct.cartItemId) {
+      const response = await cartService.updateQuantity(cartProduct.cartItemId, newQuantity);
+      
+      if (response.success && response.data) {
+        await loadCart(demoCustomerId);
+        setSuccessMessage('Quantity updated');
+      } else {
+        setErrorMessage(response.message || 'Failed to update quantity');
+      }
+    } else {
+      setErrorMessage('Cart item not found');
+    }
   };
 
-  const handleRemoveProduct = (productId) => {
-    setProducts(products.filter((product) => product.id !== productId));
+  const handleRemoveProduct = async (productId) => {
+    // Find cart item ID
+    const cartProduct = products.find((p) => p.id === productId);
+    if (cartProduct && cartProduct.cartItemId) {
+      const response = await cartService.removeItem(cartProduct.cartItemId);
+      
+      if (response.success && response.data) {
+        await loadCart(demoCustomerId);
+        setSuccessMessage('Product removed from cart');
+      } else {
+        setErrorMessage(response.message || 'Failed to remove product');
+      }
+    } else {
+      // Fallback to local removal if no cartItemId
+      setProducts(products.filter((product) => product.id !== productId));
+    }
   };
 
   const handlePaymentMethodChange = (methodId) => {
     setSelectedPaymentMethod(methodId);
   };
 
-  const handleCreateInvoice = () => {
+  const handleCreateInvoice = async () => {
     if (products.length === 0) {
       setErrorMessage("Please add at least one product to create an invoice.");
       return;
     }
 
-    const invoiceData = {
-      products,
-      customer: customerInfo,
-      discount,
-      paymentMethod: selectedPaymentMethod,
-      totals: {
-        subtotal,
-        discount: discountAmount,
-        tax: taxAmount,
-        total: totalAmount,
-      },
-    };
+    try {
+      // Prepare invoice items from products
+      const items = products.map(product => ({
+        product_id: product.id,
+        description: product.name,
+        quantity: product.quantity,
+        unit_price: product.price,
+        line_total: product.total
+      }));
 
-    console.log("Creating invoice:", invoiceData);
-    setSuccessMessage("Invoice created successfully!");
-    setTimeout(() => navigate("/invoice"), 2000);
+      // Prepare invoice data for API
+      const invoiceData = {
+        customer_id: customerInfo.id || demoCustomerId,
+        items: items,
+        notes: discount ? `Discount applied: ${discount.name} (${discount.percentage}%)` : ''
+      };
+
+      // Add order_id if cart has been checked out
+      if (currentCart && currentCart.order_id) {
+        invoiceData.order_id = currentCart.order_id;
+      }
+
+      console.log("Creating invoice with data:", invoiceData);
+
+      // Call API to create invoice
+      const response = await invoiceService.createInvoice(invoiceData);
+
+      if (response.success) {
+        setSuccessMessage("Invoice created successfully!");
+        setTimeout(() => navigate("/invoice"), 2000);
+      } else {
+        setErrorMessage(response.message || "Failed to create invoice");
+      }
+    } catch (error) {
+      console.error('Error creating invoice:', error);
+      setErrorMessage("Failed to create invoice. Please try again.");
+    }
   };
 
   const handleBack = () => {
@@ -792,6 +481,36 @@ const CreateInvoice = () => {
           setErrorMessage("");
         }}
       />
+      
+      {/* Loading State */}
+      {(isLoadingProducts || isLoadingCustomers) && (
+        <div style={{ 
+          position: 'fixed', 
+          top: 0, 
+          left: 0, 
+          right: 0, 
+          bottom: 0, 
+          background: 'rgba(0,0,0,0.3)', 
+          display: 'flex', 
+          alignItems: 'center', 
+          justifyContent: 'center', 
+          zIndex: 9999 
+        }}>
+          <div style={{ 
+            background: 'white', 
+            padding: '40px', 
+            borderRadius: '10px', 
+            textAlign: 'center' 
+          }}>
+            <p style={{ fontSize: '18px', marginBottom: '10px' }}>🔄 Loading...</p>
+            <p style={{ fontSize: '14px', color: '#666' }}>
+              {isLoadingProducts && 'Loading products...'}
+              {isLoadingCustomers && 'Loading customers...'}
+            </p>
+          </div>
+        </div>
+      )}
+      
       {/* Header */}
       <div className="create-invoice-page-header">
         <h1 className="create-invoice-page-title">Create New Invoice</h1>

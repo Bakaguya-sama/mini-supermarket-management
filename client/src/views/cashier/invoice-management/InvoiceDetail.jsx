@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   FaPlus,
   FaMinus,
@@ -12,27 +12,20 @@ import { useNavigate, useParams, useLocation } from "react-router-dom";
 import "./InvoiceDetail.css";
 import SuccessMessage from "../../../components/Messages/SuccessMessage";
 import ErrorMessage from "../../../components/Messages/ErrorMessage";
+import { invoiceService } from "../../../services/invoiceService";
 
 const InvoiceDetail = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { invoiceId } = useParams();
+  const { id: invoiceId } = useParams();
 
   // Message
   const [errorMessage, setErrorMessage] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
 
-  // Sample invoice data - in real app, fetch by invoiceId
-  const invoiceData = {
-    id: invoiceId || "INV-2024-001",
-    status: "pending", // pending, completed, refunded
-    paymentMethod: "Card Payment", // From invoice data
-    customer: {
-      id: "CUST-001",
-      name: "John Doe",
-      hasInfo: true, // true if customer has full info, false for guest
-    },
-  };
+  // Loading state
+  const [isLoading, setIsLoading] = useState(true);
+  const [invoice, setInvoice] = useState(null);
 
   // Modal state for cancel confirmation
   const [showCancelModal, setShowCancelModal] = useState(false);
@@ -41,12 +34,110 @@ const InvoiceDetail = () => {
   const [customerSearchTerm, setCustomerSearchTerm] = useState("");
   const [showCustomerList, setShowCustomerList] = useState(false);
 
-  // Payment method state - can be changed if status is pending
-  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState(
-    invoiceData.paymentMethod
-  );
+  // Payment method state - will be initialized from invoice data
+  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState("Cash");
 
-  // Available customers for selection
+  // Product list state - from invoice items
+  const [products, setProducts] = useState([]);
+
+  // Customer information - from invoice
+  const [customerInfo, setCustomerInfo] = useState({
+    id: null,
+    type: "Guest Customer",
+    name: "Guest Customer",
+    description: "Walk-in customer",
+    contact: "No contact information",
+    hasInfo: false,
+  });
+
+  // Available payment methods
+  const paymentMethods = [
+    { id: "Card Payment", name: "Card Payment", icon: "💳" },
+    { id: "Cash", name: "Cash", icon: "💰" },
+    { id: "Digital Wallet", name: "Digital Wallet", icon: "📱" },
+  ];
+
+  // ========== API FUNCTIONS ==========
+  
+  // Load invoice details from API
+  const loadInvoice = async () => {
+    setIsLoading(true);
+    try {
+      const response = await invoiceService.getInvoiceById(invoiceId);
+      
+      if (response.success && response.data) {
+        const invoiceData = response.data;
+        setInvoice(invoiceData);
+
+        // Transform invoice items to product format
+        if (invoiceData.items && Array.isArray(invoiceData.items) && invoiceData.items.length > 0) {
+          const transformedProducts = invoiceData.items.map(item => ({
+            id: item._id,
+            name: item.product_id?.name || item.description || 'Unknown Product',
+            category: item.product_id?.category || 'Other',
+            quantity: item.quantity,
+            price: item.unit_price,
+            total: item.line_total,
+            sku: item.product_id?.sku
+          }));
+          setProducts(transformedProducts);
+        } else {
+          setProducts([]);
+        }
+
+        // Set customer info
+        if (invoiceData.customer_id) {
+          const customer = invoiceData.customer_id;
+          const accountInfo = customer.account_id;
+          setCustomerInfo({
+            id: customer._id,
+            type: 'Registered Customer',
+            name: accountInfo?.full_name || customer._id,
+            description: `${customer.membership_type || 'Regular'} customer`,
+            contact: accountInfo?.email || accountInfo?.phone_number || 'No contact',
+            hasInfo: true,
+          });
+        } else {
+          setCustomerInfo({
+            id: null,
+            type: 'Guest Customer',
+            name: 'Guest Customer',
+            description: 'Walk-in customer',
+            contact: 'No contact information',
+            hasInfo: false,
+          });
+        }
+
+        // Set payment method from order if available
+        if (invoiceData.order_id && invoiceData.order_id.payment_method) {
+          setSelectedPaymentMethod(invoiceData.order_id.payment_method);
+        } else {
+          setSelectedPaymentMethod('Cash'); // Default
+        }
+      } else {
+        setErrorMessage(response.message || 'Failed to load invoice');
+        setTimeout(() => navigate('/invoice'), 3000);
+      }
+    } catch (error) {
+      console.error('Error loading invoice:', error);
+      setErrorMessage('Failed to load invoice details');
+      setTimeout(() => navigate('/invoice'), 3000);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Load invoice on mount
+  useEffect(() => {
+    if (invoiceId) {
+      loadInvoice();
+    } else {
+      setErrorMessage('Invoice ID not provided');
+      setTimeout(() => navigate('/invoice'), 2000);
+    }
+  }, [invoiceId]);
+
+  // Available customers for selection (keep fake data for now - already exists in original code)
   const [availableCustomers] = useState([
     {
       id: "CUST-001",
@@ -190,78 +281,6 @@ const InvoiceDetail = () => {
     },
   ]);
 
-  // Available payment methods
-  const paymentMethods = [
-    { id: "Card Payment", name: "Card Payment", icon: "💳" },
-    { id: "Cash", name: "Cash", icon: "💰" },
-    { id: "Digital Wallet", name: "Digital Wallet", icon: "📱" },
-  ];
-
-  // Product list state
-  const [products, setProducts] = useState([
-    {
-      id: 1,
-      name: "Fresh Milk 1L",
-      category: "Dairy",
-      quantity: 2,
-      price: 24.5,
-      total: 49.0,
-    },
-    {
-      id: 2,
-      name: "Whole Wheat Bread",
-      category: "Bakery",
-      quantity: 1,
-      price: 18.0,
-      total: 18.0,
-    },
-    {
-      id: 3,
-      name: "Greek Yogurt 500g",
-      category: "Dairy",
-      quantity: 3,
-      price: 16.3,
-      total: 48.9,
-    },
-    {
-      id: 4,
-      name: "Chocolate Chip Cookies",
-      category: "Snacks",
-      quantity: 1,
-      price: 12.5,
-      total: 12.5,
-    },
-    {
-      id: 5,
-      name: "Orange Juice 1L",
-      category: "Beverages",
-      quantity: 2,
-      price: 15.8,
-      total: 31.6,
-    },
-  ]);
-
-  // Customer information based on invoice data
-  const [customerInfo, setCustomerInfo] = useState(
-    invoiceData.customer.hasInfo
-      ? {
-          id: invoiceData.customer.id,
-          type: "Registered Customer",
-          name: invoiceData.customer.name,
-          description: "Member customer",
-          contact: "john.doe@email.com",
-          hasInfo: true,
-        }
-      : {
-          id: null,
-          type: "Guest Customer",
-          name: "Guest Customer",
-          description: "Walk-in customer",
-          contact: "No contact information",
-          hasInfo: false,
-        }
-  );
-
   // Discount & Promotion state - initialize from location.state if available
   const [discount, setDiscount] = useState(() => {
     if (location.state?.selectedPromotion) {
@@ -282,15 +301,27 @@ const InvoiceDetail = () => {
     return null;
   });
 
-  // Payment method - can be changed if pending
-  const paymentMethod = selectedPaymentMethod;
-
-  // Calculate totals
+  // Calculate totals from products and invoice data
   const subtotal = products.reduce((sum, product) => sum + product.total, 0);
-  const discountAmount = 0.0; // Based on the image
+  const discountAmount = invoice?.discount_amount || 0;
   const taxRate = 0.09; // 9% tax
-  const taxAmount = subtotal * taxRate;
-  const totalAmount = subtotal - discountAmount + taxAmount;
+  const taxAmount = invoice?.tax_amount || (subtotal * taxRate);
+  const totalAmount = invoice?.total_amount || (subtotal - discountAmount + taxAmount);
+
+  // Get invoice status for UI
+  const invoiceStatus = invoice?.payment_status || 'unpaid';
+  const statusMap = {
+    'unpaid': 'pending',
+    'paid': 'completed',
+    'partial': 'pending',
+    'refunded': 'refunded'
+  };
+  const invoiceData = {
+    id: invoice?.invoice_number || invoiceId,
+    status: statusMap[invoiceStatus] || 'pending',
+    paymentMethod: selectedPaymentMethod,
+    customer: customerInfo
+  };
 
   // Filter available customers
   const filteredCustomers = availableCustomers.filter((customer) => {
@@ -345,32 +376,49 @@ const InvoiceDetail = () => {
   };
 
   const handleBack = () => {
-    if (invoiceData.status === "pending") {
-      // Update invoice status to pending and navigate back
-      console.log("Saving invoice as pending:", invoiceData.id);
-      // In real app: updateInvoiceStatus(invoiceData.id, "pending")
-    }
     navigate(-1);
   };
 
-  const handleConfirmPayment = () => {
-    console.log("Confirming payment for:", invoiceData.id);
-    // In real app: updateInvoiceStatus(invoiceData.id, "completed")
-    // Show success message and navigate back
-    setSuccessMessage("Payment confirmed successfully!");
-    setTimeout(() => navigate("/invoice"), 2000);
+  const handleConfirmPayment = async () => {
+    try {
+      const response = await invoiceService.markInvoiceAsPaid(invoiceId);
+      
+      if (response.success) {
+        setSuccessMessage(response.message || 'Payment confirmed successfully!');
+        setTimeout(() => navigate('/invoice'), 2000);
+      } else {
+        setErrorMessage(response.message || 'Failed to confirm payment');
+      }
+    } catch (error) {
+      console.error('Error confirming payment:', error);
+      setErrorMessage('Failed to confirm payment');
+    }
   };
 
   const handleCancelTransaction = () => {
     setShowCancelModal(true);
   };
 
-  const confirmCancelTransaction = () => {
-    console.log("Canceling transaction:", invoiceData.id);
-    // In real app: updateInvoiceStatus(invoiceData.id, "refunded")
-    errorMessage("Transaction canceled and refunded!");
-    setShowCancelModal(false);
-    navigate("/invoice");
+  const confirmCancelTransaction = async () => {
+    try {
+      // Update invoice to refunded status
+      const response = await invoiceService.updateInvoice(invoiceId, {
+        payment_status: 'refunded'
+      });
+      
+      if (response.success) {
+        setSuccessMessage('Transaction canceled and refunded!');
+        setShowCancelModal(false);
+        setTimeout(() => navigate('/invoice'), 2000);
+      } else {
+        setErrorMessage(response.message || 'Failed to cancel transaction');
+        setShowCancelModal(false);
+      }
+    } catch (error) {
+      console.error('Error canceling transaction:', error);
+      setErrorMessage('Failed to cancel transaction');
+      setShowCancelModal(false);
+    }
   };
 
   const handlePaymentMethodChange = (methodId) => {
@@ -397,6 +445,27 @@ const InvoiceDetail = () => {
 
   return (
     <div className="invoice-detail-view">
+      {/* Loading overlay */}
+      {isLoading && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(255, 255, 255, 0.9)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 1000
+        }}>
+          <div style={{ textAlign: 'center' }}>
+            <div style={{ fontSize: '24px', marginBottom: '10px' }}>⏳</div>
+            <div>Loading invoice details...</div>
+          </div>
+        </div>
+      )}
+
       <SuccessMessage
         message={successMessage}
         onClose={() => {
@@ -519,26 +588,6 @@ const InvoiceDetail = () => {
                   </button>
                 </div>
               )}
-              {invoiceData.status !== "pending" && (
-                <button
-                  className={`invoice-customer-action-btn ${
-                    customerInfo.hasInfo ? "edit" : "add"
-                  }`}
-                  onClick={handleCustomerAction}
-                >
-                  {customerInfo.hasInfo ? (
-                    <>
-                      <FaEdit className="invoice-action-icon" />
-                      Edit Customer
-                    </>
-                  ) : (
-                    <>
-                      <FaPlus className="invoice-action-icon" />
-                      Add Customer
-                    </>
-                  )}
-                </button>
-              )}
             </div>
 
             {/* Customer Search Results */}
@@ -656,9 +705,11 @@ const InvoiceDetail = () => {
                 <p className="invoice-no-promotion-text">
                   No promotion applied
                 </p>
-                <p className="invoice-no-promotion-subtitle">
-                  Add a promotion to get discounts on your purchase
-                </p>
+                {invoiceData.status === "pending" && (
+                  <p className="invoice-no-promotion-subtitle">
+                    Add a promotion to get discounts on your purchase
+                  </p>
+                )}
               </div>
             )}
           </div>
@@ -726,11 +777,11 @@ const InvoiceDetail = () => {
                 <div className="invoice-payment-readonly">
                   <div className="invoice-payment-display">
                     <span className="invoice-payment-icon">
-                      {paymentMethods.find((m) => m.id === paymentMethod)
+                      {paymentMethods.find((m) => m.id === selectedPaymentMethod)
                         ?.icon || "💳"}
                     </span>
                     <span className="invoice-payment-text">
-                      {paymentMethod}
+                      {selectedPaymentMethod}
                     </span>
                   </div>
                 </div>
