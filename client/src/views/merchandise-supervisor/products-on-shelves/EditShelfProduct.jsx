@@ -1,650 +1,308 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import {
-  FaSearch,
-  FaBox,
-  FaArrowRight,
-  FaTimes,
-  FaSave,
-  FaDownload,
-  FaArrowLeft,
-} from "react-icons/fa";
+import { FaArrowLeft, FaBox } from "react-icons/fa";
 import "./EditShelfProduct.css";
 import SuccessMessage from "../../../components/Messages/SuccessMessage";
 import ErrorMessage from "../../../components/Messages/ErrorMessage";
+import * as productShelfService from "../../../services/productShelfService";
 
 const EditShelfProduct = () => {
-  const { combinedId } = useParams();
+  const { id } = useParams(); // Product-Shelf mapping ID
   const navigate = useNavigate();
 
   const [errorMessage, setErrorMessage] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Parse the combined id to extract productId and location
-  const [productId, location] = combinedId ? combinedId.split("-") : ["", ""];
+  // Product and current shelf info
+  const [productInfo, setProductInfo] = useState(null);
+  const [currentShelf, setCurrentShelf] = useState(null);
+  const [mappingQuantity, setMappingQuantity] = useState(0);
 
-  // Debug logging
-  console.log("EditShelfProduct mounted");
-  console.log("combinedId:", combinedId);
-  console.log("productId:", productId, "location:", location);
+  // Available shelves
+  const [shelves, setShelves] = useState([]);
+  const [selectedNewShelf, setSelectedNewShelf] = useState(null);
 
-  // Sample selected product data with current shelf locations
-  const [selectedProduct, setSelectedProduct] = useState({
-    id: "P001",
-    name: "Coca Cola 330ml",
-    category: "Beverages",
-    brand: "Coca-Cola",
-    price: "$1.99",
-    supplier: "Beverage Co.",
-    totalStock: 105,
-    locations: [
-      {
-        shelfLocation: "A1",
-        section: "A",
-        slot: "12",
-        stock: 45,
-        capacity: 60,
-        status: "Low Stock",
-      },
-      {
-        shelfLocation: "D2",
-        section: "D",
-        slot: "08",
-        stock: 60,
-        capacity: 80,
-        status: "In Stock",
-      },
-    ],
-  });
+  // Load data on mount
+  useEffect(() => {
+    loadProductShelfData();
+  }, [id]);
 
-  // Sample available shelf locations
-  const [availableShelfData] = useState([
-    {
-      shelfLocation: "A1",
-      section: "A",
-      slot: "12",
-      capacity: 60,
-      currentStock: 45,
-      availableSpace: 15,
-    },
-    {
-      shelfLocation: "A2",
-      section: "A",
-      slot: "20",
-      capacity: 50,
-      currentStock: 0,
-      availableSpace: 50,
-    },
-    {
-      shelfLocation: "B1",
-      section: "B",
-      slot: "07",
-      capacity: 70,
-      currentStock: 40,
-      availableSpace: 30,
-    },
-    {
-      shelfLocation: "B3",
-      section: "B",
-      slot: "14",
-      capacity: 80,
-      currentStock: 80,
-      availableSpace: 0,
-    },
-    {
-      shelfLocation: "C1",
-      section: "C",
-      slot: "15",
-      capacity: 60,
-      currentStock: 25,
-      availableSpace: 35,
-    },
-    {
-      shelfLocation: "C2",
-      section: "C",
-      slot: "18",
-      capacity: 90,
-      currentStock: 22,
-      availableSpace: 68,
-    },
-    {
-      shelfLocation: "D1",
-      section: "D",
-      slot: "05",
-      capacity: 75,
-      currentStock: 0,
-      availableSpace: 75,
-    },
-    {
-      shelfLocation: "D2",
-      section: "D",
-      slot: "08",
-      capacity: 80,
-      currentStock: 60,
-      availableSpace: 20,
-    },
-  ]);
+  const loadProductShelfData = async () => {
+    try {
+      setIsLoading(true);
+      
+      // Get current mapping
+      const mappingResponse = await productShelfService.getProductShelfById(id);
+      
+      if (mappingResponse.success && mappingResponse.data) {
+        const mapping = mappingResponse.data;
+        setProductInfo(mapping.product_id);
+        setCurrentShelf(mapping.shelf_id);
+        setMappingQuantity(mapping.quantity);
+      } else {
+        setErrorMessage("Failed to load product-shelf mapping");
+        return;
+      }
 
-  const [shelfSearchTerm, setShelfSearchTerm] = useState("");
-  const [shelfCurrentPage, setShelfCurrentPage] = useState(1);
-  const [pendingActions, setPendingActions] = useState([]);
-  const [selectedQuantities, setSelectedQuantities] = useState({});
+      // Load all shelves (excluding current one)
+      const shelvesResponse = await productShelfService.getAllProductShelves({
+        limit: 100
+      });
+      
+      // Get all unique shelves from API or load from shelves endpoint
+      const allShelvesRes = await fetch('http://localhost:5000/api/shelves?limit=100');
+      const shelvesData = await allShelvesRes.json();
+      
+      if (shelvesData.success) {
+        setShelves(shelvesData.data || []);
+      }
 
-  const itemsPerPage = 5;
+    } catch (error) {
+      console.error("Error loading data:", error);
+      setErrorMessage("Error loading product shelf data");
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
-  // Filter available shelves
-  const filteredShelfData = availableShelfData.filter((shelf) => {
-    const matchesSearch =
-      shelf.shelfLocation
-        .toLowerCase()
-        .includes(shelfSearchTerm.toLowerCase()) ||
-      shelf.section.toLowerCase().includes(shelfSearchTerm.toLowerCase()) ||
-      shelf.slot.toLowerCase().includes(shelfSearchTerm.toLowerCase());
+  const handleMoveProduct = async () => {
+    if (!selectedNewShelf) {
+      setErrorMessage("Please select a shelf to move the product to");
+      return;
+    }
 
-    return matchesSearch;
-  });
+    try {
+      setIsSubmitting(true);
+      
+      // Call move API
+      const response = await productShelfService.moveProductToShelf(id, {
+        new_shelf_id: selectedNewShelf._id
+      });
+      
+      if (response.success) {
+        setSuccessMessage(`Successfully moved ${mappingQuantity} units to ${selectedNewShelf.shelf_number}!`);
+        setTimeout(() => navigate("/shelf-product"), 1500);
+      } else {
+        setErrorMessage(response.message || "Failed to move product");
+      }
+    } catch (error) {
+      console.error("Error moving product:", error);
+      setErrorMessage("Error moving product to new shelf");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
-  // Calculate pagination for shelves
-  const totalShelfItems = filteredShelfData.length;
-  const totalShelfPages = Math.ceil(totalShelfItems / itemsPerPage);
-  const shelfStartIndex = (shelfCurrentPage - 1) * itemsPerPage;
-  const shelfEndIndex = shelfStartIndex + itemsPerPage;
-  const paginatedShelfData = filteredShelfData.slice(
-    shelfStartIndex,
-    shelfEndIndex
+  if (isLoading) {
+    return (
+      <div className="edit-shelf-product-view">
+        <div style={{ padding: '2rem', textAlign: 'center' }}>
+          <div className="spinner" style={{ margin: '0 auto', width: '40px', height: '40px', border: '4px solid #f3f3f3', borderTop: '4px solid #2563eb', borderRadius: '50%', animation: 'spin 1s linear infinite' }}></div>
+          <p style={{ marginTop: '1rem', color: '#64748b' }}>Loading product data...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!productInfo || !currentShelf) {
+    return (
+      <div className="edit-shelf-product-view">
+        <div style={{ padding: '2rem', textAlign: 'center', color: '#dc2626' }}>
+          Product or shelf information not found
+        </div>
+      </div>
+    );
+  }
+
+  // Filter out current shelf from available shelves
+  const availableShelves = shelves.filter(
+    shelf => shelf._id !== currentShelf._id
   );
-
-  const handleQuantityChange = (shelfLocation, type, value) => {
-    const key = `${shelfLocation}-${type}`;
-    setSelectedQuantities((prev) => ({
-      ...prev,
-      [key]: Math.max(0, parseInt(value) || 0),
-    }));
-  };
-
-  const getQuantityForLocation = (shelfLocation, type) => {
-    const key = `${shelfLocation}-${type}`;
-    return selectedQuantities[key] || 0;
-  };
-
-  const handleMoveToShelf = (targetShelf) => {
-    const moveQuantity = getQuantityForLocation(
-      targetShelf.shelfLocation,
-      "move"
-    );
-
-    if (moveQuantity <= 0) {
-      setErrorMessage("Please enter a valid quantity to move");
-      return;
-    }
-
-    if (moveQuantity > targetShelf.availableSpace) {
-      setErrorMessage(
-        `Cannot move ${moveQuantity} units. Available space: ${targetShelf.availableSpace}`
-      );
-      return;
-    }
-
-    const action = {
-      id: Date.now(),
-      type: "move",
-      productId: selectedProduct.id,
-      productName: selectedProduct.name,
-      targetShelf: targetShelf.shelfLocation,
-      targetSection: targetShelf.section,
-      targetSlot: targetShelf.slot,
-      quantity: moveQuantity,
-    };
-
-    setPendingActions((prev) => [...prev, action]);
-
-    // Reset quantity input
-    const key = `${targetShelf.shelfLocation}-move`;
-    setSelectedQuantities((prev) => ({
-      ...prev,
-      [key]: 0,
-    }));
-  };
-
-  const handleRemoveFromShelf = (sourceLocation) => {
-    const removeQuantity = getQuantityForLocation(
-      sourceLocation.shelfLocation,
-      "remove"
-    );
-
-    if (removeQuantity <= 0) {
-      setErrorMessage("Please enter a valid quantity to remove");
-      return;
-    }
-
-    if (removeQuantity > sourceLocation.stock) {
-      setErrorMessage(
-        `Cannot remove ${removeQuantity} units. Available stock: ${sourceLocation.stock}`
-      );
-      return;
-    }
-
-    const action = {
-      id: Date.now(),
-      type: "remove",
-      productId: selectedProduct.id,
-      productName: selectedProduct.name,
-      sourceShelf: sourceLocation.shelfLocation,
-      sourceSection: sourceLocation.section,
-      sourceSlot: sourceLocation.slot,
-      quantity: removeQuantity,
-    };
-
-    setPendingActions((prev) => [...prev, action]);
-
-    // Reset quantity input
-    const key = `${sourceLocation.shelfLocation}-remove`;
-    setSelectedQuantities((prev) => ({
-      ...prev,
-      [key]: 0,
-    }));
-  };
-
-  const handleRemoveAction = (actionId) => {
-    setPendingActions((prev) =>
-      prev.filter((action) => action.id !== actionId)
-    );
-  };
-
-  const handleSaveChanges = () => {
-    if (pendingActions.length === 0) {
-      setErrorMessage("No changes to save");
-      return;
-    }
-
-    console.log("Saving changes:", pendingActions);
-    setSuccessMessage(`Successfully saved ${pendingActions.length} changes!`);
-    navigate(-1);
-  };
-
-  const handleCancel = () => {
-    if (pendingActions.length > 0) {
-      const confirmLeave = window.confirm(
-        "You have unsaved changes. Are you sure you want to cancel?"
-      );
-      if (!confirmLeave) return;
-    }
-    navigate(-1);
-  };
-
-  const getCapacityColor = (currentStock, capacity) => {
-    const percentage = (currentStock / capacity) * 100;
-    if (percentage >= 90) return "edit-shelf-capacity-full";
-    if (percentage >= 70) return "edit-shelf-capacity-high";
-    if (percentage >= 40) return "edit-shelf-capacity-medium";
-    return "edit-shelf-capacity-low";
-  };
-
-  const getStatusBadgeClass = (status) => {
-    switch (status) {
-      case "In Stock":
-        return "edit-shelf-status-approved";
-      case "Low Stock":
-        return "edit-shelf-status-pending";
-      case "Out of Stock":
-        return "edit-shelf-status-declined";
-      default:
-        return "edit-shelf-status-default";
-    }
-  };
 
   return (
     <div className="edit-shelf-product-view">
       <SuccessMessage
         message={successMessage}
-        onClose={() => {
-          setSuccessMessage("");
-        }}
+        onClose={() => setSuccessMessage("")}
       />
       <ErrorMessage
         message={errorMessage}
-        onClose={() => {
-          setErrorMessage("");
-        }}
+        onClose={() => setErrorMessage("")}
       />
+
       {/* Header */}
-      <div className="edit-shelf-page-header">
-        <button onClick={handleCancel} className="edit-shelf-back-btn">
-          <FaArrowLeft />
+      <div className="edit-shelf-header">
+        <button
+          className="edit-shelf-back-btn"
+          onClick={() => navigate(-1)}
+          disabled={isSubmitting}
+        >
+          <FaArrowLeft className="back-icon" />
+          Back
         </button>
-        <div className="edit-shelf-header-content">
-          <h1 className="edit-shelf-page-title">Edit Shelf Product</h1>
+        <div>
+          <h1 className="edit-shelf-page-title">Update Location</h1>
           <p className="edit-shelf-page-subtitle">
-            {selectedProduct.name} - {selectedProduct.id}
+            Move product to a different shelf
           </p>
-        </div>
-        <div className="edit-shelf-header-actions">
-          <button onClick={handleSaveChanges} className="edit-shelf-save-btn">
-            <FaSave className="edit-shelf-save-icon" />
-            Save Changes ({pendingActions.length})
-          </button>
         </div>
       </div>
 
       {/* Main Content */}
-      <div className="edit-shelf-content">
-        {/* Left Panel - Current Product Locations */}
+      <div className="edit-shelf-main-content">
+        {/* Left Panel - Product Information */}
         <div className="edit-shelf-left-panel">
-          <div className="edit-shelf-panel-header">
-            <FaBox className="edit-shelf-panel-icon" />
-            <h2 className="edit-shelf-panel-title">Current Locations</h2>
-            <span className="edit-shelf-location-count">
-              {selectedProduct.locations.length} locations
-            </span>
-          </div>
+          <div className="product-info-card">
+            <h2 className="card-title">
+              <FaBox className="title-icon" />
+              {productInfo.name}
+            </h2>
+            <p className="product-category">{productInfo.category}</p>
 
-          <div className="edit-shelf-current-locations">
-            {selectedProduct.locations.map((location, index) => (
-              <div key={index} className="edit-shelf-location-card">
-                <div className="edit-shelf-location-header">
-                  <div className="edit-shelf-location-info">
-                    <span className="edit-shelf-location-name">
-                      {location.shelfLocation}
-                    </span>
-                    <span className="edit-shelf-location-details">
-                      Section {location.section} - Slot {location.slot}
-                    </span>
-                  </div>
-                  <span
-                    className={`edit-shelf-status-badge ${getStatusBadgeClass(
-                      location.status
-                    )}`}
-                  >
-                    {location.status}
-                  </span>
-                </div>
-
-                <div className="edit-shelf-location-stats">
-                  <div className="edit-shelf-stat-item">
-                    <span className="edit-shelf-stat-label">Current Stock</span>
-                    <span className="edit-shelf-stat-value">
-                      {location.stock} units
-                    </span>
-                  </div>
-                  <div className="edit-shelf-stat-item">
-                    <span className="edit-shelf-stat-label">Capacity</span>
-                    <span className="edit-shelf-stat-value">
-                      {location.capacity} units
-                    </span>
-                  </div>
-                </div>
-
-                <div className="edit-shelf-capacity-bar">
-                  <div
-                    className={`edit-shelf-capacity-fill ${getCapacityColor(
-                      location.stock,
-                      location.capacity
-                    )}`}
-                    style={{
-                      width: `${(location.stock / location.capacity) * 100}%`,
-                    }}
-                  ></div>
-                </div>
-
-                <div className="edit-shelf-remove-section">
-                  <label className="edit-shelf-action-label">
-                    Remove from shelf:
-                  </label>
-                  <div className="edit-shelf-action-controls">
-                    <input
-                      type="number"
-                      min="0"
-                      max={location.stock}
-                      value={getQuantityForLocation(
-                        location.shelfLocation,
-                        "remove"
-                      )}
-                      onChange={(e) =>
-                        handleQuantityChange(
-                          location.shelfLocation,
-                          "remove",
-                          e.target.value
-                        )
-                      }
-                      className="edit-shelf-quantity-input"
-                      placeholder="Qty"
-                    />
-                    <button
-                      onClick={() => handleRemoveFromShelf(location)}
-                      className="edit-shelf-remove-btn"
-                      disabled={
-                        getQuantityForLocation(
-                          location.shelfLocation,
-                          "remove"
-                        ) <= 0
-                      }
-                    >
-                      <FaDownload />
-                      Remove
-                    </button>
-                  </div>
-                </div>
+            <div className="product-details-grid">
+              <div className="detail-item">
+                <label>Product ID</label>
+                <span>{productInfo._id?.slice(-6) || productInfo.sku || 'N/A'}</span>
               </div>
-            ))}
+
+              <div className="detail-item">
+                <label>Section</label>
+                <span>{currentShelf.shelf_name || 'N/A'}</span>
+              </div>
+
+              <div className="detail-item">
+                <label>Shelf Location</label>
+                <span>{currentShelf.shelf_number || 'N/A'}</span>
+              </div>
+
+              <div className="detail-item">
+                <label>Slot</label>
+                <span>{currentShelf.section_number || 'N/A'}</span>
+              </div>
+
+              <div className="detail-item">
+                <label>Supplier</label>
+                <span>{productInfo.supplier_id?.name || 'Unknown'}</span>
+              </div>
+
+              <div className="detail-item">
+                <label>Quantity</label>
+                <span className="quantity-value">{mappingQuantity}</span>
+              </div>
+            </div>
+
+            <div className="status-section">
+              <label>Status</label>
+              <span className="status-badge in-stock">In Stock</span>
+            </div>
+
+            <div className="description-section">
+              <label>Description</label>
+              <p>{productInfo.description || 'No description available'}</p>
+            </div>
           </div>
         </div>
 
-        {/* Right Panel - Available Shelf Locations */}
+        {/* Right Panel - Select Shelf */}
         <div className="edit-shelf-right-panel">
-          <div className="edit-shelf-panel-header">
-            <FaBox className="edit-shelf-panel-icon" />
-            <h2 className="edit-shelf-panel-title">
-              Available Shelf Locations
-            </h2>
-          </div>
+          <h2 className="panel-title">Select Shelf</h2>
+          
+          {availableShelves.length === 0 ? (
+            <div className="no-shelves-message">
+              <p>No other shelves available</p>
+            </div>
+          ) : (
+            <div className="shelves-list">
+              {availableShelves.map((shelf) => {
+                const isSelected = selectedNewShelf?._id === shelf._id;
+                const currentQty = shelf.current_quantity || 0;
+                const capacity = shelf.capacity || 50;
+                const available = capacity - currentQty;
+                const utilization = (currentQty / capacity) * 100;
+                const canFit = available >= mappingQuantity;
 
-          {/* Search */}
-          <div className="edit-shelf-search-container">
-            <FaSearch className="edit-shelf-search-icon" />
-            <input
-              type="text"
-              placeholder="Search by location, section, or slot..."
-              value={shelfSearchTerm}
-              onChange={(e) => setShelfSearchTerm(e.target.value)}
-              className="edit-shelf-search-input"
-            />
-          </div>
-
-          {/* Available Shelves Table */}
-          <div className="edit-shelf-table-container">
-            <table className="edit-shelf-table">
-              <thead>
-                <tr>
-                  <th>Location</th>
-                  <th>Capacity</th>
-                  <th>Available</th>
-                  <th>Move Quantity</th>
-                  <th>Action</th>
-                </tr>
-              </thead>
-              <tbody>
-                {paginatedShelfData.map((shelf, index) => (
-                  <tr key={index}>
-                    <td>
-                      <div className="edit-shelf-location-cell">
-                        <div className="edit-shelf-location-name">
-                          {shelf.shelfLocation}
-                        </div>
-                        <div className="edit-shelf-location-details">
-                          Section {shelf.section} - Slot {shelf.slot}
-                        </div>
-                      </div>
-                    </td>
-                    <td>
-                      <div className="edit-shelf-capacity-info">
-                        <span className="edit-shelf-capacity-text">
-                          {shelf.currentStock}/{shelf.capacity}
-                        </span>
-                        <div className="edit-shelf-capacity-bar-small">
-                          <div
-                            className={`edit-shelf-capacity-fill ${getCapacityColor(
-                              shelf.currentStock,
-                              shelf.capacity
-                            )}`}
-                            style={{
-                              width: `${
-                                (shelf.currentStock / shelf.capacity) * 100
-                              }%`,
-                            }}
-                          ></div>
-                        </div>
-                      </div>
-                    </td>
-                    <td>
-                      <span
-                        className={`edit-shelf-available-space ${
-                          shelf.availableSpace === 0
-                            ? "edit-shelf-no-space"
-                            : "edit-shelf-has-space"
-                        }`}
-                      >
-                        {shelf.availableSpace}
-                      </span>
-                    </td>
-                    <td>
+                return (
+                  <div
+                    key={shelf._id}
+                    className={`shelf-card ${isSelected ? 'selected' : ''} ${!canFit ? 'insufficient-space' : ''}`}
+                    onClick={() => canFit && setSelectedNewShelf(shelf)}
+                  >
+                    <div className="shelf-card-header">
                       <input
-                        type="number"
-                        min="0"
-                        max={shelf.availableSpace}
-                        value={getQuantityForLocation(
-                          shelf.shelfLocation,
-                          "move"
-                        )}
-                        onChange={(e) =>
-                          handleQuantityChange(
-                            shelf.shelfLocation,
-                            "move",
-                            e.target.value
-                          )
-                        }
-                        className="edit-shelf-quantity-input"
-                        placeholder="0"
-                        disabled={shelf.availableSpace === 0}
+                        type="radio"
+                        name="selectedShelf"
+                        checked={isSelected}
+                        onChange={() => canFit && setSelectedNewShelf(shelf)}
+                        disabled={!canFit}
+                        className="shelf-radio"
                       />
-                    </td>
-                    <td>
-                      <button
-                        onClick={() => handleMoveToShelf(shelf)}
-                        className="edit-shelf-move-btn"
-                        disabled={
-                          shelf.availableSpace === 0 ||
-                          getQuantityForLocation(shelf.shelfLocation, "move") <=
-                            0
-                        }
-                      >
-                        <FaArrowRight />
-                        Move
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                      <div className="shelf-info">
+                        <h3 className="shelf-id">{shelf.shelf_number}</h3>
+                        <p className="shelf-name">{shelf.description || `Shelf ${shelf.shelf_name}`}</p>
+                      </div>
+                    </div>
 
-          {/* Pagination */}
-          <div className="edit-shelf-pagination">
-            <div className="edit-shelf-pagination-info">
-              Showing {totalShelfItems > 0 ? shelfStartIndex + 1 : 0}-
-              {Math.min(shelfEndIndex, totalShelfItems)} of {totalShelfItems}
+                    <div className="shelf-details">
+                      <div className="detail-row">
+                        <span>Location:</span>
+                        <span className="detail-value">{shelf.shelf_number}</span>
+                      </div>
+                      <div className="detail-row">
+                        <span>Section:</span>
+                        <span className="detail-value">{shelf.shelf_name}</span>
+                      </div>
+                      <div className="detail-row">
+                        <span>Slot:</span>
+                        <span className="detail-value">{shelf.section_number}</span>
+                      </div>
+                    </div>
+
+                    <div className="capacity-info">
+                      <div className="capacity-header">
+                        <span>Capacity</span>
+                        <span className="capacity-text">
+                          {currentQty}/{capacity}
+                        </span>
+                      </div>
+                      <div className="capacity-bar-container">
+                        <div 
+                          className="capacity-bar-fill"
+                          style={{ width: `${utilization}%` }}
+                        ></div>
+                      </div>
+                      <div className="available-space">
+                        <span>Available: </span>
+                        <span className={`available-value ${canFit ? 'positive' : 'negative'}`}>
+                          {available}
+                        </span>
+                        {!canFit && (
+                          <span className="insufficient-label">Insufficient space</span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
-            <div className="edit-shelf-pagination-controls">
+          )}
+
+          {/* Action Button */}
+          {selectedNewShelf && (
+            <div className="action-bar">
               <button
-                className="edit-shelf-pagination-btn"
-                onClick={() =>
-                  setShelfCurrentPage(Math.max(1, shelfCurrentPage - 1))
-                }
-                disabled={shelfCurrentPage === 1}
+                className="move-product-btn"
+                onClick={handleMoveProduct}
+                disabled={isSubmitting}
               >
-                ‹
-              </button>
-
-              <div className="edit-shelf-page-numbers">
-                {Array.from(
-                  { length: Math.min(3, totalShelfPages) },
-                  (_, i) => {
-                    let pageNum;
-                    if (totalShelfPages <= 3) {
-                      pageNum = i + 1;
-                    } else if (shelfCurrentPage === 1) {
-                      pageNum = i + 1;
-                    } else if (shelfCurrentPage === totalShelfPages) {
-                      pageNum = totalShelfPages - 2 + i;
-                    } else {
-                      pageNum = shelfCurrentPage - 1 + i;
-                    }
-
-                    return (
-                      <button
-                        key={pageNum}
-                        className={`edit-shelf-page-number ${
-                          shelfCurrentPage === pageNum ? "active" : ""
-                        }`}
-                        onClick={() => setShelfCurrentPage(pageNum)}
-                      >
-                        {pageNum}
-                      </button>
-                    );
-                  }
-                )}
-              </div>
-
-              <button
-                className="edit-shelf-pagination-btn"
-                onClick={() =>
-                  setShelfCurrentPage(
-                    Math.min(totalShelfPages, shelfCurrentPage + 1)
-                  )
-                }
-                disabled={shelfCurrentPage === totalShelfPages}
-              >
-                ›
+                <FaArrowLeft className="btn-icon" style={{ transform: 'rotate(180deg)' }} />
+                {isSubmitting ? 'Moving...' : `Move product to ${selectedNewShelf.shelf_number}`}
               </button>
             </div>
-          </div>
+          )}
         </div>
       </div>
-
-      {/* Pending Actions Panel */}
-      {pendingActions.length > 0 && (
-        <div className="edit-shelf-pending-panel">
-          <h3 className="edit-shelf-pending-title">
-            Pending Changes ({pendingActions.length})
-          </h3>
-          <div className="edit-shelf-pending-actions">
-            {pendingActions.map((action) => (
-              <div key={action.id} className="edit-shelf-pending-item">
-                <div className="edit-shelf-action-info">
-                  {action.type === "move" ? (
-                    <span className="edit-shelf-action-text">
-                      Move {action.quantity} units to {action.targetShelf}{" "}
-                      (Section {action.targetSection} - Slot {action.targetSlot}
-                      )
-                    </span>
-                  ) : (
-                    <span className="edit-shelf-action-text">
-                      Remove {action.quantity} units from {action.sourceShelf}{" "}
-                      (Section {action.sourceSection} - Slot {action.sourceSlot}
-                      )
-                    </span>
-                  )}
-                </div>
-                <button
-                  onClick={() => handleRemoveAction(action.id)}
-                  className="edit-shelf-remove-action-btn"
-                >
-                  <FaTimes />
-                </button>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
     </div>
   );
 };

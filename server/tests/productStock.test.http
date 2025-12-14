@@ -1,0 +1,458 @@
+### ProductStock API Tests
+### Base URL
+@baseUrl = http://localhost:5000/api/product-stocks
+
+###############################################
+# 1. GET ALL PRODUCT STOCKS
+###############################################
+
+### Get all product stocks (with pagination)
+GET {{baseUrl}}?page=1&limit=10
+
+### Get stocks for a specific product
+@productId = 6756c1e64f4b5f4d9c8e2a31
+GET {{baseUrl}}?product_id={{productId}}
+
+### Get stocks on a specific shelf
+@shelfId = 6756c1e64f4b5f4d9c8e2a41
+GET {{baseUrl}}?shelf_id={{shelfId}}
+
+### Get stocks by status - available
+GET {{baseUrl}}?status=available
+
+### Get stocks by status - low_stock
+GET {{baseUrl}}?status=low_stock
+
+### Get stocks in a specific warehouse
+GET {{baseUrl}}?warehouse_id=WH-001
+
+### Combined filters: product + shelf + status
+GET {{baseUrl}}?product_id={{productId}}&shelf_id={{shelfId}}&status=available
+
+###############################################
+# 2. GET PRODUCT STOCK STATS
+###############################################
+
+### Get product stock statistics
+GET {{baseUrl}}/stats
+
+###############################################
+# 3. GET LOW STOCK PRODUCTS
+###############################################
+
+### Get all products with low stock (with supplier info)
+GET {{baseUrl}}/low-stock
+
+### Get low stock products with limit
+GET {{baseUrl}}/low-stock?limit=5
+
+###############################################
+# 4. GET STOCK BY PRODUCT
+###############################################
+
+### Get total stock across all shelves for a product (Gạo ST25)
+@gaoST25Id = 6756c1e64f4b5f4d9c8e2a31
+GET {{baseUrl}}/product/{{gaoST25Id}}
+
+### Get stock for another product (Sữa tươi Vinamilk)
+@suaTuoiId = 6756c1e64f4b5f4d9c8e2a33
+GET {{baseUrl}}/product/{{suaTuoiId}}
+
+###############################################
+# 5. GET STOCK BY SHELF
+###############################################
+
+### Get all stock on shelf A1 (Lương thực)
+@shelfA1Id = 6756c1e64f4b5f4d9c8e2a41
+GET {{baseUrl}}/shelf/{{shelfA1Id}}
+
+### Get stock on shelf B1 (Sữa & Trứng)
+@shelfB1Id = 6756c1e64f4b5f4d9c8e2a43
+GET {{baseUrl}}/shelf/{{shelfB1Id}}
+
+###############################################
+# 6. GET PRODUCT STOCK BY ID
+###############################################
+
+### Get product stock by ID
+@productStockId = 6756c1e64f4b5f4d9c8e2a61
+GET {{baseUrl}}/{{productStockId}}
+
+###############################################
+# 7. CREATE PRODUCT STOCK
+###############################################
+
+### Create new stock record - Success case
+POST {{baseUrl}}
+Content-Type: application/json
+
+{
+  "product_id": "6756c1e64f4b5f4d9c8e2a31",
+  "shelf_id": "6756c1e64f4b5f4d9c8e2a41",
+  "warehouse_id": "WH-001",
+  "quantity": 100,
+  "status": "available",
+  "section": "A",
+  "slot": "1"
+}
+
+### Create stock with low_stock status
+POST {{baseUrl}}
+Content-Type: application/json
+
+{
+  "product_id": "6756c1e64f4b5f4d9c8e2a32",
+  "shelf_id": "6756c1e64f4b5f4d9c8e2a42",
+  "warehouse_id": "WH-001",
+  "quantity": 5,
+  "status": "low_stock",
+  "section": "A",
+  "slot": "2"
+}
+
+### Create stock - Invalid product_id (should fail)
+POST {{baseUrl}}
+Content-Type: application/json
+
+{
+  "product_id": "507f1f77bcf86cd799439011",
+  "shelf_id": "6756c1e64f4b5f4d9c8e2a41",
+  "warehouse_id": "WH-001",
+  "quantity": 100,
+  "status": "available"
+}
+
+### Create stock - Invalid shelf_id (should fail)
+POST {{baseUrl}}
+Content-Type: application/json
+
+{
+  "product_id": "6756c1e64f4b5f4d9c8e2a31",
+  "shelf_id": "507f1f77bcf86cd799439011",
+  "warehouse_id": "WH-001",
+  "quantity": 100,
+  "status": "available"
+}
+
+### Create stock - Missing required fields (should fail)
+POST {{baseUrl}}
+Content-Type: application/json
+
+{
+  "product_id": "6756c1e64f4b5f4d9c8e2a31",
+  "quantity": 100
+}
+
+###############################################
+# 8. UPDATE PRODUCT STOCK
+###############################################
+
+### Update stock quantity
+PUT {{baseUrl}}/{{productStockId}}
+Content-Type: application/json
+
+{
+  "quantity": 150
+}
+
+### Update stock status
+PUT {{baseUrl}}/{{productStockId}}
+Content-Type: application/json
+
+{
+  "status": "low_stock"
+}
+
+### Update section and slot
+PUT {{baseUrl}}/{{productStockId}}
+Content-Type: application/json
+
+{
+  "section": "B",
+  "slot": "3"
+}
+
+### Update multiple fields
+PUT {{baseUrl}}/{{productStockId}}
+Content-Type: application/json
+
+{
+  "quantity": 200,
+  "status": "available",
+  "section": "C",
+  "slot": "5"
+}
+
+###############################################
+# 9. ADJUST STOCK QUANTITY
+###############################################
+
+### Increase stock quantity (positive adjustment)
+PUT {{baseUrl}}/{{productStockId}}/adjust
+Content-Type: application/json
+
+{
+  "adjustment": 50,
+  "reason": "Nhập hàng mới từ nhà cung cấp"
+}
+
+### Decrease stock quantity (negative adjustment)
+PUT {{baseUrl}}/{{productStockId}}/adjust
+Content-Type: application/json
+
+{
+  "adjustment": -30,
+  "reason": "Xuất bán cho khách hàng"
+}
+
+### Adjust with large increase
+PUT {{baseUrl}}/{{productStockId}}/adjust
+Content-Type: application/json
+
+{
+  "adjustment": 500,
+  "reason": "Nhập kho số lượng lớn cuối tháng"
+}
+
+### Adjust with decrease to zero
+PUT {{baseUrl}}/{{productStockId}}/adjust
+Content-Type: application/json
+
+{
+  "adjustment": -150,
+  "reason": "Xuất hết hàng tồn kho"
+}
+
+### Adjust without reason (should work but log warning)
+PUT {{baseUrl}}/{{productStockId}}/adjust
+Content-Type: application/json
+
+{
+  "adjustment": 10
+}
+
+### Adjust to negative quantity (should fail)
+PUT {{baseUrl}}/{{productStockId}}/adjust
+Content-Type: application/json
+
+{
+  "adjustment": -99999,
+  "reason": "Test negative stock"
+}
+
+###############################################
+# 10. BULK UPDATE STATUS
+###############################################
+
+### Update status for multiple stock records
+PUT {{baseUrl}}/bulk/update-status
+Content-Type: application/json
+
+{
+  "stock_ids": [
+    "6756c1e64f4b5f4d9c8e2a61",
+    "6756c1e64f4b5f4d9c8e2a62",
+    "6756c1e64f4b5f4d9c8e2a63"
+  ],
+  "status": "available"
+}
+
+### Bulk update to low_stock
+PUT {{baseUrl}}/bulk/update-status
+Content-Type: application/json
+
+{
+  "stock_ids": [
+    "6756c1e64f4b5f4d9c8e2a64",
+    "6756c1e64f4b5f4d9c8e2a65"
+  ],
+  "status": "low_stock"
+}
+
+### Bulk update with some invalid IDs (partial success)
+PUT {{baseUrl}}/bulk/update-status
+Content-Type: application/json
+
+{
+  "stock_ids": [
+    "6756c1e64f4b5f4d9c8e2a61",
+    "507f1f77bcf86cd799439011"
+  ],
+  "status": "available"
+}
+
+### Bulk update - Missing stock_ids (should fail)
+PUT {{baseUrl}}/bulk/update-status
+Content-Type: application/json
+
+{
+  "status": "available"
+}
+
+### Bulk update - Invalid status value (should fail)
+PUT {{baseUrl}}/bulk/update-status
+Content-Type: application/json
+
+{
+  "stock_ids": ["6756c1e64f4b5f4d9c8e2a61"],
+  "status": "invalid_status"
+}
+
+###############################################
+# 11. DELETE PRODUCT STOCK
+###############################################
+
+### Delete product stock (soft delete)
+@deleteProductStockId = 6756c1e64f4b5f4d9c8e2a61
+DELETE {{baseUrl}}/{{deleteProductStockId}}
+
+###############################################
+# INTEGRATION TESTS
+###############################################
+
+### Integration: Create -> Get -> Update -> Adjust -> Delete
+### Step 1: Create stock
+# POST {{baseUrl}}
+# Content-Type: application/json
+# {
+#   "product_id": "6756c1e64f4b5f4d9c8e2a31",
+#   "shelf_id": "6756c1e64f4b5f4d9c8e2a41",
+#   "warehouse_id": "WH-001",
+#   "quantity": 100,
+#   "status": "available",
+#   "section": "A",
+#   "slot": "1"
+# }
+
+### Step 2: Get by ID (use ID from create response)
+# GET {{baseUrl}}/NEW_STOCK_ID_HERE
+
+### Step 3: Update quantity and status
+# PUT {{baseUrl}}/NEW_STOCK_ID_HERE
+# Content-Type: application/json
+# {
+#   "quantity": 150,
+#   "status": "available"
+# }
+
+### Step 4: Increase stock
+# PUT {{baseUrl}}/NEW_STOCK_ID_HERE/adjust
+# Content-Type: application/json
+# {
+#   "adjustment": 50,
+#   "reason": "Nhập hàng bổ sung"
+# }
+
+### Step 5: Decrease stock
+# PUT {{baseUrl}}/NEW_STOCK_ID_HERE/adjust
+# Content-Type: application/json
+# {
+#   "adjustment": -75,
+#   "reason": "Xuất bán"
+# }
+
+### Step 6: Get by ID (verify new quantity)
+# GET {{baseUrl}}/NEW_STOCK_ID_HERE
+
+### Step 7: Delete
+# DELETE {{baseUrl}}/NEW_STOCK_ID_HERE
+
+###############################################
+# BUSINESS LOGIC TESTS
+###############################################
+
+### Test: Track product across multiple shelves
+# 1. Create stock record for product A on shelf 1 with 100 units
+# 2. Create stock record for product A on shelf 2 with 50 units
+# 3. Get total stock for product A (should show both shelves)
+# 4. Sum should be 150 units
+
+### Test: Low stock alert workflow
+# 1. Create stock with quantity 5, status: low_stock
+# 2. Get low-stock products (should include this product)
+# 3. Adjust quantity +100
+# 4. Update status to "available"
+# 5. Get low-stock products (should no longer include this product)
+
+### Test: Stock adjustment tracking
+# 1. Create stock with quantity 100
+# 2. Adjust -30 (reason: "Xuất bán")
+# 3. Adjust +50 (reason: "Nhập hàng")
+# 4. Adjust -20 (reason: "Hàng hư hỏng")
+# 5. Final quantity should be 100 - 30 + 50 - 20 = 100
+
+###############################################
+# EDGE CASES & VALIDATION TESTS
+###############################################
+
+### Invalid stock ID format
+GET {{baseUrl}}/invalid-id-format
+
+### Non-existent stock ID
+GET {{baseUrl}}/507f1f77bcf86cd799439011
+
+### Zero quantity stock
+POST {{baseUrl}}
+Content-Type: application/json
+
+{
+  "product_id": "6756c1e64f4b5f4d9c8e2a31",
+  "shelf_id": "6756c1e64f4b5f4d9c8e2a41",
+  "warehouse_id": "WH-001",
+  "quantity": 0,
+  "status": "available"
+}
+
+### Negative quantity (should fail)
+POST {{baseUrl}}
+Content-Type: application/json
+
+{
+  "product_id": "6756c1e64f4b5f4d9c8e2a31",
+  "shelf_id": "6756c1e64f4b5f4d9c8e2a41",
+  "warehouse_id": "WH-001",
+  "quantity": -50,
+  "status": "available"
+}
+
+### Adjust with zero (should work but no change)
+PUT {{baseUrl}}/{{productStockId}}/adjust
+Content-Type: application/json
+
+{
+  "adjustment": 0,
+  "reason": "Test zero adjustment"
+}
+
+### Empty update body (should fail)
+PUT {{baseUrl}}/{{productStockId}}
+Content-Type: application/json
+
+{}
+
+###############################################
+# WAREHOUSE SCENARIOS
+###############################################
+
+### Scenario: Multi-warehouse stock tracking
+# 1. Product A on Shelf 1 in Warehouse 1: 100 units
+# 2. Product A on Shelf 2 in Warehouse 2: 50 units
+# 3. Filter by warehouse_id to see stock in each warehouse
+
+### Scenario: Section and slot management
+# 1. Create stock with section "A", slot "1"
+# 2. Create stock with section "A", slot "2"
+# 3. Create stock with section "B", slot "1"
+# 4. Search/filter by section/slot for physical location
+
+###############################################
+# NOTES
+###############################################
+# Replace @productStockId, @productId, @shelfId with actual IDs from your database
+# Sample IDs from seed.js (adjust as needed):
+# - Gạo ST25: Check database for actual Product ObjectId
+# - Shelf A1: Check database for actual Shelf ObjectId
+# - ProductStock records: Check database for actual ProductStock ObjectIds
+#
+# Status values: "available", "low_stock", "out_of_stock", "reserved"
+# Warehouse IDs: "WH-001", "WH-002", etc.

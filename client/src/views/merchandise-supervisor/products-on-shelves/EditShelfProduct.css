@@ -1,669 +1,450 @@
-/* Edit Shelf Product View */
+/* EditShelfProduct.css - Updated for Move Product UI */
 .edit-shelf-product-view {
-    padding: 0;
-    background: #EFFFE8;
-    min-height: 100vh;
-    width: 100%;
+  min-height: 100vh;
+  background-color: #f8fafc;
+  padding: 1.5rem;
 }
 
 /* Header */
-.edit-shelf-page-header {
-    background: transparent;
-    padding: 1.5rem 2rem;
-    border-bottom: 1px solid #e2e8f0;
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-    position: sticky;
-    top: 0;
+.edit-shelf-header {
+  margin-bottom: 2rem;
 }
 
 .edit-shelf-back-btn {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 40px;
-    height: 40px;
-    background: #f1f5f9;
-    color: #64748b;
-    border: 1px solid #e2e8f0;
-    border-radius: 8px;
-    cursor: pointer;
-    transition: all 0.2s;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.5rem;
+  color: #64748b;
+  cursor: pointer;
+  font-size: 0.875rem;
+  transition: all 0.2s;
+  margin-bottom: 1rem;
 }
 
-.edit-shelf-back-btn:hover {
-    background: #e2e8f0;
-    color: #475569;
+.edit-shelf-back-btn:hover:not(:disabled) {
+  background: #f1f5f9;
+  color: #0f172a;
 }
 
-.edit-shelf-header-content {
-    flex: 1;
+.edit-shelf-back-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 .edit-shelf-page-title {
-    font-size: 1.75rem;
-    font-weight: 700;
-    color: #1e293b;
-    margin: 0;
+  font-size: 1.875rem;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0;
 }
 
 .edit-shelf-page-subtitle {
-    font-size: 0.875rem;
-    color: #64748b;
-    margin: 0.25rem 0 0 0;
+  color: #64748b;
+  margin-top: 0.25rem;
 }
 
-.edit-shelf-header-actions {
-    display: flex;
-    gap: 0.75rem;
+/* Main Content Layout */
+.edit-shelf-main-content {
+  display: grid;
+  grid-template-columns: 35% 1fr;
+  gap: 2rem;
+  max-width: 1400px;
 }
 
-.edit-shelf-save-btn {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 0.75rem 1.5rem;
-    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-    color: white;
-    border: none;
-    border-radius: 8px;
-    font-size: 0.875rem;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.2s;
+/* Left Panel - Product Info */
+.edit-shelf-left-panel {
+  background: #e8f5e9;
+  padding: 2rem;
+  border-radius: 1rem;
 }
 
-.edit-shelf-save-btn:hover {
-    background: linear-gradient(135deg, #059669 0%, #047857 100%);
-    transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+.product-info-card {
+  background: white;
+  padding: 2rem;
+  border-radius: 0.75rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
-.edit-shelf-save-icon {
-    font-size: 0.875rem;
+.card-title {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0 0 0.5rem 0;
 }
 
-/* Main Content */
-.edit-shelf-content {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 2rem;
-    padding: 2rem;
-    max-width: 1400px;
-    margin: 0 auto;
+.title-icon {
+  color: #2563eb;
 }
 
-/* Panel Styles */
-.edit-shelf-left-panel,
+.product-category {
+  color: #64748b;
+  margin: 0 0 1.5rem 0;
+  font-size: 0.875rem;
+}
+
+.product-details-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.25rem;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1.5rem;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.detail-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+}
+
+.detail-item label {
+  font-size: 0.75rem;
+  color: #64748b;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.detail-item span {
+  font-size: 0.9375rem;
+  color: #0f172a;
+  font-weight: 500;
+}
+
+.quantity-value {
+  color: #2563eb;
+  font-weight: 700;
+  font-size: 1.125rem;
+}
+
+.status-section {
+  margin-bottom: 1.5rem;
+  padding-bottom: 1.5rem;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.status-section label {
+  display: block;
+  font-size: 0.75rem;
+  color: #64748b;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 0.5rem;
+}
+
+.status-badge {
+  display: inline-block;
+  padding: 0.375rem 0.875rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.status-badge.in-stock {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.description-section label {
+  display: block;
+  font-size: 0.75rem;
+  color: #64748b;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 0.5rem;
+}
+
+.description-section p {
+  color: #475569;
+  font-size: 0.875rem;
+  line-height: 1.6;
+  margin: 0;
+}
+
+/* Right Panel - Shelf Selection */
 .edit-shelf-right-panel {
-    background: white;
-    border-radius: 12px;
-    border: 1px solid #e2e8f0;
-    overflow: hidden;
-    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+  background: #e3f2fd;
+  padding: 2rem;
+  border-radius: 1rem;
+  position: relative;
 }
 
-.edit-shelf-panel-header {
-    padding: 1.5rem;
-    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
-    color: white;
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
+.panel-title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0 0 1.5rem 0;
 }
 
-.edit-shelf-panel-icon {
-    font-size: 1.25rem;
+.no-shelves-message {
+  text-align: center;
+  padding: 3rem;
+  color: #64748b;
 }
 
-.edit-shelf-panel-title {
-    font-size: 1.25rem;
-    font-weight: 600;
-    margin: 0;
-    flex: 1;
+.shelves-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  max-height: 600px;
+  overflow-y: auto;
+  padding-right: 0.5rem;
+  margin-bottom: 1rem;
 }
 
-.edit-shelf-location-count {
-    background: rgba(255, 255, 255, 0.2);
-    padding: 0.25rem 0.75rem;
-    border-radius: 12px;
-    font-size: 0.75rem;
-    font-weight: 500;
+/* Shelf Card */
+.shelf-card {
+  background: white;
+  border: 2px solid #e2e8f0;
+  border-radius: 0.75rem;
+  padding: 1.25rem;
+  cursor: pointer;
+  transition: all 0.2s;
 }
 
-/* Current Locations */
-.edit-shelf-current-locations {
-    padding: 1.5rem;
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
-    max-height: 600px;
-    overflow-y: auto;
+.shelf-card:hover:not(.insufficient-space) {
+  border-color: #2563eb;
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.15);
 }
 
-.edit-shelf-location-card {
-    border: 1px solid #e2e8f0;
-    border-radius: 8px;
-    padding: 1rem;
-    transition: border-color 0.2s, box-shadow 0.2s;
+.shelf-card.selected {
+  border-color: #2563eb;
+  background: #eff6ff;
 }
 
-.edit-shelf-location-card:hover {
-    border-color: #c7d2fe;
-    box-shadow: 0 2px 8px rgba(99, 102, 241, 0.1);
+.shelf-card.insufficient-space {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background: #fef2f2;
+  border-color: #fee2e2;
 }
 
-.edit-shelf-location-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    margin-bottom: 1rem;
+.shelf-card-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1rem;
 }
 
-.edit-shelf-location-info {
-    flex: 1;
+.shelf-radio {
+  width: 20px;
+  height: 20px;
+  cursor: pointer;
 }
 
-.edit-shelf-location-name {
-    display: block;
-    font-size: 1.125rem;
-    font-weight: 600;
-    color: #1e293b;
-    margin-bottom: 0.25rem;
+.shelf-radio:disabled {
+  cursor: not-allowed;
 }
 
-.edit-shelf-location-details {
-    font-size: 0.875rem;
-    color: #64748b;
+.shelf-info {
+  flex: 1;
 }
 
-.edit-shelf-location-stats {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 1rem;
-    margin-bottom: 1rem;
+.shelf-id {
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: #2563eb;
+  margin: 0;
 }
 
-.edit-shelf-stat-item {
-    display: flex;
-    flex-direction: column;
-    gap: 0.25rem;
+.shelf-name {
+  color: #64748b;
+  font-size: 0.875rem;
+  margin: 0.25rem 0 0 0;
 }
 
-.edit-shelf-stat-label {
-    font-size: 0.75rem;
-    font-weight: 500;
-    color: #64748b;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
+.shelf-details {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid #e2e8f0;
 }
 
-.edit-shelf-stat-value {
-    font-size: 0.875rem;
-    font-weight: 600;
-    color: #1e293b;
+.detail-row {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
 }
 
-/* Capacity Bar */
-.edit-shelf-capacity-bar {
-    height: 6px;
-    background: #f1f5f9;
-    border-radius: 3px;
-    overflow: hidden;
-    margin-bottom: 1rem;
+.detail-row span:first-child {
+  font-size: 0.75rem;
+  color: #64748b;
+  font-weight: 600;
 }
 
-.edit-shelf-capacity-fill {
-    height: 100%;
-    border-radius: 3px;
-    transition: width 0.3s ease;
+.detail-value {
+  font-size: 0.875rem;
+  color: #0f172a;
+  font-weight: 500;
 }
 
-.edit-shelf-capacity-low {
-    background: linear-gradient(90deg, #10b981 0%, #34d399 100%);
+.capacity-info {
+  margin-top: 0.75rem;
 }
 
-.edit-shelf-capacity-medium {
-    background: linear-gradient(90deg, #f59e0b 0%, #fbbf24 100%);
+.capacity-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+  font-size: 0.75rem;
+  color: #64748b;
+  font-weight: 600;
 }
 
-.edit-shelf-capacity-high {
-    background: linear-gradient(90deg, #f97316 0%, #fb923c 100%);
+.capacity-text {
+  color: #0f172a;
+  font-weight: 600;
 }
 
-.edit-shelf-capacity-full {
-    background: linear-gradient(90deg, #ef4444 0%, #f87171 100%);
+.capacity-bar-container {
+  width: 100%;
+  height: 8px;
+  background: #e2e8f0;
+  border-radius: 9999px;
+  overflow: hidden;
+  margin-bottom: 0.5rem;
 }
 
-/* Remove Section */
-.edit-shelf-remove-section {
-    border-top: 1px solid #f1f5f9;
-    padding-top: 1rem;
+.capacity-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #22c55e 0%, #eab308 70%, #ef4444 100%);
+  transition: width 0.3s;
 }
 
-.edit-shelf-action-label {
-    display: block;
-    font-size: 0.875rem;
-    font-weight: 500;
-    color: #374151;
-    margin-bottom: 0.5rem;
+.available-space {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.875rem;
 }
 
-.edit-shelf-action-controls {
-    display: flex;
-    gap: 0.75rem;
-    align-items: center;
+.available-space span:first-child {
+  color: #64748b;
 }
 
-.edit-shelf-quantity-input {
-    width: 80px;
-    padding: 0.5rem 0.75rem;
-    border: 1px solid #d1d5db;
-    border-radius: 6px;
-    font-size: 0.875rem;
-    text-align: center;
+.available-value {
+  font-weight: 700;
 }
 
-.edit-shelf-quantity-input:focus {
-    outline: none;
-    border-color: #6366f1;
-    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+.available-value.positive {
+  color: #16a34a;
 }
 
-.edit-shelf-remove-btn {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 0.5rem 1rem;
-    background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
-    color: white;
-    border: none;
-    border-radius: 6px;
-    font-size: 0.875rem;
-    font-weight: 500;
-    cursor: pointer;
-    transition: all 0.2s;
+.available-value.negative {
+  color: #dc2626;
 }
 
-.edit-shelf-remove-btn:hover:not(:disabled) {
-    background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
-    transform: translateY(-1px);
-    box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3);
+.insufficient-label {
+  color: #dc2626;
+  font-size: 0.75rem;
+  font-weight: 600;
+  margin-left: auto;
 }
 
-.edit-shelf-remove-btn:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-    transform: none;
+/* Action Bar */
+.action-bar {
+  position: sticky;
+  bottom: 0;
+  background: white;
+  border-top: 2px solid #e2e8f0;
+  padding: 1.25rem;
+  margin: -2rem -2rem 0 -2rem;
+  border-radius: 0 0 1rem 1rem;
 }
 
-/* Right Panel - Available Shelves */
-.edit-shelf-search-container {
-    padding: 1.5rem;
-    border-bottom: 1px solid #f1f5f9;
-    position: relative;
+.move-product-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  padding: 0.875rem 1.5rem;
+  background: #2563eb;
+  color: white;
+  border: none;
+  border-radius: 0.5rem;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
 }
 
-.edit-shelf-search-icon {
-    position: absolute;
-    left: 2.25rem;
-    top: 50%;
-    transform: translateY(-50%);
-    color: #9ca3af;
-    font-size: 0.875rem;
+.move-product-btn:hover:not(:disabled) {
+  background: #1d4ed8;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
 }
 
-.edit-shelf-search-input {
-    width: 100%;
-    padding: 0.75rem 0.75rem 0.75rem 2.5rem;
-    border: 1px solid #d1d5db;
-    border-radius: 8px;
-    font-size: 0.875rem;
-    transition: border-color 0.2s, box-shadow 0.2s;
+.move-product-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
 }
 
-.edit-shelf-search-input:focus {
-    outline: none;
-    border-color: #6366f1;
-    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+.btn-icon {
+  font-size: 1.125rem;
 }
 
-/* Table */
-.edit-shelf-table-container {
-    overflow-x: auto;
-    max-height: 500px;
-    overflow-y: auto;
+/* Spinner */
+@keyframes spin {
+  to { transform: rotate(360deg); }
 }
 
-.edit-shelf-table {
-    width: 100%;
-    border-collapse: collapse;
-    font-size: 0.875rem;
+.spinner {
+  border: 3px solid #f3f3f3;
+  border-top: 3px solid #2563eb;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
 }
 
-.edit-shelf-table th {
-    background: #f8fafc;
-    padding: 0.75rem;
-    text-align: left;
-    font-weight: 600;
-    color: #374151;
-    border-bottom: 1px solid #e5e7eb;
-    position: sticky;
-    top: 0;
-    z-index: 10;
+/* Scrollbar Styling */
+.shelves-list::-webkit-scrollbar {
+  width: 6px;
 }
 
-.edit-shelf-table td {
-    padding: 0.75rem;
-    border-bottom: 1px solid #f1f5f9;
-    vertical-align: middle;
+.shelves-list::-webkit-scrollbar-track {
+  background: #f1f5f9;
+  border-radius: 10px;
 }
 
-.edit-shelf-table tbody tr:hover {
-    background: #f8fafc;
+.shelves-list::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 10px;
 }
 
-.edit-shelf-location-cell {
-    display: flex;
-    flex-direction: column;
-    gap: 0.25rem;
-}
-
-.edit-shelf-location-name {
-    font-weight: 600;
-    color: #1e293b;
-}
-
-.edit-shelf-capacity-info {
-    display: flex;
-    flex-direction: column;
-    gap: 0.25rem;
-}
-
-.edit-shelf-capacity-text {
-    font-weight: 500;
-    color: #374151;
-}
-
-.edit-shelf-capacity-bar-small {
-    height: 4px;
-    background: #f1f5f9;
-    border-radius: 2px;
-    overflow: hidden;
-    width: 60px;
-}
-
-.edit-shelf-available-space {
-    font-weight: 600;
-    padding: 0.25rem 0.5rem;
-    border-radius: 4px;
-    font-size: 0.75rem;
-}
-
-.edit-shelf-has-space {
-    background: #dcfce7;
-    color: #166534;
-}
-
-.edit-shelf-no-space {
-    background: #fee2e2;
-    color: #991b1b;
-}
-
-.edit-shelf-move-btn {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 0.5rem 1rem;
-    background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
-    color: white;
-    border: none;
-    border-radius: 6px;
-    font-size: 0.875rem;
-    font-weight: 500;
-    cursor: pointer;
-    transition: all 0.2s;
-}
-
-.edit-shelf-move-btn:hover:not(:disabled) {
-    background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
-    transform: translateY(-1px);
-    box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
-}
-
-.edit-shelf-move-btn:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-    transform: none;
-}
-
-/* Status Badges */
-.edit-shelf-status-badge {
-    display: inline-block;
-    padding: 0.25rem 0.75rem;
-    border-radius: 12px;
-    font-size: 0.75rem;
-    font-weight: 500;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-}
-
-.edit-shelf-status-approved {
-    background: #dcfce7;
-    color: #166534;
-    border: 1px solid #bbf7d0;
-}
-
-.edit-shelf-status-pending {
-    background: #fef3c7;
-    color: #92400e;
-    border: 1px solid #fde68a;
-}
-
-.edit-shelf-status-declined {
-    background: #fee2e2;
-    color: #991b1b;
-    border: 1px solid #fecaca;
-}
-
-/* Pagination */
-.edit-shelf-pagination {
-    padding: 1rem 1.5rem;
-    border-top: 1px solid #f1f5f9;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-
-.edit-shelf-pagination-info {
-    font-size: 0.875rem;
-    color: #64748b;
-}
-
-.edit-shelf-pagination-controls {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-}
-
-.edit-shelf-pagination-btn {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 32px;
-    height: 32px;
-    border: 1px solid #d1d5db;
-    background: white;
-    color: #6b7280;
-    border-radius: 6px;
-    cursor: pointer;
-    transition: all 0.2s;
-    font-size: 0.875rem;
-}
-
-.edit-shelf-pagination-btn:hover:not(:disabled) {
-    background: #f9fafb;
-    border-color: #9ca3af;
-}
-
-.edit-shelf-pagination-btn:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-}
-
-.edit-shelf-page-numbers {
-    display: flex;
-    gap: 0.25rem;
-}
-
-.edit-shelf-page-number {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 32px;
-    height: 32px;
-    border: 1px solid #d1d5db;
-    background: white;
-    color: #6b7280;
-    border-radius: 6px;
-    cursor: pointer;
-    transition: all 0.2s;
-    font-size: 0.875rem;
-    font-weight: 500;
-}
-
-.edit-shelf-page-number:hover {
-    background: #f9fafb;
-    border-color: #9ca3af;
-}
-
-.edit-shelf-page-number.active {
-    background: #6366f1;
-    color: white;
-    border-color: #6366f1;
-}
-
-/* Pending Actions Panel */
-.edit-shelf-pending-panel {
-    background: white;
-    border: 1px solid #e2e8f0;
-    border-radius: 12px;
-    margin: 0 2rem 2rem;
-    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
-}
-
-.edit-shelf-pending-title {
-    padding: 1rem 1.5rem;
-    margin: 0;
-    font-size: 1.125rem;
-    font-weight: 600;
-    color: #1e293b;
-    border-bottom: 1px solid #f1f5f9;
-    background: #fafbfc;
-    border-radius: 12px 12px 0 0;
-}
-
-.edit-shelf-pending-actions {
-    padding: 1rem;
-    display: flex;
-    flex-direction: column;
-    gap: 0.75rem;
-    max-height: 200px;
-    overflow-y: auto;
-}
-
-.edit-shelf-pending-item {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 0.75rem;
-    background: #f8fafc;
-    border: 1px solid #e2e8f0;
-    border-radius: 8px;
-}
-
-.edit-shelf-action-text {
-    font-size: 0.875rem;
-    color: #374151;
-    font-weight: 500;
-}
-
-.edit-shelf-remove-action-btn {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 24px;
-    height: 24px;
-    background: #fee2e2;
-    color: #dc2626;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    transition: all 0.2s;
-}
-
-.edit-shelf-remove-action-btn:hover {
-    background: #fecaca;
-    color: #b91c1c;
+.shelves-list::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
 }
 
 /* Responsive Design */
 @media (max-width: 1200px) {
-    .edit-shelf-content {
-        grid-template-columns: 1fr;
-        gap: 1.5rem;
-    }
-
-    .edit-shelf-pending-panel {
-        margin: 0 1rem 1rem;
-    }
+  .edit-shelf-main-content {
+    grid-template-columns: 1fr;
+  }
 }
 
 @media (max-width: 768px) {
-    .edit-shelf-page-header {
-        padding: 1rem;
-        flex-wrap: wrap;
-        gap: 0.75rem;
-    }
+  .edit-shelf-product-view {
+    padding: 1rem;
+  }
 
-    .edit-shelf-header-actions {
-        width: 100%;
-        justify-content: flex-end;
-    }
+  .product-details-grid {
+    grid-template-columns: 1fr;
+  }
 
-    .edit-shelf-content {
-        padding: 1rem;
-        gap: 1rem;
-    }
-
-    .edit-shelf-current-locations,
-    .edit-shelf-search-container {
-        padding: 1rem;
-    }
-
-    .edit-shelf-location-stats {
-        grid-template-columns: 1fr;
-        gap: 0.5rem;
-    }
-
-    .edit-shelf-action-controls {
-        flex-direction: column;
-        align-items: stretch;
-        gap: 0.5rem;
-    }
-
-    .edit-shelf-quantity-input {
-        width: 100%;
-    }
-
-    .edit-shelf-table-container {
-        max-height: 400px;
-    }
-
-    .edit-shelf-pagination {
-        padding: 1rem;
-        flex-direction: column;
-        gap: 0.75rem;
-    }
+  .shelf-details {
+    grid-template-columns: 1fr;
+  }
 }

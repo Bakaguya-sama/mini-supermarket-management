@@ -1,0 +1,216 @@
+### Shelf API Tests
+### Base URL
+@baseUrl = http://localhost:5000/api/shelves
+
+###############################################
+# 1. GET ALL SHELVES
+###############################################
+
+### Get all shelves (with pagination)
+GET {{baseUrl}}?page=1&limit=10
+
+### Get all shelves with category filter
+GET {{baseUrl}}?category=Lương thực
+
+### Get all shelves with isfull filter
+GET {{baseUrl}}?isfull=false
+
+### Search shelves by shelf_number
+GET {{baseUrl}}?search=A1
+
+### Get all available (not full) shelves
+GET {{baseUrl}}/available
+
+###############################################
+# 2. GET SHELF STATS
+###############################################
+
+### Get shelf statistics
+GET {{baseUrl}}/stats
+
+###############################################
+# 3. GET SHELVES BY CATEGORY
+###############################################
+
+### Get shelves by category - Lương thực
+GET {{baseUrl}}/category/Lương thực
+
+### Get shelves by category - Sữa & Trứng
+GET {{baseUrl}}/category/Sữa & Trứng
+
+### Get shelves by category - Đồ uống
+GET {{baseUrl}}/category/Đồ uống
+
+###############################################
+# 4. GET SHELF BY ID
+###############################################
+
+### Get shelf by ID (replace with actual shelf ID)
+@shelfId = 6756c1e64f4b5f4d9c8e2a41
+GET {{baseUrl}}/{{shelfId}}
+
+###############################################
+# 5. GET SHELF CAPACITY
+###############################################
+
+### Get shelf capacity/utilization (replace with actual shelf ID)
+GET {{baseUrl}}/{{shelfId}}/capacity
+
+###############################################
+# 6. CREATE NEW SHELF
+###############################################
+
+### Create new shelf - Success case
+POST {{baseUrl}}
+Content-Type: application/json
+
+{
+  "shelf_number": "E1",
+  "category": "Điện tử",
+  "capacity": 150,
+  "isfull": false,
+  "warehouse_id": "WH-001"
+}
+
+### Create new shelf - Duplicate shelf_number (should fail)
+POST {{baseUrl}}
+Content-Type: application/json
+
+{
+  "shelf_number": "A1",
+  "category": "Test",
+  "capacity": 100,
+  "isfull": false,
+  "warehouse_id": "WH-001"
+}
+
+### Create new shelf - Missing required fields (should fail)
+POST {{baseUrl}}
+Content-Type: application/json
+
+{
+  "category": "Test"
+}
+
+###############################################
+# 7. UPDATE SHELF
+###############################################
+
+### Update shelf - Change capacity
+PUT {{baseUrl}}/{{shelfId}}
+Content-Type: application/json
+
+{
+  "capacity": 200
+}
+
+### Update shelf - Change category and isfull
+PUT {{baseUrl}}/{{shelfId}}
+Content-Type: application/json
+
+{
+  "category": "Điện tử mới",
+  "isfull": true
+}
+
+### Update shelf - Change shelf_number to duplicate (should fail)
+PUT {{baseUrl}}/{{shelfId}}
+Content-Type: application/json
+
+{
+  "shelf_number": "A2"
+}
+
+###############################################
+# 8. TOGGLE SHELF FULL STATUS
+###############################################
+
+### Toggle shelf full status (false -> true or true -> false)
+PUT {{baseUrl}}/{{shelfId}}/toggle-full
+
+###############################################
+# 9. DELETE SHELF
+###############################################
+
+### Delete shelf (soft delete)
+@deleteShelfId = 6756c1e64f4b5f4d9c8e2a41
+DELETE {{baseUrl}}/{{deleteShelfId}}
+
+### Delete shelf that has products (should fail with prevention message)
+@shelfWithProductsId = 6756c1e64f4b5f4d9c8e2a41
+DELETE {{baseUrl}}/{{shelfWithProductsId}}
+
+###############################################
+# INTEGRATION TESTS
+###############################################
+
+### Integration: Create -> Get -> Update -> Toggle -> Delete
+### Step 1: Create
+# POST {{baseUrl}}
+# Content-Type: application/json
+# {
+#   "shelf_number": "TEST-1",
+#   "category": "Test Category",
+#   "capacity": 100,
+#   "isfull": false,
+#   "warehouse_id": "WH-001"
+# }
+
+### Step 2: Get by ID (use ID from create response)
+# GET {{baseUrl}}/NEW_SHELF_ID_HERE
+
+### Step 3: Update
+# PUT {{baseUrl}}/NEW_SHELF_ID_HERE
+# Content-Type: application/json
+# {
+#   "capacity": 150,
+#   "category": "Updated Category"
+# }
+
+### Step 4: Toggle full
+# PUT {{baseUrl}}/NEW_SHELF_ID_HERE/toggle-full
+
+### Step 5: Get capacity
+# GET {{baseUrl}}/NEW_SHELF_ID_HERE/capacity
+
+### Step 6: Delete
+# DELETE {{baseUrl}}/NEW_SHELF_ID_HERE
+
+###############################################
+# EDGE CASES & VALIDATION TESTS
+###############################################
+
+### Invalid ID format
+GET {{baseUrl}}/invalid-id-format
+
+### Non-existent shelf ID
+GET {{baseUrl}}/507f1f77bcf86cd799439011
+
+### Empty update body (should fail)
+PUT {{baseUrl}}/{{shelfId}}
+Content-Type: application/json
+
+{}
+
+### Negative capacity (should fail if validation exists)
+POST {{baseUrl}}
+Content-Type: application/json
+
+{
+  "shelf_number": "F1",
+  "category": "Test",
+  "capacity": -50,
+  "isfull": false,
+  "warehouse_id": "WH-001"
+}
+
+###############################################
+# NOTES
+###############################################
+# Replace @shelfId with actual shelf IDs from your database
+# Sample shelf IDs from seed.js (adjust as needed):
+# - A1 shelf: Check database for actual ObjectId
+# - A2 shelf: Check database for actual ObjectId
+# - B1 shelf: Check database for actual ObjectId
+# - C1 shelf: Check database for actual ObjectId
+# - D1 shelf: Check database for actual ObjectId

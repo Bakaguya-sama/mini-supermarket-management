@@ -115,30 +115,58 @@ async function seedDatabase() {
     ]);
     console.log(`   ✅ ${products.length} products\n`);
 
-    // 7. SHELVES (5 kệ)
-    console.log('7/23 📚 Tạo Shelves...');
+    // 7. SHELVES (6 kệ x 4 section = 24 shelves)
+    console.log('7/23 📚 Tạo Shelves (6 shelves: A-F, mỗi shelf có 4 sections)...');
     const shelves = await Shelf.insertMany([
-      { shelf_number: 'A1', category: 'Lương thực', capacity: 500, isfull: false, isDelete: false },
-      { shelf_number: 'A2', category: 'Lương thực', capacity: 500, isfull: false, isDelete: false },
-      { shelf_number: 'B1', category: 'Sữa & Trứng', capacity: 300, isfull: false, isDelete: false },
-      { shelf_number: 'C1', category: 'Đồ uống', capacity: 1000, isfull: false, isDelete: false },
-      { shelf_number: 'D1', category: 'Gia dụng', capacity: 400, isfull: false, isDelete: false }
+      // Shelf A - Lương thực (Grains & Staples)
+      { shelf_number: 'A1', shelf_name: 'A', section_number: 1, description: 'Lương thực - Section 1', capacity: 50, current_quantity: 0, isDelete: false },
+      { shelf_number: 'A2', shelf_name: 'A', section_number: 2, description: 'Lương thực - Section 2', capacity: 50, current_quantity: 0, isDelete: false },
+      { shelf_number: 'A3', shelf_name: 'A', section_number: 3, description: 'Lương thực - Section 3', capacity: 50, current_quantity: 0, isDelete: false },
+      { shelf_number: 'A4', shelf_name: 'A', section_number: 4, description: 'Lương thực - Section 4', capacity: 50, current_quantity: 0, isDelete: false },
+      
+      // Shelf B - Sữa & Trứng (Dairy & Eggs)
+      { shelf_number: 'B1', shelf_name: 'B', section_number: 1, description: 'Sữa & Trứng - Section 1', capacity: 50, current_quantity: 0, isDelete: false },
+      { shelf_number: 'B2', shelf_name: 'B', section_number: 2, description: 'Sữa & Trứng - Section 2', capacity: 50, current_quantity: 0, isDelete: false },
+      { shelf_number: 'B3', shelf_name: 'B', section_number: 3, description: 'Sữa & Trứng - Section 3', capacity: 50, current_quantity: 0, isDelete: false },
+      { shelf_number: 'B4', shelf_name: 'B', section_number: 4, description: 'Sữa & Trứng - Section 4', capacity: 50, current_quantity: 0, isDelete: false },
+      
+      // Shelf C - Đồ uống (Beverages)
+      { shelf_number: 'C1', shelf_name: 'C', section_number: 1, description: 'Đồ uống - Section 1', capacity: 50, current_quantity: 0, isDelete: false },
+      { shelf_number: 'C2', shelf_name: 'C', section_number: 2, description: 'Đồ uống - Section 2', capacity: 50, current_quantity: 0, isDelete: false },
+      { shelf_number: 'C3', shelf_name: 'C', section_number: 3, description: 'Đồ uống - Section 3', capacity: 50, current_quantity: 0, isDelete: false },
+      { shelf_number: 'C4', shelf_name: 'C', section_number: 4, description: 'Đồ uống - Section 4', capacity: 50, current_quantity: 0, isDelete: false },
+      
+      // Shelf D - Gia dụng (Household)
+      { shelf_number: 'D1', shelf_name: 'D', section_number: 1, description: 'Gia dụng - Section 1', capacity: 50, current_quantity: 0, isDelete: false },
+      { shelf_number: 'D2', shelf_name: 'D', section_number: 2, description: 'Gia dụng - Section 2', capacity: 50, current_quantity: 0, isDelete: false },
+      { shelf_number: 'D3', shelf_name: 'D', section_number: 3, description: 'Gia dụng - Section 3', capacity: 50, current_quantity: 0, isDelete: false },
+      { shelf_number: 'D4', shelf_name: 'D', section_number: 4, description: 'Gia dụng - Section 4', capacity: 50, current_quantity: 0, isDelete: false },
+      
+      // Shelf E - Bánh kẹo (Snacks & Sweets)
+      { shelf_number: 'E1', shelf_name: 'E', section_number: 1, description: 'Bánh kẹo - Section 1', capacity: 50, current_quantity: 0, isDelete: false },
+      { shelf_number: 'E2', shelf_name: 'E', section_number: 2, description: 'Bánh kẹo - Section 2', capacity: 50, current_quantity: 0, isDelete: false },
+      { shelf_number: 'E3', shelf_name: 'E', section_number: 3, description: 'Bánh kẹo - Section 3', capacity: 50, current_quantity: 0, isDelete: false },
+      { shelf_number: 'E4', shelf_name: 'E', section_number: 4, description: 'Bánh kẹo - Section 4', capacity: 50, current_quantity: 0, isDelete: false },
+      
+      // Shelf F - Đông lạnh (Frozen Food)
+      { shelf_number: 'F1', shelf_name: 'F', section_number: 1, description: 'Đông lạnh - Section 1', capacity: 50, current_quantity: 0, isDelete: false },
+      { shelf_number: 'F2', shelf_name: 'F', section_number: 2, description: 'Đông lạnh - Section 2', capacity: 50, current_quantity: 0, isDelete: false },
+      { shelf_number: 'F3', shelf_name: 'F', section_number: 3, description: 'Đông lạnh - Section 3', capacity: 50, current_quantity: 0, isDelete: false },
+      { shelf_number: 'F4', shelf_name: 'F', section_number: 4, description: 'Đông lạnh - Section 4', capacity: 50, current_quantity: 0, isDelete: false }
     ]);
-    console.log(`   ✅ ${shelves.length} shelves\n`);
+    console.log(`   ✅ ${shelves.length} shelf sections (6 shelves x 4 sections)\n`);
 
-    // 8. PRODUCT SHELVES (8 ánh xạ)
-    console.log('8/23 📍 Tạo ProductShelves...');
+    // 8. PRODUCT SHELVES (Chỉ một số sản phẩm đã được xếp vào kệ)
+    // Business Rule: 1 product can only be on 1 shelf
+    console.log('8/23 📍 Tạo ProductShelves (1 product = 1 shelf only)...');
     const productShelves = await ProductShelf.insertMany([
-      { product_id: products[0]._id, shelf_id: shelves[0]._id, quantity: 100, isDelete: false },
-      { product_id: products[1]._id, shelf_id: shelves[2]._id, quantity: 200, isDelete: false },
-      { product_id: products[2]._id, shelf_id: shelves[3]._id, quantity: 500, isDelete: false },
-      { product_id: products[3]._id, shelf_id: shelves[2]._id, quantity: 80, isDelete: false },
-      { product_id: products[5]._id, shelf_id: shelves[1]._id, quantity: 150, isDelete: false },
-      { product_id: products[6]._id, shelf_id: shelves[3]._id, quantity: 400, isDelete: false },
-      { product_id: products[7]._id, shelf_id: shelves[4]._id, quantity: 120, isDelete: false },
-      { product_id: products[8]._id, shelf_id: shelves[2]._id, quantity: 180, isDelete: false }
+      { product_id: products[0]._id, shelf_id: shelves[0]._id, quantity: 50, isDelete: false }, // Gạo ST25 -> A1
+      { product_id: products[1]._id, shelf_id: shelves[4]._id, quantity: 100, isDelete: false }, // Sữa Vinamilk -> B1
+      { product_id: products[2]._id, shelf_id: shelves[8]._id, quantity: 200, isDelete: false }, // Coca -> C1
+      { product_id: products[5]._id, shelf_id: shelves[1]._id, quantity: 80, isDelete: false }, // Bánh mì -> A2
+      { product_id: products[6]._id, shelf_id: shelves[9]._id, quantity: 150, isDelete: false }, // Nước suối -> C2
     ]);
-    console.log(`   ✅ ${productShelves.length} product-shelf links\n`);
+    console.log(`   ✅ ${productShelves.length} product-shelf mappings\n`);
 
     // 9. PROMOTIONS (4 khuyến mãi)
     console.log('9/23 🎁 Tạo Promotions...');
