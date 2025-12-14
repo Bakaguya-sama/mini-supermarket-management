@@ -55,6 +55,10 @@ app.use('/api/delivery-orders', require('./routes/deliveryOrderRoutes'));
 app.use('/api/carts', require('./routes/cartRoutes'));
 app.use('/api/customers', require('./routes/customerRoutes'));
 app.use('/api/invoices', require('./routes/invoiceRoutes'));
+app.use('/api/damaged-products', require('./routes/damagedProductRoutes'));
+app.use('/api/shelves', require('./routes/shelfRoutes'));
+app.use('/api/product-shelves', require('./routes/productShelfRoutes'));
+app.use('/api/product-stocks', require('./routes/productStockRoutes'));
 
 // Future routes
 // app.use('/api/accounts', require('./routes/accountRoutes'));

@@ -1,9 +1,10 @@
-import React, { use, useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { FaSearch, FaEye, FaEdit, FaPlus } from "react-icons/fa";
 import "./DamagedProduct.css";
 import SuccessMessage from "../../../components/Messages/SuccessMessage";
 import ErrorMessage from "../../../components/Messages/ErrorMessage";
+import { damagedProductService } from "../../../services/damagedProductService";
 
 const DamagedProduct = () => {
   const navigate = useNavigate();
@@ -14,8 +15,95 @@ const DamagedProduct = () => {
   const [errorMessage, setErrorMessage] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
 
-  // Sample damaged product data
-  const damagedProductData = [
+  // Loading states
+  const [isLoading, setIsLoading] = useState(true);
+  
+  // Data from API
+  const [damagedProductData, setDamagedProductData] = useState([]);
+  const [totalRecords, setTotalRecords] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
+
+  const itemsPerPage = 10;
+
+  // ========== API FUNCTIONS ==========
+  
+  // Load damaged products from API
+  const loadDamagedProducts = async () => {
+    setIsLoading(true);
+    try {
+      const params = {
+        page: currentPage,
+        limit: itemsPerPage,
+        sort: '-createdAt'
+      };
+
+      if (searchTerm) {
+        params.search = searchTerm;
+      }
+
+      // Map UI filter to API resolution_action field
+      if (reasonFilter && reasonFilter !== 'All') {
+        params.resolution_action = reasonFilter.toLowerCase();
+      }
+
+      const response = await damagedProductService.getAllDamagedProducts(params);
+      
+      if (response.success && response.data && Array.isArray(response.data)) {
+        // Transform API data to UI format
+        const transformedData = response.data.map(damaged => {
+          const product = damaged.product_id;
+          const supplier = product?.supplier_id;
+          
+          // Get first shelf location if available
+          let shelfLocation = 'N/A';
+          let section = 'N/A';
+          let slot = 'N/A';
+          
+          return {
+            id: damaged._id,
+            productId: product?._id || '',
+            name: product?.name || 'Unknown Product',
+            supplier: supplier?.name || 'Unknown Supplier',
+            shelfLocation: shelfLocation,
+            section: section,
+            slot: slot,
+            damagedQty: damaged.damaged_quantity || 0,
+            reason: damaged.resolution_action || damaged.status || 'Pending',
+            status: damaged.status,
+            description: damaged.description || '',
+            discoveryDate: damaged.discovery_date,
+            inventoryAdjusted: damaged.inventory_adjusted,
+            _original: damaged
+          };
+        });
+
+        setDamagedProductData(transformedData);
+        setTotalRecords(response.total || 0);
+        setTotalPages(response.pages || 0);
+      } else {
+        console.error('Failed to load damaged products:', response.message);
+        setDamagedProductData([]);
+        setTotalRecords(0);
+        setTotalPages(0);
+      }
+    } catch (error) {
+      console.error('Error loading damaged products:', error);
+      setErrorMessage('Failed to load damaged products');
+      setDamagedProductData([]);
+      setTotalRecords(0);
+      setTotalPages(0);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Load products on mount and when filters change
+  useEffect(() => {
+    loadDamagedProducts();
+  }, [currentPage, reasonFilter, searchTerm]);
+
+  // Sample fake damaged product data - REMOVE sau khi test API
+  const oldDamagedProductData = [
     {
       id: "P001",
       name: "Fresh Milk 1L",
@@ -137,11 +225,9 @@ const DamagedProduct = () => {
       damagedQty: 8,
       reason: "Damaged",
     },
-  ];
+  ]; // End fake data
 
-  const itemsPerPage = 10;
-
-  // Filter data first
+  // Filter data first (now using API data)
   const filteredData = damagedProductData.filter((product) => {
     const matchesSearch =
       product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -152,17 +238,13 @@ const DamagedProduct = () => {
     return matchesSearch && matchesReason;
   });
 
-  // Calculate pagination based on filtered data
-  const totalItems = filteredData.length;
-  const totalPages = Math.ceil(totalItems / itemsPerPage);
+  // Calculate pagination (API handles filtering)
+  const totalItems = totalRecords;
+  const clientTotalPages = totalPages || Math.ceil(filteredData.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
-  const paginatedData = filteredData.slice(startIndex, endIndex);
-
-  // Reset to first page when filters change
-  React.useEffect(() => {
-    setCurrentPage(1);
-  }, [searchTerm, reasonFilter]);
+  // Use filtered data directly as API returns filtered results
+  const paginatedData = filteredData;
 
   const handleReasonFilterChange = (reason) => {
     setReasonFilter(reason);
@@ -249,6 +331,17 @@ const DamagedProduct = () => {
 
       {/* Table */}
       <div className="damaged-table-container">
+        {isLoading && (
+          <div style={{
+            position: 'absolute',
+            top: '50%',
+            left: '50%',
+            transform: 'translate(-50%, -50%)',
+            zIndex: 10
+          }}>
+            <div>Loading damaged products...</div>
+          </div>
+        )}
         <table className="damaged-table">
           <thead>
             <tr>
@@ -264,6 +357,13 @@ const DamagedProduct = () => {
             </tr>
           </thead>
           <tbody>
+            {!isLoading && paginatedData.length === 0 && (
+              <tr>
+                <td colSpan="9" style={{ textAlign: 'center', padding: '2rem' }}>
+                  No damaged products found
+                </td>
+              </tr>
+            )}
             {paginatedData.map((product, index) => (
               <tr key={`page-${currentPage}-${product.id}-${index}`}>
                 <td className="damaged-product-id">{product.id}</td>
@@ -317,15 +417,15 @@ const DamagedProduct = () => {
 
           {/* Page numbers */}
           <div className="damaged-page-numbers">
-            {Array.from({ length: Math.min(3, totalPages) }, (_, i) => {
+            {Array.from({ length: Math.min(3, clientTotalPages) }, (_, i) => {
               let pageNum;
 
-              if (totalPages <= 3) {
+              if (clientTotalPages <= 3) {
                 pageNum = i + 1;
               } else if (currentPage === 1) {
                 pageNum = i + 1;
-              } else if (currentPage === totalPages) {
-                pageNum = totalPages - 2 + i;
+              } else if (currentPage === clientTotalPages) {
+                pageNum = clientTotalPages - 2 + i;
               } else {
                 pageNum = currentPage - 1 + i;
               }
@@ -347,9 +447,9 @@ const DamagedProduct = () => {
           <button
             className="damaged-pagination-btn"
             onClick={() =>
-              setCurrentPage(Math.min(totalPages, currentPage + 1))
+              setCurrentPage(Math.min(clientTotalPages, currentPage + 1))
             }
-            disabled={currentPage === totalPages}
+            disabled={currentPage === clientTotalPages}
             title="Next page"
           >
             ›
