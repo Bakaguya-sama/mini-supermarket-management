@@ -161,29 +161,86 @@ async function seedDatabase() {
     ]);
     console.log(`   ✅ ${promotionProducts.length} promotion-product links\n`);
 
-    // 11. ORDERS (4 đơn hàng từ 4 customers)
+    // 11. ORDERS (15 đơn hàng từ 4 customers - nhiều hơn để test delivery)
     console.log('11/23 📋 Tạo Orders...');
     const orders = await Order.insertMany([
-      { order_number: 'ORD-001', customer_id: customers[0]._id, orderItems: [], order_date: new Date('2024-12-01'), status: 'delivered', total_amount: 500000, notes: 'Giao giờ hành chính', tracking_number: 'TRACK-001', isDelete: false },
-      { order_number: 'ORD-002', customer_id: customers[1]._id, orderItems: [], order_date: new Date('2024-12-05'), status: 'shipped', total_amount: 350000, tracking_number: 'TRACK-002', isDelete: false },
-      { order_number: 'ORD-003', customer_id: customers[2]._id, orderItems: [], order_date: new Date('2024-12-08'), status: 'confirmed', total_amount: 280000, notes: 'Giao cuối tuần', isDelete: false },
-      { order_number: 'ORD-004', customer_id: customers[3]._id, orderItems: [], order_date: new Date('2024-12-10'), status: 'pending', total_amount: 150000, isDelete: false }
+      // Customer 1 - 4 orders
+      { order_number: 'ORD-001', customer_id: customers[0]._id, orderItems: [], order_date: new Date('2024-12-01'), status: 'delivered', total_amount: 540000, notes: 'Giao giờ hành chính', tracking_number: 'TRACK-001', isDelete: false },
+      { order_number: 'ORD-005', customer_id: customers[0]._id, orderItems: [], order_date: new Date('2024-12-12'), status: 'delivered', total_amount: 346000, notes: 'Giao buổi sáng', tracking_number: 'TRACK-005', isDelete: false },
+      { order_number: 'ORD-009', customer_id: customers[0]._id, orderItems: [], order_date: new Date('2024-12-13'), status: 'confirmed', total_amount: 220000, notes: 'Giao sau 5pm', tracking_number: 'TRACK-009', isDelete: false },
+      { order_number: 'ORD-013', customer_id: customers[0]._id, orderItems: [], order_date: new Date('2024-12-14'), status: 'pending', total_amount: 180000, isDelete: false },
+      
+      // Customer 2 - 4 orders
+      { order_number: 'ORD-002', customer_id: customers[1]._id, orderItems: [], order_date: new Date('2024-12-05'), status: 'delivered', total_amount: 340000, tracking_number: 'TRACK-002', isDelete: false },
+      { order_number: 'ORD-006', customer_id: customers[1]._id, orderItems: [], order_date: new Date('2024-12-11'), status: 'shipped', total_amount: 416000, tracking_number: 'TRACK-006', isDelete: false },
+      { order_number: 'ORD-010', customer_id: customers[1]._id, orderItems: [], order_date: new Date('2024-12-13'), status: 'confirmed', total_amount: 396000, notes: 'Gọi trước 30 phút', tracking_number: 'TRACK-010', isDelete: false },
+      { order_number: 'ORD-014', customer_id: customers[1]._id, orderItems: [], order_date: new Date('2024-12-14'), status: 'pending', total_amount: 290000, isDelete: false },
+      
+      // Customer 3 - 4 orders
+      { order_number: 'ORD-003', customer_id: customers[2]._id, orderItems: [], order_date: new Date('2024-12-08'), status: 'delivered', total_amount: 206000, notes: 'Giao cuối tuần', tracking_number: 'TRACK-003', isDelete: false },
+      { order_number: 'ORD-007', customer_id: customers[2]._id, orderItems: [], order_date: new Date('2024-12-10'), status: 'delivered', total_amount: 500000, tracking_number: 'TRACK-007', isDelete: false },
+      { order_number: 'ORD-011', customer_id: customers[2]._id, orderItems: [], order_date: new Date('2024-12-14'), status: 'shipped', total_amount: 313000, notes: 'Để ở bảo vệ', tracking_number: 'TRACK-011', isDelete: false },
+      { order_number: 'ORD-015', customer_id: customers[2]._id, orderItems: [], order_date: new Date('2024-12-14'), status: 'pending', total_amount: 210000, isDelete: false },
+      
+      // Customer 4 - 3 orders
+      { order_number: 'ORD-004', customer_id: customers[3]._id, orderItems: [], order_date: new Date('2024-12-10'), status: 'delivered', total_amount: 139000, tracking_number: 'TRACK-004', isDelete: false },
+      { order_number: 'ORD-008', customer_id: customers[3]._id, orderItems: [], order_date: new Date('2024-12-12'), status: 'shipped', total_amount: 243000, notes: 'Tầng 3, phòng 301', tracking_number: 'TRACK-008', isDelete: false },
+      { order_number: 'ORD-012', customer_id: customers[3]._id, orderItems: [], order_date: new Date('2024-12-14'), status: 'confirmed', total_amount: 179000, tracking_number: 'TRACK-012', isDelete: false }
     ]);
     console.log(`   ✅ ${orders.length} orders\n`);
 
-    // 12. ORDER ITEMS (10 chi tiết đơn hàng)
+    // 12. ORDER ITEMS (30+ chi tiết đơn hàng cho các orders)
     console.log('12/23 📦 Tạo OrderItems...');
     const orderItems = await OrderItem.insertMany([
+      // Order 1 (ORD-001) - Delivered
       { order_id: orders[0]._id, product_id: products[0]._id, quantity: 2, unit_price: 145000, status: 'shipped', isDelete: false },
       { order_id: orders[0]._id, product_id: products[1]._id, quantity: 5, unit_price: 32000, status: 'shipped', isDelete: false },
       { order_id: orders[0]._id, product_id: products[3]._id, quantity: 2, unit_price: 45000, status: 'shipped', isDelete: false },
-      { order_id: orders[1]._id, product_id: products[2]._id, quantity: 10, unit_price: 10000, status: 'picked', isDelete: false },
-      { order_id: orders[1]._id, product_id: products[6]._id, quantity: 20, unit_price: 5000, status: 'picked', isDelete: false },
-      { order_id: orders[1]._id, product_id: products[5]._id, quantity: 5, unit_price: 28000, status: 'picked', isDelete: false },
-      { order_id: orders[2]._id, product_id: products[7]._id, quantity: 3, unit_price: 42000, status: 'pending', isDelete: false },
-      { order_id: orders[2]._id, product_id: products[4]._id, quantity: 20, unit_price: 4000, status: 'pending', isDelete: false },
-      { order_id: orders[3]._id, product_id: products[9]._id, quantity: 10, unit_price: 9500, status: 'pending', isDelete: false },
-      { order_id: orders[3]._id, product_id: products[11]._id, quantity: 2, unit_price: 22000, status: 'pending', isDelete: false }
+      
+      // Order 2 (ORD-002) - Delivered
+      { order_id: orders[4]._id, product_id: products[2]._id, quantity: 10, unit_price: 10000, status: 'picked', isDelete: false },
+      { order_id: orders[4]._id, product_id: products[6]._id, quantity: 20, unit_price: 5000, status: 'picked', isDelete: false },
+      { order_id: orders[4]._id, product_id: products[5]._id, quantity: 5, unit_price: 28000, status: 'picked', isDelete: false },
+      
+      // Order 3 (ORD-003) - Delivered
+      { order_id: orders[8]._id, product_id: products[7]._id, quantity: 3, unit_price: 42000, status: 'pending', isDelete: false },
+      { order_id: orders[8]._id, product_id: products[4]._id, quantity: 20, unit_price: 4000, status: 'pending', isDelete: false },
+      
+      // Order 4 (ORD-004) - Delivered
+      { order_id: orders[12]._id, product_id: products[9]._id, quantity: 10, unit_price: 9500, status: 'pending', isDelete: false },
+      { order_id: orders[12]._id, product_id: products[11]._id, quantity: 2, unit_price: 22000, status: 'pending', isDelete: false },
+      
+      // Order 5 (ORD-005) - Delivered
+      { order_id: orders[1]._id, product_id: products[1]._id, quantity: 8, unit_price: 32000, status: 'shipped', isDelete: false },
+      { order_id: orders[1]._id, product_id: products[3]._id, quantity: 2, unit_price: 45000, status: 'shipped', isDelete: false },
+      
+      // Order 6 (ORD-006) - Shipped (in_transit)
+      { order_id: orders[5]._id, product_id: products[0]._id, quantity: 2, unit_price: 145000, status: 'picked', isDelete: false },
+      { order_id: orders[5]._id, product_id: products[7]._id, quantity: 3, unit_price: 42000, status: 'picked', isDelete: false },
+      
+      // Order 7 (ORD-007) - Delivered
+      { order_id: orders[9]._id, product_id: products[8]._id, quantity: 10, unit_price: 35000, status: 'shipped', isDelete: false },
+      { order_id: orders[9]._id, product_id: products[2]._id, quantity: 15, unit_price: 10000, status: 'shipped', isDelete: false },
+      
+      // Order 8 (ORD-008) - Shipped (in_transit)
+      { order_id: orders[13]._id, product_id: products[5]._id, quantity: 6, unit_price: 28000, status: 'picked', isDelete: false },
+      { order_id: orders[13]._id, product_id: products[6]._id, quantity: 15, unit_price: 5000, status: 'picked', isDelete: false },
+      
+      // Order 9 (ORD-009) - Confirmed (assigned)
+      { order_id: orders[2]._id, product_id: products[4]._id, quantity: 30, unit_price: 4000, status: 'pending', isDelete: false },
+      { order_id: orders[2]._id, product_id: products[6]._id, quantity: 20, unit_price: 5000, status: 'pending', isDelete: false },
+      
+      // Order 10 (ORD-010) - Confirmed (assigned)
+      { order_id: orders[6]._id, product_id: products[1]._id, quantity: 10, unit_price: 32000, status: 'pending', isDelete: false },
+      { order_id: orders[6]._id, product_id: products[9]._id, quantity: 8, unit_price: 9500, status: 'pending', isDelete: false },
+      
+      // Order 11 (ORD-011) - Shipped (in_transit)
+      { order_id: orders[10]._id, product_id: products[0]._id, quantity: 1, unit_price: 145000, status: 'picked', isDelete: false },
+      { order_id: orders[10]._id, product_id: products[7]._id, quantity: 4, unit_price: 42000, status: 'picked', isDelete: false },
+      
+      // Order 12 (ORD-012) - Confirmed (assigned)
+      { order_id: orders[14]._id, product_id: products[3]._id, quantity: 3, unit_price: 45000, status: 'pending', isDelete: false },
+      { order_id: orders[14]._id, product_id: products[11]._id, quantity: 2, unit_price: 22000, status: 'pending', isDelete: false }
     ]);
     console.log(`   ✅ ${orderItems.length} order items\n`);
 
@@ -197,14 +254,154 @@ async function seedDatabase() {
     }
     console.log('   ✅ Orders updated with items\n');
 
-    // 13. DELIVERY ORDERS (3 đơn giao hàng)
+    // 13. DELIVERY ORDERS (11 đơn giao hàng cho delivery staff - nhiều để test)
     console.log('13/23 🚚 Tạo DeliveryOrders...');
     const deliveryOrders = await DeliveryOrder.insertMany([
-      { order_id: orders[0]._id, staff_id: staffs[2]._id, order_date: new Date('2024-12-02'), status: 'delivered', tracking_number: 'TRACK-001', notes: 'Đã giao thành công', delivery_date: new Date('2024-12-03'), isDelete: false },
-      { order_id: orders[1]._id, staff_id: staffs[2]._id, order_date: new Date('2024-12-06'), status: 'in_transit', tracking_number: 'TRACK-002', notes: 'Đang trên đường giao', isDelete: false },
-      { order_id: orders[2]._id, staff_id: staffs[2]._id, order_date: new Date('2024-12-09'), status: 'assigned', tracking_number: 'TRACK-003', notes: 'Chờ lấy hàng', isDelete: false }
+      // DELIVERED orders (5 orders) - Cho Order History
+      { 
+        order_id: orders[0]._id, 
+        staff_id: staffs[2]._id, 
+        order_date: new Date('2024-12-01T08:00:00'), 
+        delivery_date: new Date('2024-12-01T10:30:00'),
+        status: 'delivered', 
+        tracking_number: 'TRACK-001', 
+        notes: 'Đã giao thành công, khách hàng ký nhận', 
+        orderItems: [], 
+        isDelete: false 
+      },
+      { 
+        order_id: orders[4]._id, 
+        staff_id: staffs[2]._id, 
+        order_date: new Date('2024-12-05T09:00:00'),
+        delivery_date: new Date('2024-12-05T11:45:00'), 
+        status: 'delivered', 
+        tracking_number: 'TRACK-002', 
+        notes: 'Giao thành công, để ở bảo vệ theo yêu cầu', 
+        orderItems: [], 
+        isDelete: false 
+      },
+      { 
+        order_id: orders[8]._id, 
+        staff_id: staffs[2]._id, 
+        order_date: new Date('2024-12-08T10:00:00'),
+        delivery_date: new Date('2024-12-08T14:20:00'), 
+        status: 'delivered', 
+        tracking_number: 'TRACK-003', 
+        notes: 'Giao cuối tuần, đã hoàn thành', 
+        orderItems: [], 
+        isDelete: false 
+      },
+      { 
+        order_id: orders[12]._id, 
+        staff_id: staffs[2]._id, 
+        order_date: new Date('2024-12-10T07:30:00'),
+        delivery_date: new Date('2024-12-10T09:15:00'), 
+        status: 'delivered', 
+        tracking_number: 'TRACK-004', 
+        notes: 'Giao sớm theo yêu cầu khách hàng', 
+        orderItems: [], 
+        isDelete: false 
+      },
+      { 
+        order_id: orders[1]._id, 
+        staff_id: staffs[2]._id, 
+        order_date: new Date('2024-12-12T08:30:00'),
+        delivery_date: new Date('2024-12-12T10:00:00'), 
+        status: 'delivered', 
+        tracking_number: 'TRACK-005', 
+        notes: 'Giao buổi sáng thành công', 
+        orderItems: [], 
+        isDelete: false 
+      },
+      { 
+        order_id: orders[9]._id, 
+        staff_id: staffs[2]._id, 
+        order_date: new Date('2024-12-10T09:00:00'),
+        delivery_date: new Date('2024-12-10T12:30:00'), 
+        status: 'delivered', 
+        tracking_number: 'TRACK-007', 
+        notes: 'Đơn hàng lớn, giao thành công', 
+        orderItems: [], 
+        isDelete: false 
+      },
+      
+      // IN_TRANSIT orders (3 orders) - Đang giao
+      { 
+        order_id: orders[5]._id, 
+        staff_id: staffs[2]._id, 
+        order_date: new Date('2024-12-14T08:00:00'), 
+        status: 'in_transit', 
+        tracking_number: 'TRACK-006', 
+        notes: 'Đang trên đường giao, dự kiến 30 phút nữa', 
+        orderItems: [], 
+        isDelete: false 
+      },
+      { 
+        order_id: orders[13]._id, 
+        staff_id: staffs[2]._id, 
+        order_date: new Date('2024-12-14T09:15:00'), 
+        status: 'in_transit', 
+        tracking_number: 'TRACK-008', 
+        notes: 'Đang giao tầng 3 phòng 301', 
+        orderItems: [], 
+        isDelete: false 
+      },
+      { 
+        order_id: orders[10]._id, 
+        staff_id: staffs[2]._id, 
+        order_date: new Date('2024-12-14T10:00:00'), 
+        status: 'in_transit', 
+        tracking_number: 'TRACK-011', 
+        notes: 'Đang giao, sẽ để ở bảo vệ', 
+        orderItems: [], 
+        isDelete: false 
+      },
+      
+      // ASSIGNED orders (3 orders) - Chờ lấy hàng
+      { 
+        order_id: orders[2]._id, 
+        staff_id: staffs[2]._id, 
+        order_date: new Date('2024-12-14T11:00:00'), 
+        status: 'assigned', 
+        tracking_number: 'TRACK-009', 
+        notes: 'Chờ lấy hàng, giao sau 5pm theo yêu cầu', 
+        orderItems: [], 
+        isDelete: false 
+      },
+      { 
+        order_id: orders[6]._id, 
+        staff_id: staffs[2]._id, 
+        order_date: new Date('2024-12-14T11:30:00'), 
+        status: 'assigned', 
+        tracking_number: 'TRACK-010', 
+        notes: 'Mới assign, cần gọi trước 30 phút', 
+        orderItems: [], 
+        isDelete: false 
+      },
+      { 
+        order_id: orders[14]._id, 
+        staff_id: staffs[2]._id, 
+        order_date: new Date('2024-12-14T12:00:00'), 
+        status: 'assigned', 
+        tracking_number: 'TRACK-012', 
+        notes: 'Chờ xác nhận lấy hàng', 
+        orderItems: [], 
+        isDelete: false 
+      }
     ]);
-    console.log(`   ✅ ${deliveryOrders.length} delivery orders\n`);
+    console.log(`   ✅ ${deliveryOrders.length} delivery orders (6 delivered, 3 in_transit, 3 assigned)\n`);
+    
+    // ✅ UPDATE DELIVERY ORDERS WITH ORDERITEMS FROM ORDERS
+    console.log('   Updating delivery orders with orderItems...');
+    for (let delivery of deliveryOrders) {
+      const order = orders.find(o => o._id.equals(delivery.order_id));
+      if (order && order.orderItems && order.orderItems.length > 0) {
+        await DeliveryOrder.findByIdAndUpdate(delivery._id, {
+          orderItems: order.orderItems
+        });
+      }
+    }
+    console.log('   ✅ Delivery orders updated with items\n');
 
     // 14. INVOICES (4 hóa đơn từ 4 customers)
     console.log('14/23 🧾 Tạo Invoices...');

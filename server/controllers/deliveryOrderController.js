@@ -77,11 +77,25 @@ exports.getDeliveryOrderById = async (req, res) => {
       .populate({
         path: 'order_id',
         populate: [
-          { path: 'customer_id', select: 'account_id membership_type' },
+          { 
+            path: 'customer_id', 
+            select: 'account_id membership_type',
+            populate: {
+              path: 'account_id',
+              select: 'full_name email phone address avatar_link'
+            }
+          },
           { path: 'payment_id' }
         ]
       })
-      .populate('staff_id', 'position account_id');
+      .populate({
+        path: 'staff_id', 
+        select: 'position account_id',
+        populate: {
+          path: 'account_id',
+          select: 'full_name phone'
+        }
+      });
 
     if (!deliveryOrder) {
       return res.status(404).json({
@@ -90,9 +104,12 @@ exports.getDeliveryOrderById = async (req, res) => {
       });
     }
 
-    // Get order items for this delivery
+    // Get order items for this delivery với đầy đủ product info
     const orderItems = await OrderItem.find({ order_id: deliveryOrder.order_id })
-      .populate('product_id', 'name category sku');
+      .populate({
+        path: 'product_id',
+        select: 'name description category unit price image_link sku barcode'
+      });
 
     res.status(200).json({
       success: true,
@@ -133,7 +150,18 @@ exports.getDeliveriesByStaff = async (req, res) => {
     if (status) query.status = status;
 
     const deliveries = await DeliveryOrder.find(query)
-      .populate('order_id', 'order_number customer_id total_amount')
+      .populate({
+        path: 'order_id',
+        select: 'order_number customer_id total_amount',
+        populate: {
+          path: 'customer_id',
+          select: 'account_id membership_type',
+          populate: {
+            path: 'account_id',
+            select: 'full_name email phone address avatar_link'
+          }
+        }
+      })
       .skip(skip)
       .limit(parseInt(limit))
       .sort('-order_date');
