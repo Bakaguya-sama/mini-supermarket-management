@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   FaSearch,
   FaEye,
@@ -12,6 +12,7 @@ import {
 import { TbBoxOff } from "react-icons/tb";
 import "./ShelfProduct.css";
 import { useNavigate } from "react-router-dom";
+import { productShelfService } from "../../../services/productShelfService";
 
 const ShelfProduct = () => {
   const navigate = useNavigate();
@@ -25,8 +26,91 @@ const ShelfProduct = () => {
   const [statusFilter, setStatusFilter] = useState("All status");
   const [currentPage, setCurrentPage] = useState(1);
 
-  // Sample shelf product data with multiple locations for same product ID
-  const shelfProductData = [
+  // Loading states
+  const [isLoading, setIsLoading] = useState(true);
+  
+  // Data from API
+  const [shelfProductData, setShelfProductData] = useState([]);
+  const [totalRecords, setTotalRecords] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
+
+  const itemsPerPage = 10;
+
+  // ========== API FUNCTIONS ==========
+  
+  // Load product-shelf mappings from API
+  const loadProductShelves = async () => {
+    setIsLoading(true);
+    try {
+      const params = {
+        page: currentPage,
+        limit: itemsPerPage,
+        sort: '-createdAt'
+      };
+
+      const response = await productShelfService.getAllProductShelves(params);
+      
+      if (response.success && response.data && Array.isArray(response.data)) {
+        // Transform API data to UI format
+        const transformedData = response.data.map(mapping => {
+          const product = mapping.product_id;
+          const shelf = mapping.shelf_id;
+          
+          // Determine stock status based on quantity
+          let status = 'In Stock';
+          const quantity = mapping.quantity || 0;
+          const lowStockThreshold = 20; // Default threshold
+          
+          if (quantity === 0) {
+            status = 'Out of Stock';
+          } else if (quantity < lowStockThreshold) {
+            status = 'Low Stock';
+          }
+          
+          return {
+            id: product?._id || mapping._id,
+            mappingId: mapping._id,
+            name: product?.name || 'Unknown Product',
+            category: product?.category || 'N/A',
+            brand: 'N/A', // TODO: Add brand field if available
+            price: `$${(product?.price || 0).toFixed(2)}`,
+            stock: quantity,
+            lowStockThreshold: lowStockThreshold,
+            supplier: 'N/A', // TODO: Populate supplier from product
+            status: status,
+            shelfLocation: shelf?.shelf_number || 'N/A',
+            section: shelf?.shelf_number?.charAt(0) || 'N/A',
+            slot: shelf?.note || 'N/A',
+            _original: mapping
+          };
+        });
+
+        setShelfProductData(transformedData);
+        setTotalRecords(response.total || 0);
+        setTotalPages(response.pages || 0);
+      } else {
+        console.error('Failed to load product shelves:', response.message);
+        setShelfProductData([]);
+        setTotalRecords(0);
+        setTotalPages(0);
+      }
+    } catch (error) {
+      console.error('Error loading product shelves:', error);
+      setShelfProductData([]);
+      setTotalRecords(0);
+      setTotalPages(0);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Load data on mount and when page changes
+  useEffect(() => {
+    loadProductShelves();
+  }, [currentPage]);
+
+  // Sample fake shelf product data - REMOVE sau khi test API
+  const oldShelfProductData = [
     {
       id: "P001",
       name: "Coca Cola 330ml",
@@ -195,11 +279,9 @@ const ShelfProduct = () => {
       section: "G",
       slot: "16",
     },
-  ];
+  ]; // End fake data
 
-  const itemsPerPage = 10;
-
-  // Filter data
+  // Filter data (client-side filtering for now)
   const filteredData = shelfProductData.filter((product) => {
     const matchesSearch =
       product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -247,7 +329,7 @@ const ShelfProduct = () => {
 
   // Calculate pagination
   const totalItems = sortedData.length;
-  const totalPages = Math.ceil(totalItems / itemsPerPage);
+  const clientTotalPages = Math.ceil(totalItems / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
   const paginatedData = sortedData.slice(startIndex, endIndex);
@@ -497,6 +579,17 @@ const ShelfProduct = () => {
 
       {/* Products Table */}
       <div className="shelf-table-container">
+        {isLoading && (
+          <div style={{
+            position: 'absolute',
+            top: '50%',
+            left: '50%',
+            transform: 'translate(-50%, -50%)',
+            zIndex: 10
+          }}>
+            <div>Loading products on shelves...</div>
+          </div>
+        )}
         <table className="shelf-table">
           <thead>
             <tr>
@@ -510,6 +603,13 @@ const ShelfProduct = () => {
             </tr>
           </thead>
           <tbody>
+            {!isLoading && paginatedData.length === 0 && (
+              <tr>
+                <td colSpan="7" style={{ textAlign: 'center', padding: '2rem' }}>
+                  No products on shelves found
+                </td>
+              </tr>
+            )}
             {paginatedData.map((product, index) => (
               <tr key={`${product.id}-${product.shelfLocation}-${index}`}>
                 <td className="shelf-product-id-cell">{product.id}</td>
@@ -583,15 +683,15 @@ const ShelfProduct = () => {
 
           {/* Page numbers */}
           <div className="shelf-page-numbers">
-            {Array.from({ length: Math.min(3, totalPages) }, (_, i) => {
+            {Array.from({ length: Math.min(3, clientTotalPages) }, (_, i) => {
               let pageNum;
 
-              if (totalPages <= 3) {
+              if (clientTotalPages <= 3) {
                 pageNum = i + 1;
               } else if (currentPage === 1) {
                 pageNum = i + 1;
-              } else if (currentPage === totalPages) {
-                pageNum = totalPages - 2 + i;
+              } else if (currentPage === clientTotalPages) {
+                pageNum = clientTotalPages - 2 + i;
               } else {
                 pageNum = currentPage - 1 + i;
               }
@@ -613,9 +713,9 @@ const ShelfProduct = () => {
           <button
             className="shelf-pagination-btn"
             onClick={() =>
-              setCurrentPage(Math.min(totalPages, currentPage + 1))
+              setCurrentPage(Math.min(clientTotalPages, currentPage + 1))
             }
-            disabled={currentPage === totalPages}
+            disabled={currentPage === clientTotalPages}
             title="Next page"
           >
             ›

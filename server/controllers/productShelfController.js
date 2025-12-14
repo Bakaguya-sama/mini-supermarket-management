@@ -1,0 +1,686 @@
+// controllers/productShelfController.js - UPDATED WITH NEW BUSINESS RULES
+// Business Rules:
+// 1. One product can only be on ONE shelf at a time (unique product_id)
+// 2. When adding product to shelf, deduct quantity from warehouse inventory (current_stock)
+// 3. When moving product, must move ALL quantity (no partial transfers)
+const { ProductShelf, Product, Shelf } = require('../models');
+
+// @desc    Get all product-shelf mappings with filters and pagination
+// @route   GET /api/product-shelves
+exports.getAllProductShelves = async (req, res) => {
+  try {
+    const {
+      page = 1,
+      limit = 20,
+      product_id,
+      shelf_id,
+      sort = '-createdAt'
+    } = req.query;
+
+    // Build query
+    const query = { isDelete: false };
+    if (product_id) query.product_id = product_id;
+    if (shelf_id) query.shelf_id = shelf_id;
+
+    // Calculate pagination
+    const skip = (parseInt(page) - 1) * parseInt(limit);
+
+    // Execute query with population
+    const productShelves = await ProductShelf.find(query)
+      .populate({
+        path: 'product_id',
+        select: 'name category unit price current_stock minimum_stock_level maximum_stock_level image_link sku barcode supplier_id',
+        populate: {
+          path: 'supplier_id',
+          select: 'name contact_person_name email phone'
+        }
+      })
+      .populate({
+        path: 'shelf_id',
+        select: 'shelf_number shelf_name section_number description capacity current_quantity'
+      })
+      .sort(sort)
+      .skip(skip)
+      .limit(parseInt(limit));
+
+    const total = await ProductShelf.countDocuments(query);
+
+    res.status(200).json({
+      success: true,
+      count: productShelves.length,
+      total,
+      page: parseInt(page),
+      pages: Math.ceil(total / parseInt(limit)),
+      data: productShelves
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching product-shelf mappings',
+      error: error.message
+    });
+  }
+};
+
+// @desc    Get product-shelf mapping statistics
+// @route   GET /api/product-shelves/stats
+exports.getProductShelfStats = async (req, res) => {
+  try {
+    const totalMappings = await ProductShelf.countDocuments({ isDelete: false });
+    
+    const totalQuantity = await ProductShelf.aggregate([
+      { $match: { isDelete: false } },
+      { $group: { _id: null, total: { $sum: '$quantity' } } }
+    ]);
+
+    const byShelves = await ProductShelf.aggregate([
+      { $match: { isDelete: false } },
+      { 
+        $lookup: {
+          from: 'shelves',
+          localField: 'shelf_id',
+          foreignField: '_id',
+          as: 'shelf'
+        }
+      },
+      { $unwind: '$shelf' },
+      { 
+        $group: { 
+          _id: {
+            shelf_id: '$shelf_id',
+            shelf_number: '$shelf.shelf_number',
+            shelf_name: '$shelf.shelf_name'
+          }, 
+          product_count: { $sum: 1 },
+          total_quantity: { $sum: '$quantity' },
+          capacity: { $first: '$shelf.capacity' }
+        } 
+      },
+      { $sort: { '_id.shelf_number': 1 } }
+    ]);
+
+    res.status(200).json({
+      success: true,
+      data: {
+        total_mappings: totalMappings,
+        total_quantity_on_shelves: totalQuantity[0]?.total || 0,
+        by_shelves: byShelves
+      }
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching product-shelf statistics',
+      error: error.message
+    });
+  }
+};
+
+// @desc    Get single product-shelf mapping by ID
+// @route   GET /api/product-shelves/:id
+exports.getProductShelfById = async (req, res) => {
+  try {
+    const productShelf = await ProductShelf.findOne({
+      _id: req.params.id,
+      isDelete: false
+    })
+      .populate({
+        path: 'product_id',
+        select: 'name description category unit price current_stock minimum_stock_level maximum_stock_level image_link sku barcode supplier_id status',
+        populate: {
+          path: 'supplier_id',
+          select: 'name contact_person_name email phone'
+        }
+      })
+      .populate({
+        path: 'shelf_id',
+        select: 'shelf_number shelf_name section_number description capacity current_quantity'
+      });
+
+    if (!productShelf) {
+      return res.status(404).json({
+        success: false,
+        message: 'Product-shelf mapping not found'
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      data: productShelf
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching product-shelf mapping',
+      error: error.message
+    });
+  }
+};
+
+// @desc    Get shelf for a specific product (since 1 product = 1 shelf)
+// @route   GET /api/product-shelves/product/:productId/shelves
+exports.getShelvesByProduct = async (req, res) => {
+  try {
+    const productShelf = await ProductShelf.findOne({
+      product_id: req.params.productId,
+      isDelete: false
+    }).populate({
+      path: 'shelf_id',
+      select: 'shelf_number shelf_name section_number description capacity current_quantity'
+    });
+
+    if (!productShelf) {
+      return res.status(404).json({
+        success: false,
+        message: 'Product not found on any shelf'
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      data: {
+        shelf: productShelf.shelf_id,
+        quantity: productShelf.quantity,
+        mapping_id: productShelf._id
+      }
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching shelves for product',
+      error: error.message
+    });
+  }
+};
+
+// @desc    Get all products on a specific shelf
+// @route   GET /api/product-shelves/shelf/:shelfId/products
+exports.getProductsByShelf = async (req, res) => {
+  try {
+    const { page = 1, limit = 50, sort = 'product_id.name' } = req.query;
+    const skip = (parseInt(page) - 1) * parseInt(limit);
+
+    const query = {
+      shelf_id: req.params.shelfId,
+      isDelete: false
+    };
+
+    const productShelves = await ProductShelf.find(query)
+      .populate({
+        path: 'product_id',
+        select: 'name category unit price current_stock image_link sku supplier_id',
+        populate: {
+          path: 'supplier_id',
+          select: 'name'
+        }
+      })
+      .sort(sort)
+      .skip(skip)
+      .limit(parseInt(limit));
+
+    const total = await ProductShelf.countDocuments(query);
+
+    // Get shelf info
+    const shelf = await Shelf.findById(req.params.shelfId);
+
+    res.status(200).json({
+      success: true,
+      count: productShelves.length,
+      total,
+      page: parseInt(page),
+      pages: Math.ceil(total / parseInt(limit)),
+      shelf_info: shelf ? {
+        shelf_number: shelf.shelf_number,
+        shelf_name: shelf.shelf_name,
+        section_number: shelf.section_number,
+        capacity: shelf.capacity,
+        current_quantity: shelf.current_quantity,
+        available: shelf.capacity - shelf.current_quantity
+      } : null,
+      data: productShelves
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching products on shelf',
+      error: error.message
+    });
+  }
+};
+
+// @desc    Create product-shelf mapping (Assign product to shelf)
+// @route   POST /api/product-shelves
+// Business Rule: Deduct quantity from product.current_stock
+exports.createProductShelf = async (req, res) => {
+  try {
+    const { product_id, shelf_id, quantity } = req.body;
+
+    // Validate required fields
+    if (!product_id || !shelf_id || !quantity || quantity <= 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Product ID, Shelf ID, and valid quantity are required'
+      });
+    }
+
+    // Check if product already exists on ANY shelf
+    const existingMapping = await ProductShelf.findOne({
+      product_id,
+      isDelete: false
+    });
+
+    if (existingMapping) {
+      return res.status(400).json({
+        success: false,
+        message: 'Product already exists on another shelf. Please remove it first or use move operation.'
+      });
+    }
+
+    // Get product to check availability
+    const product = await Product.findById(product_id);
+    if (!product) {
+      return res.status(404).json({
+        success: false,
+        message: 'Product not found'
+      });
+    }
+
+    // Check if product has enough stock in warehouse
+    if (product.current_stock < quantity) {
+      return res.status(400).json({
+        success: false,
+        message: `Not enough stock in warehouse. Available: ${product.current_stock}, Requested: ${quantity}`
+      });
+    }
+
+    // Get shelf to check capacity
+    const shelf = await Shelf.findById(shelf_id);
+    if (!shelf) {
+      return res.status(404).json({
+        success: false,
+        message: 'Shelf not found'
+      });
+    }
+
+    const availableCapacity = shelf.capacity - (shelf.current_quantity || 0);
+    if (availableCapacity < quantity) {
+      return res.status(400).json({
+        success: false,
+        message: `Not enough space on shelf. Available: ${availableCapacity}, Requested: ${quantity}`
+      });
+    }
+
+    // Create mapping
+    const productShelf = await ProductShelf.create({
+      product_id,
+      shelf_id,
+      quantity
+    });
+
+    // Deduct from warehouse inventory
+    product.current_stock -= quantity;
+    await product.save();
+
+    // Update shelf quantity
+    shelf.current_quantity = (shelf.current_quantity || 0) + quantity;
+    await shelf.save();
+
+    // Populate and return
+    const populatedMapping = await ProductShelf.findById(productShelf._id)
+      .populate('product_id', 'name current_stock')
+      .populate('shelf_id', 'shelf_number capacity current_quantity');
+
+    res.status(201).json({
+      success: true,
+      message: `Successfully added ${quantity} units of ${product.name} to shelf ${shelf.shelf_number}`,
+      data: populatedMapping
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Error creating product-shelf mapping',
+      error: error.message
+    });
+  }
+};
+
+// @desc    Update product-shelf mapping
+// @route   PUT /api/product-shelves/:id
+exports.updateProductShelf = async (req, res) => {
+  try {
+    const { quantity } = req.body;
+
+    const productShelf = await ProductShelf.findOne({
+      _id: req.params.id,
+      isDelete: false
+    });
+
+    if (!productShelf) {
+      return res.status(404).json({
+        success: false,
+        message: 'Product-shelf mapping not found'
+      });
+    }
+
+    // Get product and shelf
+    const product = await Product.findById(productShelf.product_id);
+    const shelf = await Shelf.findById(productShelf.shelf_id);
+
+    if (!product || !shelf) {
+      return res.status(404).json({
+        success: false,
+        message: 'Product or shelf not found'
+      });
+    }
+
+    // Calculate difference
+    const oldQuantity = productShelf.quantity;
+    const difference = quantity - oldQuantity;
+
+    // If increasing, check warehouse stock
+    if (difference > 0) {
+      if (product.current_stock < difference) {
+        return res.status(400).json({
+          success: false,
+          message: `Not enough stock in warehouse. Available: ${product.current_stock}, Need: ${difference}`
+        });
+      }
+
+      // Check shelf capacity
+      const availableCapacity = shelf.capacity - shelf.current_quantity;
+      if (availableCapacity < difference) {
+        return res.status(400).json({
+          success: false,
+          message: `Not enough space on shelf. Available: ${availableCapacity}, Need: ${difference}`
+        });
+      }
+
+      // Deduct from warehouse
+      product.current_stock -= difference;
+      shelf.current_quantity += difference;
+    } else if (difference < 0) {
+      // Decreasing - return to warehouse
+      product.current_stock += Math.abs(difference);
+      shelf.current_quantity -= Math.abs(difference);
+    }
+
+    // Update quantity
+    productShelf.quantity = quantity;
+    await productShelf.save();
+    await product.save();
+    await shelf.save();
+
+    const updated = await ProductShelf.findById(productShelf._id)
+      .populate('product_id', 'name current_stock')
+      .populate('shelf_id', 'shelf_number capacity current_quantity');
+
+    res.status(200).json({
+      success: true,
+      message: 'Product-shelf mapping updated successfully',
+      data: updated
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Error updating product-shelf mapping',
+      error: error.message
+    });
+  }
+};
+
+// @desc    Move product to another shelf (MUST move ALL quantity)
+// @route   PUT /api/product-shelves/:id/move
+// Business Rule: Must move entire quantity, cannot split
+exports.moveProductToShelf = async (req, res) => {
+  try {
+    const { new_shelf_id } = req.body;
+
+    if (!new_shelf_id) {
+      return res.status(400).json({
+        success: false,
+        message: 'New shelf ID is required'
+      });
+    }
+
+    const productShelf = await ProductShelf.findOne({
+      _id: req.params.id,
+      isDelete: false
+    }).populate('product_id', 'name')
+      .populate('shelf_id', 'shelf_number shelf_name capacity current_quantity');
+
+    if (!productShelf) {
+      return res.status(404).json({
+        success: false,
+        message: 'Product-shelf mapping not found'
+      });
+    }
+
+    const oldShelf = productShelf.shelf_id;
+    const newShelf = await Shelf.findById(new_shelf_id);
+
+    if (!newShelf) {
+      return res.status(404).json({
+        success: false,
+        message: 'New shelf not found'
+      });
+    }
+
+    // Prevent moving to same shelf
+    if (oldShelf._id.toString() === new_shelf_id) {
+      return res.status(400).json({
+        success: false,
+        message: 'Product is already on this shelf'
+      });
+    }
+
+    // Check new shelf capacity
+    const availableCapacity = newShelf.capacity - (newShelf.current_quantity || 0);
+    if (availableCapacity < productShelf.quantity) {
+      return res.status(400).json({
+        success: false,
+        message: `Not enough space on new shelf. Available: ${availableCapacity}, Need: ${productShelf.quantity}`
+      });
+    }
+
+    // Update old shelf quantity
+    oldShelf.current_quantity = Math.max(0, (oldShelf.current_quantity || 0) - productShelf.quantity);
+    await oldShelf.save();
+
+    // Update new shelf quantity
+    newShelf.current_quantity = (newShelf.current_quantity || 0) + productShelf.quantity;
+    await newShelf.save();
+
+    // Update mapping
+    productShelf.shelf_id = new_shelf_id;
+    await productShelf.save();
+
+    const updated = await ProductShelf.findById(productShelf._id)
+      .populate('product_id', 'name')
+      .populate('shelf_id', 'shelf_number shelf_name capacity current_quantity');
+
+    res.status(200).json({
+      success: true,
+      message: `Successfully moved ${productShelf.quantity} units from ${oldShelf.shelf_number} to ${newShelf.shelf_number}`,
+      data: updated
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Error moving product to new shelf',
+      error: error.message
+    });
+  }
+};
+
+// @desc    Delete product-shelf mapping (Remove from shelf, return to warehouse)
+// @route   DELETE /api/product-shelves/:id
+exports.deleteProductShelf = async (req, res) => {
+  try {
+    const productShelf = await ProductShelf.findOne({
+      _id: req.params.id,
+      isDelete: false
+    });
+
+    if (!productShelf) {
+      return res.status(404).json({
+        success: false,
+        message: 'Product-shelf mapping not found'
+      });
+    }
+
+    // Get product and shelf
+    const product = await Product.findById(productShelf.product_id);
+    const shelf = await Shelf.findById(productShelf.shelf_id);
+
+    if (product) {
+      // Return quantity to warehouse
+      product.current_stock += productShelf.quantity;
+      await product.save();
+    }
+
+    if (shelf) {
+      // Remove from shelf quantity
+      shelf.current_quantity = Math.max(0, (shelf.current_quantity || 0) - productShelf.quantity);
+      await shelf.save();
+    }
+
+    // Soft delete
+    productShelf.isDelete = true;
+    await productShelf.save();
+
+    res.status(200).json({
+      success: true,
+      message: `Product removed from shelf. ${productShelf.quantity} units returned to warehouse.`
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Error deleting product-shelf mapping',
+      error: error.message
+    });
+  }
+};
+
+// @desc    Bulk assign multiple products to a shelf
+// @route   POST /api/product-shelves/bulk/assign
+// Business Rule: Check for existing mappings, deduct from warehouse
+exports.bulkAssignToShelf = async (req, res) => {
+  try {
+    const { shelf_id, products } = req.body;
+
+    if (!shelf_id || !products || !Array.isArray(products) || products.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Shelf ID and products array are required'
+      });
+    }
+
+    // Get shelf
+    const shelf = await Shelf.findById(shelf_id);
+    if (!shelf) {
+      return res.status(404).json({
+        success: false,
+        message: 'Shelf not found'
+      });
+    }
+
+    const results = {
+      success: [],
+      errors: [],
+      total_assigned: 0
+    };
+
+    for (const item of products) {
+      try {
+        const { product_id, quantity } = item;
+
+        // Check existing mapping
+        const existing = await ProductShelf.findOne({
+          product_id,
+          isDelete: false
+        });
+
+        if (existing) {
+          results.errors.push({
+            product_id,
+            error: 'Product already on another shelf'
+          });
+          continue;
+        }
+
+        // Get product
+        const product = await Product.findById(product_id);
+        if (!product) {
+          results.errors.push({
+            product_id,
+            error: 'Product not found'
+          });
+          continue;
+        }
+
+        // Check stock
+        if (product.current_stock < quantity) {
+          results.errors.push({
+            product_id,
+            error: `Not enough stock. Available: ${product.current_stock}`
+          });
+          continue;
+        }
+
+        // Check capacity
+        const currentCapacity = shelf.capacity - (shelf.current_quantity || 0);
+        if (currentCapacity < quantity) {
+          results.errors.push({
+            product_id,
+            error: `Not enough shelf space. Available: ${currentCapacity}`
+          });
+          continue;
+        }
+
+        // Create mapping
+        const mapping = await ProductShelf.create({
+          product_id,
+          shelf_id,
+          quantity
+        });
+
+        // Update warehouse and shelf
+        product.current_stock -= quantity;
+        await product.save();
+
+        shelf.current_quantity = (shelf.current_quantity || 0) + quantity;
+
+        results.success.push({
+          product_id,
+          product_name: product.name,
+          quantity,
+          mapping_id: mapping._id
+        });
+
+        results.total_assigned += quantity;
+
+      } catch (itemError) {
+        results.errors.push({
+          product_id: item.product_id,
+          error: itemError.message
+        });
+      }
+    }
+
+    // Save shelf with updated quantity
+    await shelf.save();
+
+    res.status(results.errors.length > 0 ? 207 : 201).json({
+      success: results.errors.length === 0,
+      message: `Successfully assigned ${results.success.length} product(s). ${results.errors.length} error(s).`,
+      data: results
+    });
+
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Error bulk assigning products to shelf',
+      error: error.message
+    });
+  }
+};

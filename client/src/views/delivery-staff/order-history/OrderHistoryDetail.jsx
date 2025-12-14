@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import {
   FaArrowLeft,
   FaMapMarkerAlt,
@@ -8,13 +8,130 @@ import {
 } from "react-icons/fa";
 import { useNavigate, useParams } from "react-router-dom";
 import "./OrderHistoryDetail.css";
+import { deliveryOrderService } from "../../../services/deliveryOrderService";
 
 const OrderHistoryDetail = () => {
   const navigate = useNavigate();
-  const { orderId } = useParams();
+  const { id: orderId } = useParams();
 
-  // Sample order data - in real app, fetch by orderId
-  const orderData = {
+  // Loading states
+  const [isLoading, setIsLoading] = useState(true);
+  const [orderData, setOrderData] = useState(null);
+  const [error, setError] = useState(null);
+
+  // ========== API FUNCTIONS ==========
+  
+  // Load delivered order details
+  const loadOrderDetails = async () => {
+    if (!orderId) {
+      setError('Order ID is required');
+      setIsLoading(false);
+      return;
+    }
+
+    setIsLoading(true);
+    setError(null);
+    
+    try {
+      const response = await deliveryOrderService.getDeliveryOrderById(orderId);
+      
+      if (response.success && response.data) {
+        const delivery = response.data;
+        const order = delivery.order_id;
+        const customer = order?.customer_id;
+        const accountInfo = customer?.account_id;
+        
+        // Transform API data to UI format
+        const orderDate = new Date(delivery.order_date);
+        const deliveryDate = delivery.delivery_date ? new Date(delivery.delivery_date) : orderDate;
+        
+        const transformedData = {
+          id: order?.order_number || `#${delivery._id.slice(-6)}`,
+          _id: delivery._id,
+          orderDate: orderDate.toLocaleDateString('en-US', { 
+            month: 'short', 
+            day: 'numeric', 
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+          }),
+          expectedDeliveryDate: deliveryDate.toLocaleDateString('en-US', { 
+            month: 'short', 
+            day: 'numeric', 
+            year: 'numeric' 
+          }),
+          deliveredDate: deliveryDate.toLocaleDateString('en-US', { 
+            month: 'short', 
+            day: 'numeric', 
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+          }),
+          totalAmount: order?.total_amount ? `${order.total_amount.toLocaleString()} VND` : '0 VND',
+          customer: {
+            name: accountInfo?.full_name || 'Guest Customer',
+            phone: accountInfo?.phone || 'No phone provided',
+            address: accountInfo?.address || 'No address provided',
+          },
+          deliveryNotes: delivery.notes || 'No special delivery instructions',
+          trackingNumber: delivery.tracking_number,
+          status: delivery.status,
+          items: [],
+          pricing: {
+            subtotal: '0 VND',
+            shippingFee: '0 VND',
+            total: '0 VND'
+          }
+        };
+
+        // Transform order items if available
+        if (delivery.orderItems && Array.isArray(delivery.orderItems)) {
+          let subtotal = 0;
+          transformedData.items = delivery.orderItems.map((item, index) => {
+            const itemTotal = (item.unit_price || item.price || 0) * (item.quantity || 0);
+            subtotal += itemTotal;
+            
+            const product = item.product_id;
+            return {
+              id: index + 1,
+              name: product?.product_name || product?.name || 'Unknown Product',
+              category: product?.category_id?.category_name || product?.category || 'N/A',
+              price: `${(item.unit_price || item.price || 0).toLocaleString()} VND each`,
+              quantity: item.quantity || 0,
+              total: `${itemTotal.toLocaleString()} VND`
+            };
+          });
+          
+          // Calculate total and shipping fee from order
+          const orderTotal = order?.total_amount || 0;
+          const shippingFee = Math.max(0, orderTotal - subtotal);
+          
+          transformedData.pricing = {
+            subtotal: `${subtotal.toLocaleString()} VND`,
+            shippingFee: `${shippingFee.toLocaleString()} VND`,
+            total: `${orderTotal.toLocaleString()} VND`
+          };
+        }
+
+        setOrderData(transformedData);
+      } else {
+        setError(response.message || 'Failed to load order details');
+      }
+    } catch (err) {
+      console.error('Error loading order details:', err);
+      setError('An error occurred while loading order details');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Load order on mount
+  useEffect(() => {
+    loadOrderDetails();
+  }, [orderId]);
+
+  // Sample fake order data - REMOVE sau khi test API
+  const oldOrderData = {
     id: "#002",
     orderDate: "Nov 05, 2025 09:30 AM",
     expectedDeliveryDate: "Nov 05, 2025",
@@ -84,6 +201,37 @@ const OrderHistoryDetail = () => {
 
   return (
     <div className="history-detail-view">
+      {/* Loading State */}
+      {isLoading && (
+        <div style={{
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          minHeight: '400px'
+        }}>
+          <div>Loading order details...</div>
+        </div>
+      )}
+
+      {/* Error State */}
+      {!isLoading && error && (
+        <div style={{
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'center',
+          alignItems: 'center',
+          minHeight: '400px'
+        }}>
+          <div style={{ color: 'red', marginBottom: '1rem' }}>{error}</div>
+          <button onClick={() => navigate(-1)} className="history-cancel-btn">
+            Go Back
+          </button>
+        </div>
+      )}
+
+      {/* Order Content */}
+      {!isLoading && !error && orderData && (
+        <>
       {/* Header */}
       <div className="history-page-header">
         <h1 className="history-page-title">Order History Details</h1>
@@ -239,6 +387,8 @@ const OrderHistoryDetail = () => {
           </button>
         </div>
       </div>
+        </>
+      )}
     </div>
   );
 };

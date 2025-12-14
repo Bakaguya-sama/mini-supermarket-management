@@ -1,7 +1,9 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { FaSearch, FaEye } from "react-icons/fa";
 import "./OrderHistoryView.css";
+import { deliveryOrderService } from "../../../services/deliveryOrderService";
+import { staffService } from "../../../services/staffService";
 
 const OrderHistoryView = () => {
   const navigate = useNavigate();
@@ -11,8 +13,143 @@ const OrderHistoryView = () => {
   const [endDate, setEndDate] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
 
-  // Sample order history data (all delivered)
-  const historyData = [
+  // Demo staff - TODO: Replace with authenticated user after login
+  const [demoStaffId, setDemoStaffId] = useState(null);
+  
+  // Loading states
+  const [isLoading, setIsLoading] = useState(true);
+  
+  // Data from API
+  const [historyData, setHistoryData] = useState([]);
+  const [totalRecords, setTotalRecords] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
+
+  const itemsPerPage = 10;
+
+  // ========== API FUNCTIONS ==========
+  
+  // Fetch demo delivery staff (first staff with position 'Delivery')
+  const fetchDemoStaff = async () => {
+    try {
+      const response = await staffService.getAll({ 
+        position: 'Delivery',
+        limit: 1,
+        is_active: true
+      });
+      
+      if (response.success && response.data && response.data.length > 0) {
+        const deliveryStaff = response.data[0];
+        console.log('Demo delivery staff:', deliveryStaff);
+        setDemoStaffId(deliveryStaff._id);
+        return deliveryStaff._id;
+      } else {
+        console.error('No delivery staff found');
+        return null;
+      }
+    } catch (error) {
+      console.error('Error fetching delivery staff:', error);
+      return null;
+    }
+  };
+  
+  // Load delivered orders history from API
+  const loadOrderHistory = async (staffId) => {
+    if (!staffId) {
+      console.log('No staff ID available, skipping load');
+      setIsLoading(false);
+      return;
+    }
+    
+    setIsLoading(true);
+    try {
+      // Get orders with status 'delivered' for this delivery staff
+      const params = {
+        page: currentPage,
+        limit: itemsPerPage,
+        status: 'delivered', // Only delivered orders
+        sort: timeFilter === 'Latest' ? '-delivery_date' : timeFilter === 'Earliest' ? 'delivery_date' : '-updatedAt'
+      };
+
+      if (searchTerm) {
+        params.search = searchTerm;
+      }
+
+      // Date range filter
+      if (startDate) {
+        params.startDate = startDate;
+      }
+      if (endDate) {
+        params.endDate = endDate;
+      }
+
+      const response = await deliveryOrderService.getDeliveriesByStaff(staffId, params);
+      
+      if (response.success && response.data && Array.isArray(response.data)) {
+        // Transform API data to UI format
+        const transformedOrders = response.data.map(delivery => {
+          const order = delivery.order_id;
+          const customer = order?.customer_id;
+          const accountInfo = customer?.account_id;
+          
+          const orderDate = new Date(delivery.order_date);
+          const deliveryDate = delivery.delivery_date ? new Date(delivery.delivery_date) : orderDate;
+          
+          return {
+            id: delivery._id,
+            orderId: order?.order_number || delivery._id.slice(-6),
+            customer: accountInfo?.full_name || 'Guest Customer',
+            deliveryDate: deliveryDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+            address: accountInfo?.address || 'No address provided',
+            phone: accountInfo?.phone || 'No phone',
+            items: delivery.notes || 'Delivered items',
+            totalAmount: order?.total_amount ? `${order.total_amount.toLocaleString()} VND` : '0 VND',
+            assignedTime: orderDate.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
+            deliveredTime: deliveryDate.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
+            dateSort: deliveryDate,
+            trackingNumber: delivery.tracking_number,
+            status: delivery.status
+          };
+        });
+
+        setHistoryData(transformedOrders);
+        setTotalRecords(response.total || 0);
+        setTotalPages(response.pages || 0);
+      } else {
+        console.error('Failed to load order history:', response.message);
+        setHistoryData([]);
+        setTotalRecords(0);
+        setTotalPages(0);
+      }
+    } catch (error) {
+      console.error('Error loading order history:', error);
+      setHistoryData([]);
+      setTotalRecords(0);
+      setTotalPages(0);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Fetch demo staff on mount
+  useEffect(() => {
+    const initStaff = async () => {
+      const staffId = await fetchDemoStaff();
+      if (staffId) {
+        loadOrderHistory(staffId);
+      }
+    };
+    initStaff();
+  }, []);
+  
+  // Load history when filters change (only if we have staffId)
+  useEffect(() => {
+    if (demoStaffId) {
+      loadOrderHistory(demoStaffId);
+    }
+  }, [currentPage, timeFilter, searchTerm, startDate, endDate]);
+
+  // Sample fake order history data - REMOVE sau khi test API
+  const oldHistoryData = [
     {
       id: "101",
       customer: "Le Thi Mai",
@@ -109,11 +246,10 @@ const OrderHistoryView = () => {
       deliveredTime: "04:20 PM",
       dateSort: new Date("2025-10-29"),
     },
-  ];
-
-  const itemsPerPage = 10;
+  ]; // End fake data
 
   // Filter orders based on search term, time filter, and date range
+  // NOTE: API now handles filtering, so this is mostly for client-side only
   const filteredOrders = historyData.filter((order) => {
     const matchesSearch =
       order.customer.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -148,7 +284,8 @@ const OrderHistoryView = () => {
     return 0; // No sorting for "All"
   });
 
-  const totalPages = Math.ceil(sortedOrders.length / itemsPerPage);
+  // NOTE: Pagination now handled by API, but keep for client-side filtering
+  const clientTotalPages = Math.ceil(sortedOrders.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
   const totalItems = sortedOrders.length;
@@ -226,6 +363,17 @@ const OrderHistoryView = () => {
 
       {/* Table */}
       <div className="history-table-container">
+        {isLoading && (
+          <div style={{
+            position: 'absolute',
+            top: '50%',
+            left: '50%',
+            transform: 'translate(-50%, -50%)',
+            zIndex: 10
+          }}>
+            <div>Loading order history...</div>
+          </div>
+        )}
         <table className="history-table">
           <thead>
             <tr>
@@ -237,9 +385,16 @@ const OrderHistoryView = () => {
             </tr>
           </thead>
           <tbody>
+            {!isLoading && paginatedData.length === 0 && (
+              <tr>
+                <td colSpan="5" style={{ textAlign: 'center', padding: '2rem' }}>
+                  No delivered orders found
+                </td>
+              </tr>
+            )}
             {paginatedData.map((order, index) => (
               <tr key={`page-${currentPage}-${order.id}-${index}`}>
-                <td className="history-order-id">{order.id}</td>
+                <td className="history-order-id">{order.orderId || order.id}</td>
                 <td className="history-customer-info">
                   <div className="history-customer-name">{order.customer}</div>
                   <div className="history-customer-phone">{order.phone}</div>

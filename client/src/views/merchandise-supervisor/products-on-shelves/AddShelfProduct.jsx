@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   FaSearch,
@@ -11,12 +11,58 @@ import {
 import "./AddShelfProduct.css";
 import SuccessMessage from "../../../components/Messages/SuccessMessage";
 import ErrorMessage from "../../../components/Messages/ErrorMessage";
+import * as productShelfService from "../../../services/productShelfService";
+import apiClient from "../../../services/apiClient";
 
 const AddShelfProduct = () => {
   const navigate = useNavigate();
 
   const [errorMessage, setErrorMessage] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
+
+  // Loading states
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // API data states
+  const [productsData, setProductsData] = useState([]);
+  const [shelvesData, setShelvesData] = useState([]);
+  const [productShelvesData, setProductShelvesData] = useState([]);
+
+  // Load data on mount
+  useEffect(() => {
+    loadInitialData();
+  }, []);
+
+  const loadInitialData = async () => {
+    try {
+      setIsLoading(true);
+      
+      // Load products, shelves, and existing product-shelf mappings in parallel
+      const [productsRes, shelvesRes, mappingsRes] = await Promise.all([
+        apiClient.get('/products', { params: { limit: 1000 } }),
+        apiClient.get('/shelves', { params: { limit: 1000 } }),
+        productShelfService.getAllProductShelves({ limit: 1000 })
+      ]);
+      
+      if (productsRes.data) {
+        setProductsData(productsRes.data || []);
+      }
+      
+      if (shelvesRes.data) {
+        setShelvesData(shelvesRes.data || []);
+      }
+      
+      if (mappingsRes.success) {
+        setProductShelvesData(mappingsRes.data || []);
+      }
+    } catch (error) {
+      console.error("Error loading data:", error);
+      setErrorMessage("Failed to load products and shelves");
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   // State for product inventory table (left)
   const [productSearchTerm, setProductSearchTerm] = useState("");
@@ -38,129 +84,62 @@ const AddShelfProduct = () => {
 
   const itemsPerPage = 10;
 
-  // Sample inventory data (products not yet on shelves or partially on shelves)
-  const inventoryData = [
-    {
-      id: "001",
-      name: "Product 1",
-      category: "Electronics",
-      price: "$20",
-      supplier: "Supplier 1",
-      stock: 100,
-      onShelfStatus: "In Stock", // In Stock, Low Stock, Out of Stock
-      shelfedQty: 0,
-      totalQty: 100,
-    },
-    {
-      id: "002",
-      name: "Product 1",
-      category: "Electronics",
-      price: "$30",
-      supplier: "Supplier 1",
-      stock: 100,
-      onShelfStatus: "In Stock",
-      shelfedQty: 50,
-      totalQty: 100,
-    },
-    {
-      id: "003",
-      name: "Product 1",
-      category: "Home & Garden",
-      price: "$30",
-      supplier: "Supplier 2",
-      stock: 100,
-      onShelfStatus: "Out of Stock",
-      shelfedQty: 100,
-      totalQty: 100,
-    },
-    {
-      id: "004",
-      name: "Product 1",
-      category: "Home & Garden",
-      price: "$30",
-      supplier: "Supplier 1",
-      stock: 100,
-      onShelfStatus: "Low Stock",
-      shelfedQty: 20,
-      totalQty: 100,
-    },
-    {
-      id: "005",
-      name: "Product 2",
-      category: "Electronics",
-      price: "$200",
-      supplier: "Supplier 2",
-      stock: 200,
-      onShelfStatus: "In Stock",
-      shelfedQty: 0,
-      totalQty: 200,
-    },
-    {
-      id: "006",
-      name: "Product 3",
-      category: "Clothing",
-      price: "$50",
-      supplier: "Supplier 3",
-      stock: 150,
-      onShelfStatus: "In Stock",
-      shelfedQty: 75,
-      totalQty: 150,
-    },
-  ];
+  // Transform products data with shelf information
+  const inventoryData = productsData.map(product => {
+    // Find all shelf mappings for this product
+    const productMappings = productShelvesData.filter(
+      mapping => mapping.product_id?._id === product._id || mapping.product_id === product._id
+    );
+    
+    // Calculate total quantity on shelves
+    const shelfedQty = productMappings.reduce((sum, mapping) => sum + (mapping.quantity || 0), 0);
+    const totalQty = product.stock_quantity || 0;
+    const availableToShelve = totalQty - shelfedQty;
+    
+    // Determine shelf status
+    let onShelfStatus = "Out of Stock";
+    if (availableToShelve > 20) {
+      onShelfStatus = "In Stock";
+    } else if (availableToShelve > 0) {
+      onShelfStatus = "Low Stock";
+    }
+    
+    return {
+      id: product._id,
+      name: product.name,
+      category: product.category,
+      price: `$${product.price}`,
+      supplier: product.supplier_id?.name || "Unknown",
+      stock: totalQty,
+      onShelfStatus: onShelfStatus,
+      shelfedQty: shelfedQty,
+      totalQty: totalQty,
+    };
+  });
 
-  // Sample shelf data
-  const shelfData = [
-    {
-      id: "S01",
-      name: "Shelf A1 - Fresh Produce",
-      capacity: 50,
-      currentQty: 30,
-      available: 20,
-      shelfLocation: "A1",
-      section: "A",
-      slot: "01",
-    },
-    {
-      id: "S02",
-      name: "Shelf A2 - Dairy Products",
-      capacity: 60,
-      currentQty: 45,
-      available: 15,
-      shelfLocation: "A2",
-      section: "A",
-      slot: "02",
-    },
-    {
-      id: "S03",
-      name: "Shelf B1 - Beverages",
-      capacity: 80,
-      currentQty: 20,
-      available: 60,
-      shelfLocation: "B1",
-      section: "B",
-      slot: "01",
-    },
-    {
-      id: "S04",
-      name: "Shelf E2 - Snacks",
-      capacity: 70,
-      currentQty: 65,
-      available: 5,
-      shelfLocation: "E2",
-      section: "E",
-      slot: "02",
-    },
-    {
-      id: "S05",
-      name: "Shelf C1 - Frozen Food",
-      capacity: 55,
-      currentQty: 0,
-      available: 55,
-      shelfLocation: "C1",
-      section: "C",
-      slot: "01",
-    },
-  ];
+  // Transform shelves data
+  const shelfData = shelvesData.map(shelf => {
+    // Find all products on this shelf
+    const shelfMappings = productShelvesData.filter(
+      mapping => mapping.shelf_id?._id === shelf._id || mapping.shelf_id === shelf._id
+    );
+    
+    // Calculate current quantity on shelf
+    const currentQty = shelfMappings.reduce((sum, mapping) => sum + (mapping.quantity || 0), 0);
+    const capacity = shelf.capacity || 100;
+    const available = capacity - currentQty;
+    
+    return {
+      id: shelf._id,
+      name: `Shelf ${shelf.shelf_number} - ${shelf.description || 'General'}`,
+      capacity: capacity,
+      currentQty: currentQty,
+      available: available,
+      shelfLocation: shelf.shelf_number,
+      section: shelf.shelf_number?.charAt(0) || "A",
+      slot: shelf.shelf_number?.slice(1) || "01",
+    };
+  });
 
   // Get unique values for filters
   const categories = [
@@ -272,7 +251,7 @@ const AddShelfProduct = () => {
     setSelectedShelf(shelfId === selectedShelf ? null : shelfId);
   };
 
-  const handleAddToShelf = () => {
+  const handleAddToShelf = async () => {
     if (selectedProducts.size === 0 || !selectedShelf) {
       setErrorMessage("Please select at least one product and one shelf!");
       return;
@@ -285,7 +264,7 @@ const AddShelfProduct = () => {
     });
 
     if (invalidProducts.length > 0) {
-      setE("Please enter valid quantities for all selected products!");
+      setErrorMessage("Please enter valid quantities for all selected products!");
       return;
     }
 
@@ -306,30 +285,42 @@ const AddShelfProduct = () => {
       return;
     }
 
-    const selectedProductsList = Array.from(selectedProducts).map(
-      (productId) => {
-        const product = inventoryData.find((p) => p.id === productId);
-        return {
-          ...product,
-          quantityToAdd: productQuantities[productId],
-        };
+    try {
+      setIsSubmitting(true);
+      
+      // Prepare products array for bulk assign
+      const products = Array.from(selectedProducts).map(productId => ({
+        product_id: productId,
+        quantity: productQuantities[productId]
+      }));
+      
+      // Call bulk assign API
+      const response = await productShelfService.bulkAssignToShelf({
+        shelf_id: selectedShelf,
+        products: products
+      });
+      
+      if (response.success) {
+        setSuccessMessage(
+          `Successfully added ${totalQuantity} item(s) from ${selectedProducts.size} product(s) to ${shelf.name}!`
+        );
+        
+        // Reset selections
+        setSelectedProducts(new Set());
+        setProductQuantities({});
+        setSelectedShelf(null);
+        
+        // Reload data to refresh shelf quantities
+        setTimeout(() => loadInitialData(), 1000);
+      } else {
+        setErrorMessage(response.message || "Failed to add products to shelf");
       }
-    );
-
-    console.log("Adding products to shelf:", {
-      products: selectedProductsList,
-      shelf: shelf,
-      totalQuantity: totalQuantity,
-    });
-
-    setSuccessMessage(
-      `Successfully added ${totalQuantity} item(s) from ${selectedProducts.size} product(s) to ${shelf.name}!`
-    );
-
-    // Reset selections
-    setSelectedProducts(new Set());
-    setProductQuantities({});
-    setSelectedShelf(null);
+    } catch (error) {
+      console.error("Error adding products to shelf:", error);
+      setErrorMessage("Error adding products to shelf");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const getStatusBadgeClass = (status) => {
@@ -499,7 +490,23 @@ const AddShelfProduct = () => {
                 </tr>
               </thead>
               <tbody>
-                {paginatedProductData.map((product) => {
+                {isLoading ? (
+                  <tr>
+                    <td colSpan="7" style={{ textAlign: 'center', padding: '2rem' }}>
+                      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '0.5rem' }}>
+                        <div className="spinner" style={{ width: '20px', height: '20px', border: '3px solid #f3f3f3', borderTop: '3px solid #2563eb', borderRadius: '50%', animation: 'spin 1s linear infinite' }}></div>
+                        <span>Loading products...</span>
+                      </div>
+                    </td>
+                  </tr>
+                ) : paginatedProductData.length === 0 ? (
+                  <tr>
+                    <td colSpan="7" style={{ textAlign: 'center', padding: '2rem', color: '#64748b' }}>
+                      No products found
+                    </td>
+                  </tr>
+                ) : (
+                paginatedProductData.map((product) => {
                   const isSelected = selectedProducts.has(product.id);
                   const isFullyShelved = product.shelfedQty >= product.totalQty;
                   const availableToShelve =
@@ -564,7 +571,8 @@ const AddShelfProduct = () => {
                       </td>
                     </tr>
                   );
-                })}
+                })
+                )}
               </tbody>
             </table>
           </div>
@@ -657,7 +665,23 @@ const AddShelfProduct = () => {
                 </tr>
               </thead>
               <tbody>
-                {paginatedShelfData.map((shelf) => {
+                {isLoading ? (
+                  <tr>
+                    <td colSpan="8" style={{ textAlign: 'center', padding: '2rem' }}>
+                      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '0.5rem' }}>
+                        <div className="spinner" style={{ width: '20px', height: '20px', border: '3px solid #f3f3f3', borderTop: '3px solid #2563eb', borderRadius: '50%', animation: 'spin 1s linear infinite' }}></div>
+                        <span>Loading shelves...</span>
+                      </div>
+                    </td>
+                  </tr>
+                ) : paginatedShelfData.length === 0 ? (
+                  <tr>
+                    <td colSpan="8" style={{ textAlign: 'center', padding: '2rem', color: '#64748b' }}>
+                      No shelves found
+                    </td>
+                  </tr>
+                ) : (
+                paginatedShelfData.map((shelf) => {
                   const isSelected = selectedShelf === shelf.id;
                   const utilization = (shelf.currentQty / shelf.capacity) * 100;
                   return (
@@ -702,7 +726,8 @@ const AddShelfProduct = () => {
                       </td>
                     </tr>
                   );
-                })}
+                })
+                )}
               </tbody>
             </table>
           </div>
@@ -753,13 +778,13 @@ const AddShelfProduct = () => {
                 </div>
                 <button
                   className={`add-shelf-add-btn ${
-                    isOverCapacity ? "disabled" : ""
+                    isOverCapacity || isSubmitting ? "disabled" : ""
                   }`}
                   onClick={handleAddToShelf}
-                  disabled={isOverCapacity}
+                  disabled={isOverCapacity || isSubmitting}
                 >
                   <FaPlus className="add-shelf-add-icon" />
-                  Add {totalQuantity} Item(s) to Shelf
+                  {isSubmitting ? "Adding..." : `Add ${totalQuantity} Item(s) to Shelf`}
                 </button>
               </>
             );

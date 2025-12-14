@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import {
   FaCheckCircle,
@@ -11,6 +11,7 @@ import ResolvedConfirmationModal from "../../../components/DamagedProduct/Resolv
 import "./EditDamagedProduct.css";
 import SuccessMessage from "../../../components/Messages/SuccessMessage";
 import ErrorMessage from "../../../components/Messages/ErrorMessage";
+import * as damagedProductService from "../../../services/damagedProductService";
 
 const EditDamagedProduct = () => {
   const { id } = useParams();
@@ -19,24 +20,69 @@ const EditDamagedProduct = () => {
 
   const [errorMessage, setErrorMessage] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
+  const [isLoading, setIsLoading] = useState(true);
 
-  // Sample damaged product data
+  // Damaged product data from API
   const [formData, setFormData] = useState({
-    productId: "P001",
-    productName: "Coca Cola 330ml",
-    supplier: "Beverage Co.",
-    shelfLocation: "A1",
-    section: "A",
-    slot: "12",
-    currentStock: "45",
-    damagedQty: "3",
-    reason: "expired",
+    productId: "",
+    productName: "",
+    supplier: "",
+    shelfLocation: "",
+    section: "",
+    slot: "",
+    currentStock: "0",
+    damagedQty: "0",
+    reason: "",
     customReason: "",
-    reportedDate: "Nov 25, 2025",
-    reportedBy: "John Doe",
-    status: "Pending", // Pending, Resolved
-    lastUpdated: "Nov 25, 2025",
+    reportedDate: "",
+    reportedBy: "",
+    status: "reported",
+    lastUpdated: "",
   });
+
+  // Load damaged product data
+  useEffect(() => {
+    loadDamagedProduct();
+  }, [id]);
+
+  const loadDamagedProduct = async () => {
+    try {
+      setIsLoading(true);
+      const response = await damagedProductService.getDamagedProductById(id);
+      
+      if (response.success && response.data) {
+        const damaged = response.data;
+        const product = damaged.product_id;
+        const supplier = product?.supplier_id;
+        const shelves = damaged.shelves || [];
+        const firstShelf = shelves[0]?.shelf_id;
+        
+        setFormData({
+          productId: product?._id || "",
+          productName: product?.name || "Unknown Product",
+          supplier: supplier?.name || "Unknown Supplier",
+          shelfLocation: firstShelf?.shelf_number || "N/A",
+          section: firstShelf?.shelf_number?.charAt(0) || "N/A",
+          slot: firstShelf?.shelf_number?.slice(1) || "N/A",
+          currentStock: product?.stock_quantity?.toString() || "0",
+          damagedQty: damaged.damaged_quantity?.toString() || "0",
+          reason: damaged.resolution_action || "",
+          customReason: damaged.description || "",
+          reportedDate: damaged.discovery_date ? new Date(damaged.discovery_date).toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" }) : "N/A",
+          reportedBy: damaged.reported_by || "System",
+          status: damaged.status || "reported",
+          lastUpdated: damaged.updatedAt ? new Date(damaged.updatedAt).toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" }) : "N/A",
+        });
+      } else {
+        setErrorMessage(response.message || "Failed to load damaged product");
+      }
+    } catch (error) {
+      console.error("Error loading damaged product:", error);
+      setErrorMessage("Error loading damaged product data");
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const reasonOptions = [
     { value: "expired", label: "Expired" },
@@ -65,36 +111,68 @@ const EditDamagedProduct = () => {
     setShowResolvedModal(true);
   };
 
-  const handleConfirmResolved = () => {
-    const updatedData = {
-      ...formData,
-      status: "Resolved",
-      lastUpdated: new Date().toLocaleDateString("en-US", {
-        year: "numeric",
-        month: "short",
-        day: "numeric",
-      }),
-    };
-
-    console.log("Marking as resolved:", updatedData);
-    setFormData(updatedData);
-    // Có thể thêm API call ở đây
-    // navigate(-1); // Nếu muốn quay lại sau khi mark resolved
+  const handleConfirmResolved = async () => {
+    try {
+      setShowResolvedModal(false);
+      setIsLoading(true);
+      
+      // Call API to adjust inventory and mark as resolved
+      const response = await damagedProductService.adjustInventoryForDamaged(id, {
+        inventory_adjusted: true
+      });
+      
+      if (response.success) {
+        setSuccessMessage("Damaged product marked as resolved and inventory adjusted!");
+        
+        // Update local state
+        setFormData(prev => ({
+          ...prev,
+          status: "resolved",
+          lastUpdated: new Date().toLocaleDateString("en-US", {
+            year: "numeric",
+            month: "short",
+            day: "numeric",
+          }),
+        }));
+        
+        // Reload data to get fresh info
+        setTimeout(() => loadDamagedProduct(), 1000);
+      } else {
+        setErrorMessage(response.message || "Failed to mark as resolved");
+      }
+    } catch (error) {
+      console.error("Error marking as resolved:", error);
+      setErrorMessage("Error marking damaged product as resolved");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const handleUpdate = () => {
-    const updatedData = {
-      ...formData,
-      lastUpdated: new Date().toLocaleDateString("en-US", {
-        year: "numeric",
-        month: "short",
-        day: "numeric",
-      }),
-    };
-
-    console.log("Updating damaged product:", updatedData);
-    setSuccessMessage("Damaged product information has been updated!");
-    navigate(-1);
+  const handleUpdate = async () => {
+    try {
+      setIsLoading(true);
+      
+      // Prepare update data
+      const updateData = {
+        damaged_quantity: parseInt(formData.damagedQty),
+        resolution_action: formData.reason,
+        description: formData.reason === "other" ? formData.customReason : formData.reason,
+      };
+      
+      const response = await damagedProductService.updateDamagedProduct(id, updateData);
+      
+      if (response.success) {
+        setSuccessMessage("Damaged product information has been updated!");
+        setTimeout(() => navigate(-1), 1500);
+      } else {
+        setErrorMessage(response.message || "Failed to update damaged product");
+      }
+    } catch (error) {
+      console.error("Error updating damaged product:", error);
+      setErrorMessage("Error updating damaged product");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleCancel = () => {
@@ -388,10 +466,11 @@ const EditDamagedProduct = () => {
             <h3 className="edit-damaged-product-actions-title">Actions</h3>
 
             <div className="edit-damaged-product-status-actions">
-              {formData.status === "Pending" && (
+              {formData.status !== "resolved" && formData.status !== "disposed" && (
                 <button
                   onClick={handleMarkResolved}
                   className="edit-damaged-product-resolve-btn"
+                  disabled={isLoading}
                 >
                   <FaCheckCircle className="edit-damaged-product-resolve-icon" />
                   Mark as Resolved
@@ -401,21 +480,23 @@ const EditDamagedProduct = () => {
               <button
                 onClick={handleUpdate}
                 className="edit-damaged-product-update-btn"
+                disabled={isLoading}
               >
                 <FaEdit className="edit-damaged-product-update-icon" />
-                Update
+                {isLoading ? "Updating..." : "Update"}
               </button>
 
               <button
                 onClick={handleCancel}
                 className="edit-damaged-product-cancel-btn"
+                disabled={isLoading}
               >
                 <FaTimes className="edit-damaged-product-cancel-icon" />
                 Cancel
               </button>
             </div>
 
-            {formData.status === "Resolved" && (
+            {(formData.status === "resolved" || formData.status === "disposed") && (
               <div className="edit-damaged-product-resolved-notice">
                 <FaCheckCircle className="edit-damaged-product-resolved-icon" />
                 <span>This issue has been resolved</span>

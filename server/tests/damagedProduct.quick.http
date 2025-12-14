@@ -1,0 +1,38 @@
+### ========================================
+### DAMAGED PRODUCT API - QUICK TEST WITH SEED DATA
+### ========================================
+
+### Get statistics
+GET http://localhost:5000/api/damaged-products/stats
+
+###
+
+### Get all damaged products
+GET http://localhost:5000/api/damaged-products
+
+###
+
+### Get damaged products by status - reported
+GET http://localhost:5000/api/damaged-products?status=reported
+
+###
+
+### Get damaged products by status - reviewed
+GET http://localhost:5000/api/damaged-products?status=reviewed
+
+###
+
+### Get damaged products by status - resolved
+GET http://localhost:5000/api/damaged-products?status=resolved
+
+###
+
+### Get damaged products needing inventory adjustment
+GET http://localhost:5000/api/damaged-products?inventory_adjusted=false
+
+###
+
+### Search damaged products
+GET http://localhost:5000/api/damaged-products?search=trứng
+
+###

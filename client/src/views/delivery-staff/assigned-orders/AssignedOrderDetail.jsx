@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   FaArrowLeft,
   FaMapMarkerAlt,
@@ -11,15 +11,125 @@ import { useNavigate, useParams } from "react-router-dom";
 import ConfirmationModal from "../../../components/DeliveryOrderModal/ConfirmationModal";
 import "./AssignedOrderDetail.css";
 import SuccessMessage from "../../../components/Messages/SuccessMessage";
+import { deliveryOrderService } from "../../../services/deliveryOrderService";
 
 const AssignedOrderDetail = () => {
   const navigate = useNavigate();
-  const { orderId } = useParams();
+  const { id: orderId } = useParams();
   const [isConfirmationModalOpen, setIsConfirmationModalOpen] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
+  
+  // Loading states
+  const [isLoading, setIsLoading] = useState(true);
+  const [orderData, setOrderData] = useState(null);
+  const [error, setError] = useState(null);
 
-  // Sample order data - in real app, fetch by orderId
-  const orderData = {
+  // ========== API FUNCTIONS ==========
+  
+  // Load delivery order details
+  const loadOrderDetails = async () => {
+    if (!orderId) {
+      setError('Order ID is required');
+      setIsLoading(false);
+      return;
+    }
+
+    setIsLoading(true);
+    setError(null);
+    
+    try {
+      const response = await deliveryOrderService.getDeliveryOrderById(orderId);
+      
+      if (response.success && response.data) {
+        const delivery = response.data;
+        const order = delivery.order_id;
+        const customer = order?.customer_id;
+        const accountInfo = customer?.account_id;
+        
+        // Transform API data to UI format
+        const orderDate = new Date(delivery.order_date);
+        const deliveryDate = delivery.delivery_date ? new Date(delivery.delivery_date) : orderDate;
+        
+        const transformedData = {
+          id: order?.order_number || `#${delivery._id.slice(-6)}`,
+          _id: delivery._id,
+          orderDate: orderDate.toLocaleDateString('en-US', { 
+            month: 'short', 
+            day: 'numeric', 
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+          }),
+          expectedDeliveryDate: deliveryDate.toLocaleDateString('en-US', { 
+            month: 'short', 
+            day: 'numeric', 
+            year: 'numeric' 
+          }),
+          totalAmount: order?.total_amount ? `${order.total_amount.toLocaleString()} VND` : '0 VND',
+          customer: {
+            name: accountInfo?.full_name || 'Guest Customer',
+            phone: accountInfo?.phone || 'No phone provided',
+            address: accountInfo?.address || 'No address provided',
+          },
+          deliveryNotes: delivery.notes || 'No special delivery instructions',
+          trackingNumber: delivery.tracking_number,
+          status: delivery.status,
+          items: [],
+          pricing: {
+            subtotal: '0 VND',
+            shippingFee: '0 VND',
+            total: '0 VND'
+          }
+        };
+
+        // Transform order items if available
+        if (delivery.orderItems && Array.isArray(delivery.orderItems)) {
+          let subtotal = 0;
+          transformedData.items = delivery.orderItems.map((item, index) => {
+            const itemTotal = (item.unit_price || item.price || 0) * (item.quantity || 0);
+            subtotal += itemTotal;
+            
+            const product = item.product_id;
+            return {
+              id: index + 1,
+              name: product?.product_name || product?.name || 'Unknown Product',
+              category: product?.category_id?.category_name || product?.category || 'N/A',
+              price: `${(item.unit_price || item.price || 0).toLocaleString()} VND each`,
+              quantity: item.quantity || 0,
+              total: `${itemTotal.toLocaleString()} VND`
+            };
+          });
+          
+          // Calculate total and shipping fee from order
+          const orderTotal = order?.total_amount || 0;
+          const shippingFee = Math.max(0, orderTotal - subtotal);
+          
+          transformedData.pricing = {
+            subtotal: `${subtotal.toLocaleString()} VND`,
+            shippingFee: `${shippingFee.toLocaleString()} VND`,
+            total: `${orderTotal.toLocaleString()} VND`
+          };
+        }
+
+        setOrderData(transformedData);
+      } else {
+        setError(response.message || 'Failed to load order details');
+      }
+    } catch (err) {
+      console.error('Error loading order details:', err);
+      setError('An error occurred while loading order details');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Load order on mount
+  useEffect(() => {
+    loadOrderDetails();
+  }, [orderId]);
+
+  // Sample fake order data - REMOVE sau khi test API
+  const oldOrderData = {
     id: "#001",
     orderDate: "Nov 07, 2025 08:00 AM",
     expectedDeliveryDate: "Nov 07, 2025",
@@ -88,11 +198,33 @@ const AssignedOrderDetail = () => {
     setIsConfirmationModalOpen(true);
   };
 
-  const handleConfirmPickupAction = () => {
-    console.log("Confirming pickup for order:", orderData.id);
-    // Add pickup confirmation logic here
-    // You can add API call here to update order status
-    setSuccessMessage("Order pickup confirmed successfully!");
+  const handleConfirmPickupAction = async () => {
+    if (!orderData || !orderData._id) {
+      console.error('No order data available');
+      return;
+    }
+
+    try {
+      // Update delivery status to 'in_transit'
+      const response = await deliveryOrderService.updateDeliveryOrder(orderData._id, {
+        status: 'in_transit'
+      });
+      
+      if (response.success) {
+        setSuccessMessage("Order pickup confirmed successfully! Redirecting...");
+        setIsConfirmationModalOpen(false);
+        // Navigate back to assigned orders list after success
+        setTimeout(() => {
+          navigate('/assigned-orders');
+        }, 2000);
+      } else {
+        console.error('Failed to update order status:', response.message);
+        setSuccessMessage(`Failed to update status: ${response.message}`);
+      }
+    } catch (error) {
+      console.error('Error confirming pickup:', error);
+      setSuccessMessage('An error occurred while confirming pickup');
+    }
   };
 
   const handleCloseConfirmationModal = () => {
@@ -121,6 +253,38 @@ const AssignedOrderDetail = () => {
         message={successMessage}
         onClose={() => setSuccessMessage("")}
       />
+      
+      {/* Loading State */}
+      {isLoading && (
+        <div style={{
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          minHeight: '400px'
+        }}>
+          <div>Loading order details...</div>
+        </div>
+      )}
+
+      {/* Error State */}
+      {!isLoading && error && (
+        <div style={{
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'center',
+          alignItems: 'center',
+          minHeight: '400px'
+        }}>
+          <div style={{ color: 'red', marginBottom: '1rem' }}>{error}</div>
+          <button onClick={() => navigate(-1)} className="cancel-btn">
+            Go Back
+          </button>
+        </div>
+      )}
+
+      {/* Order Content */}
+      {!isLoading && !error && orderData && (
+        <>
       {/* Header */}
       <div className="order-page-header">
         <h1 className="order-page-title">Order Details</h1>
@@ -204,7 +368,7 @@ const AssignedOrderDetail = () => {
 
           {/* Order Items Section */}
           <div className="order-section">
-            <h2 className="section-title">Order Items (5)</h2>
+            <h2 className="section-title">Order Items ({orderData.items?.length || 0})</h2>
 
             <div className="items-list">
               {orderData.items.map((item) => (
@@ -271,6 +435,8 @@ const AssignedOrderDetail = () => {
         onConfirm={handleConfirmPickupAction}
         orderData={orderData}
       />
+        </>
+      )}
     </div>
   );
 };

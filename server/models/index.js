@@ -92,11 +92,12 @@ productSchema.index({ name: 1, category: 1, supplier_id: 1 });
 
 // ==================== 7. SHELVES ====================
 const shelfSchema = new mongoose.Schema({
-  shelf_number: { type: String, required: true },
-  category: { type: String },
-  note: { type: String },
-  capacity: { type: Number },
-  isfull: { type: Boolean },
+  shelf_number: { type: String, required: true, unique: true }, // A1, A2, A3, A4, B1, B2...
+  shelf_name: { type: String, required: true }, // A, B, C, D, E, F
+  section_number: { type: Number, required: true, min: 1, max: 4 }, // 1, 2, 3, 4
+  description: { type: String },
+  capacity: { type: Number, default: 50 }, // Each section can hold 50 products
+  current_quantity: { type: Number, default: 0 },
   warehouse_id: { type: mongoose.Schema.Types.ObjectId },
   isDelete: { type: Boolean, default: false }
 }, { timestamps: true });
@@ -104,14 +105,16 @@ const shelfSchema = new mongoose.Schema({
 shelfSchema.index({ shelf_number: 1 });
 
 // ==================== 8. PRODUCT SHELVES ====================
+// Business Rule: One product can only be on ONE shelf at a time
 const productShelfSchema = new mongoose.Schema({
-  product_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Product', required: true },
+  product_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Product', required: true, unique: true }, // UNIQUE: 1 product = 1 shelf
   shelf_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Shelf', required: true },
-  quantity: { type: Number, default: 0 },
+  quantity: { type: Number, default: 0, required: true },
   isDelete: { type: Boolean, default: false }
 }, { timestamps: true });
 
-productShelfSchema.index({ product_id: 1, shelf_id: 1 }, { unique: true });
+productShelfSchema.index({ product_id: 1 }, { unique: true }); // Enforce one product per shelf
+productShelfSchema.index({ shelf_id: 1 });
 
 // ==================== 9. PROMOTIONS ====================
 const promotionSchema = new mongoose.Schema({

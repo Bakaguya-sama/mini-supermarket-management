@@ -1,0 +1,328 @@
+### ========================================
+### DAMAGED PRODUCT API TESTS
+### Base URL: http://localhost:5000/api/damaged-products
+### ========================================
+
+### VARIABLES (Replace these with actual IDs from your database)
+@baseUrl = http://localhost:5000/api/damaged-products
+@productId = 674cf1234567890abcdef123
+@damagedProductId = 674cf1234567890abcdef456
+
+### ========================================
+### 1. STATISTICS & OVERVIEW
+### ========================================
+
+### 1.1 Get damaged product statistics
+GET {{baseUrl}}/stats
+
+###
+
+### ========================================
+### 2. GET ALL DAMAGED PRODUCTS (WITH FILTERS)
+### ========================================
+
+### 2.1 Get all damaged products (paginated)
+GET {{baseUrl}}?page=1&limit=10
+
+###
+
+### 2.2 Get damaged products by status (reported)
+GET {{baseUrl}}?status=reported&page=1&limit=10
+
+###
+
+### 2.3 Get damaged products by status (reviewed)
+GET {{baseUrl}}?status=reviewed&page=1&limit=10
+
+###
+
+### 2.4 Get damaged products by status (resolved)
+GET {{baseUrl}}?status=resolved&page=1&limit=10
+
+###
+
+### 2.5 Get damaged products by resolution action (discard)
+GET {{baseUrl}}?resolution_action=discard
+
+###
+
+### 2.6 Get damaged products by resolution action (return_to_supplier)
+GET {{baseUrl}}?resolution_action=return_to_supplier
+
+###
+
+### 2.7 Get damaged products that need inventory adjustment
+GET {{baseUrl}}?inventory_adjusted=false
+
+###
+
+### 2.8 Get damaged products with search
+GET {{baseUrl}}?search=trứng
+
+###
+
+### 2.9 Get damaged products sorted by creation date (oldest first)
+GET {{baseUrl}}?sort=createdAt
+
+###
+
+### 2.10 Get damaged products sorted by quantity (highest first)
+GET {{baseUrl}}?sort=-damaged_quantity
+
+###
+
+### ========================================
+### 3. GET SPECIFIC DAMAGED PRODUCT
+### ========================================
+
+### 3.1 Get damaged product by ID (Replace with actual ID)
+GET {{baseUrl}}/{{damagedProductId}}
+
+###
+
+### 3.2 Get damaged products by product ID (Replace with actual product ID)
+GET {{baseUrl}}/product/{{productId}}
+
+###
+
+### ========================================
+### 4. CREATE DAMAGED PRODUCT REPORT
+### ========================================
+
+### 4.1 Create new damaged product report (minimal - reported)
+POST {{baseUrl}}
+Content-Type: application/json
+
+{
+  "product_id": "{{productId}}",
+  "damaged_quantity": 5,
+  "description": "Sản phẩm bị vỡ trong quá trình vận chuyển từ kho"
+}
+
+###
+
+### 4.2 Create damaged product report (full details - expired)
+POST {{baseUrl}}
+Content-Type: application/json
+
+{
+  "product_id": "{{productId}}",
+  "damaged_quantity": 10,
+  "status": "reported",
+  "description": "Sản phẩm đã hết hạn sử dụng, cần loại bỏ ngay",
+  "resolution_action": "destroy",
+  "notes": "Phát hiện trong kiểm tra định kỳ ngày 14/12/2024"
+}
+
+###
+
+### 4.3 Create damaged product report with images
+POST {{baseUrl}}
+Content-Type: application/json
+
+{
+  "product_id": "{{productId}}",
+  "damaged_quantity": 3,
+  "status": "reported",
+  "description": "Bao bì bị rách, sản phẩm bị ảnh hưởng",
+  "resolution_action": "return_to_supplier",
+  "image_urls": [
+    "https://example.com/image1.jpg",
+    "https://example.com/image2.jpg"
+  ],
+  "notes": "Cần liên hệ nhà cung cấp để đổi trả"
+}
+
+###
+
+### 4.4 Create damaged product - damaged packaging
+POST {{baseUrl}}
+Content-Type: application/json
+
+{
+  "product_id": "{{productId}}",
+  "damaged_quantity": 2,
+  "status": "reviewed",
+  "description": "Bao bì bị dập nát nhưng sản phẩm bên trong còn nguyên vẹn",
+  "resolution_action": "discount",
+  "notes": "Có thể bán với giá giảm 20%"
+}
+
+###
+
+### ========================================
+### 5. UPDATE DAMAGED PRODUCT
+### ========================================
+
+### 5.1 Update damaged product status to reviewed
+PUT {{baseUrl}}/{{damagedProductId}}
+Content-Type: application/json
+
+{
+  "status": "reviewed",
+  "notes": "Đã kiểm tra và xác nhận thiệt hại"
+}
+
+###
+
+### 5.2 Update resolution action
+PUT {{baseUrl}}/{{damagedProductId}}
+Content-Type: application/json
+
+{
+  "resolution_action": "discard",
+  "notes": "Quyết định loại bỏ sản phẩm do không thể phục hồi"
+}
+
+###
+
+### 5.3 Update to resolved status
+PUT {{baseUrl}}/{{damagedProductId}}
+Content-Type: application/json
+
+{
+  "status": "resolved",
+  "description": "Đã xử lý xong, sản phẩm đã được loại bỏ khỏi kho"
+}
+
+###
+
+### 5.4 Add images to existing report
+PUT {{baseUrl}}/{{damagedProductId}}
+Content-Type: application/json
+
+{
+  "image_urls": [
+    "https://example.com/damage-photo-1.jpg",
+    "https://example.com/damage-photo-2.jpg",
+    "https://example.com/damage-photo-3.jpg"
+  ],
+  "notes": "Đã thêm ảnh chứng minh thiệt hại"
+}
+
+###
+
+### ========================================
+### 6. INVENTORY ADJUSTMENT
+### ========================================
+
+### 6.1 Adjust inventory for damaged product (Deduct from stock)
+PUT {{baseUrl}}/{{damagedProductId}}/adjust-inventory
+Content-Type: application/json
+
+###
+
+### ========================================
+### 7. GET SHELF INFORMATION
+### ========================================
+
+### 7.1 Get shelves containing the damaged product
+GET {{baseUrl}}/{{damagedProductId}}/shelves
+
+###
+
+### ========================================
+### 8. BULK OPERATIONS
+### ========================================
+
+### 8.1 Bulk update status to reviewed
+PUT {{baseUrl}}/bulk/update-status
+Content-Type: application/json
+
+{
+  "ids": [
+    "{{damagedProductId}}",
+    "674cf1234567890abcdef457"
+  ],
+  "status": "reviewed"
+}
+
+###
+
+### 8.2 Bulk update status to resolved
+PUT {{baseUrl}}/bulk/update-status
+Content-Type: application/json
+
+{
+  "ids": [
+    "{{damagedProductId}}",
+    "674cf1234567890abcdef457",
+    "674cf1234567890abcdef458"
+  ],
+  "status": "resolved"
+}
+
+###
+
+### ========================================
+### 9. DELETE DAMAGED PRODUCT
+### ========================================
+
+### 9.1 Delete damaged product (soft delete)
+DELETE {{baseUrl}}/{{damagedProductId}}
+
+###
+
+### ========================================
+### 10. ADVANCED QUERIES
+### ========================================
+
+### 10.1 Get all reported and reviewed items (pending action)
+GET {{baseUrl}}?status=reported,reviewed
+
+###
+
+### 10.2 Get items needing inventory adjustment with discard action
+GET {{baseUrl}}?inventory_adjusted=false&resolution_action=discard
+
+###
+
+### 10.3 Get recent damaged products (last 7 days)
+GET {{baseUrl}}?sort=-createdAt&limit=20
+
+###
+
+### 10.4 Search damaged products by product name or description
+GET {{baseUrl}}?search=sữa
+
+###
+
+### 10.5 Get all damaged products for specific product with status filter
+GET {{baseUrl}}/product/{{productId}}?status=reported
+
+###
+
+### ========================================
+### NOTES FOR TESTING:
+### ========================================
+### 
+### 1. Replace {{productId}} with actual Product ID from database
+###    - Run: GET http://localhost:5000/api/products to get product IDs
+###    - Example: products[3]._id (Trứng gà), products[1]._id (Sữa Vinamilk)
+###
+### 2. Replace {{damagedProductId}} with actual DamagedProduct ID
+###    - Create a damaged product first, then use its ID
+###    - Or get from: GET http://localhost:5000/api/damaged-products
+###
+### 3. Status values:
+###    - reported: Vừa báo cáo
+###    - reviewed: Đã kiểm tra
+###    - expired: Hết hạn
+###    - damaged: Bị hư hỏng
+###    - resolved: Đã xử lý xong
+###    - removed: Đã loại bỏ
+###
+### 4. Resolution actions:
+###    - discard: Loại bỏ
+###    - return_to_supplier: Trả lại nhà cung cấp
+###    - discount: Giảm giá bán
+###    - destroy: Tiêu hủy
+###
+### 5. Workflow:
+###    a. Create damaged product report (POST)
+###    b. Review and update status (PUT - status: reviewed)
+###    c. Decide resolution action (PUT - resolution_action)
+###    d. Adjust inventory if needed (PUT /adjust-inventory)
+###    e. Mark as resolved (PUT - status: resolved)
+###
+### ========================================

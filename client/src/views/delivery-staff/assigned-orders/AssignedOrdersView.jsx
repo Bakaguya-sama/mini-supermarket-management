@@ -1,7 +1,9 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { FaSearch, FaEye } from "react-icons/fa";
 import "./AssignedOrdersView.css";
+import { deliveryOrderService } from "../../../services/deliveryOrderService";
+import { staffService } from "../../../services/staffService";
 
 const AssignedOrdersView = () => {
   const navigate = useNavigate();
@@ -9,8 +11,135 @@ const AssignedOrdersView = () => {
   const [timeFilter, setTimeFilter] = useState("All");
   const [currentPage, setCurrentPage] = useState(1);
 
-  // Sample assigned orders data
-  const ordersData = [
+  // Demo staff - TODO: Replace with authenticated user after login
+  const [demoStaffId, setDemoStaffId] = useState(null);
+  
+  // Loading states
+  const [isLoading, setIsLoading] = useState(true);
+  
+  // Data from API
+  const [ordersData, setOrdersData] = useState([]);
+  const [totalRecords, setTotalRecords] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
+
+  const itemsPerPage = 10;
+
+  // ========== API FUNCTIONS ==========
+  
+  // Fetch demo delivery staff (first staff with position 'Delivery')
+  const fetchDemoStaff = async () => {
+    try {
+      const response = await staffService.getAll({ 
+        position: 'Delivery',
+        limit: 1,
+        is_active: true
+      });
+      
+      if (response.success && response.data && response.data.length > 0) {
+        const deliveryStaff = response.data[0];
+        console.log('Demo delivery staff:', deliveryStaff);
+        setDemoStaffId(deliveryStaff._id);
+        return deliveryStaff._id;
+      } else {
+        console.error('No delivery staff found');
+        return null;
+      }
+    } catch (error) {
+      console.error('Error fetching delivery staff:', error);
+      return null;
+    }
+  };
+  
+  // Load assigned delivery orders from API
+  const loadAssignedOrders = async (staffId) => {
+    if (!staffId) {
+      console.log('No staff ID available, skipping load');
+      setIsLoading(false);
+      return;
+    }
+    
+    setIsLoading(true);
+    try {
+      // Get orders with status 'assigned' or 'in_transit' for this delivery staff
+      const params = {
+        page: currentPage,
+        limit: itemsPerPage,
+        status: 'assigned', // Only assigned orders
+        sort: timeFilter === 'Latest' ? '-order_date' : timeFilter === 'Earliest' ? 'order_date' : '-createdAt'
+      };
+
+      if (searchTerm) {
+        params.search = searchTerm;
+      }
+
+      const response = await deliveryOrderService.getDeliveriesByStaff(staffId, params);
+      
+      if (response.success && response.data && Array.isArray(response.data)) {
+        // Transform API data to UI format
+        const transformedOrders = response.data.map(delivery => {
+          const order = delivery.order_id;
+          const customer = order?.customer_id;
+          const accountInfo = customer?.account_id;
+          
+          const orderDate = new Date(delivery.order_date);
+          const deliveryDate = delivery.delivery_date ? new Date(delivery.delivery_date) : orderDate;
+          
+          return {
+            id: delivery._id,
+            orderId: order?.order_number || delivery._id.slice(-6),
+            customer: accountInfo?.full_name || 'Guest Customer',
+            deliveryDate: deliveryDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+            address: accountInfo?.address || 'No address provided',
+            phone: accountInfo?.phone || 'No phone',
+            items: delivery.notes || 'Delivery items',
+            totalAmount: order?.total_amount ? `${order.total_amount.toLocaleString()} VND` : '0 VND',
+            assignedTime: orderDate.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
+            estimatedDelivery: deliveryDate.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
+            dateSort: orderDate,
+            trackingNumber: delivery.tracking_number,
+            status: delivery.status
+          };
+        });
+
+        setOrdersData(transformedOrders);
+        setTotalRecords(response.total || 0);
+        setTotalPages(response.pages || 0);
+      } else {
+        console.error('Failed to load assigned orders:', response.message);
+        setOrdersData([]);
+        setTotalRecords(0);
+        setTotalPages(0);
+      }
+    } catch (error) {
+      console.error('Error loading assigned orders:', error);
+      setOrdersData([]);
+      setTotalRecords(0);
+      setTotalPages(0);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Fetch demo staff on mount
+  useEffect(() => {
+    const initStaff = async () => {
+      const staffId = await fetchDemoStaff();
+      if (staffId) {
+        loadAssignedOrders(staffId);
+      }
+    };
+    initStaff();
+  }, []);
+  
+  // Load orders when filters change (only if we have staffId)
+  useEffect(() => {
+    if (demoStaffId) {
+      loadAssignedOrders(demoStaffId);
+    }
+  }, [currentPage, timeFilter, searchTerm]);
+
+  // Sample fake data - REMOVE sau khi test API
+  const oldOrdersData = [
     {
       id: "001",
       customer: "Nguyen Van A",
@@ -71,9 +200,7 @@ const AssignedOrdersView = () => {
       estimatedDelivery: "09:30 AM",
       dateSort: new Date("2025-11-08"),
     },
-  ];
-
-  const itemsPerPage = 10;
+  ]; // End fake data
 
   // Filter orders based on search term and time
   const filteredOrders = ordersData.filter((order) => {
@@ -95,7 +222,8 @@ const AssignedOrdersView = () => {
     return 0; // No sorting for "All"
   });
 
-  const totalPages = Math.ceil(sortedOrders.length / itemsPerPage);
+  // NOTE: Pagination now handled by API, but keep for client-side filtering
+  const clientTotalPages = Math.ceil(sortedOrders.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
   const totalItems = sortedOrders.length;
@@ -143,6 +271,17 @@ const AssignedOrdersView = () => {
 
       {/* Table */}
       <div className="orders-table-container">
+        {isLoading && (
+          <div style={{
+            position: 'absolute',
+            top: '50%',
+            left: '50%',
+            transform: 'translate(-50%, -50%)',
+            zIndex: 10
+          }}>
+            <div>Loading assigned orders...</div>
+          </div>
+        )}
         <table className="orders-table">
           <thead>
             <tr>
@@ -154,9 +293,16 @@ const AssignedOrdersView = () => {
             </tr>
           </thead>
           <tbody>
+            {!isLoading && paginatedData.length === 0 && (
+              <tr>
+                <td colSpan="5" style={{ textAlign: 'center', padding: '2rem' }}>
+                  No assigned orders found
+                </td>
+              </tr>
+            )}
             {paginatedData.map((order, index) => (
               <tr key={`page-${currentPage}-${order.id}-${index}`}>
-                <td className="orders-order-id">{order.id}</td>
+                <td className="orders-order-id">{order.orderId || order.id}</td>
                 <td className="orders-customer-info">
                   <div className="orders-customer-name">{order.customer}</div>
                   <div className="orders-customer-phone">{order.phone}</div>

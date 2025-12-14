@@ -14,6 +14,7 @@ exports.getAllInvoices = async (req, res) => {
       limit = 10,
       customer_id,
       payment_status,
+      payment_method,
       search,
       minAmount,
       maxAmount,
@@ -46,13 +47,29 @@ exports.getAllInvoices = async (req, res) => {
     // Calculate pagination
     const skip = (parseInt(page) - 1) * parseInt(limit);
 
-    // Execute query
-    const invoices = await Invoice.find(query)
-      .populate('customer_id', 'account_id membership_type')
-      .populate('order_id', 'order_number status')
+    // Execute query with optional payment_method filter
+    let invoicesQuery = Invoice.find(query)
+      .populate({
+        path: 'customer_id',
+        select: 'account_id membership_type',
+        populate: {
+          path: 'account_id',
+          select: 'full_name email phone_number'
+        }
+      })
+      .populate('order_id', 'order_number status payment_method')
       .sort(sort)
       .skip(skip)
       .limit(parseInt(limit));
+
+    let invoices = await invoicesQuery;
+
+    // Filter by payment_method if provided (since it's in Order, not Invoice)
+    if (payment_method && payment_method !== 'All Methods') {
+      invoices = invoices.filter(invoice => 
+        invoice.order_id && invoice.order_id.payment_method === payment_method
+      );
+    }
 
     const total = await Invoice.countDocuments(query);
 
@@ -90,11 +107,15 @@ exports.getInvoiceById = async (req, res) => {
     const invoice = await Invoice.findById(req.params.id)
       .populate({
         path: 'customer_id',
-        select: 'account_id membership_type total_spent'
+        select: 'account_id membership_type total_spent',
+        populate: {
+          path: 'account_id',
+          select: 'full_name email phone_number'
+        }
       })
       .populate({
         path: 'order_id',
-        select: 'order_number status total_amount delivery_date'
+        select: 'order_number status total_amount delivery_date payment_method'
       });
 
     if (!invoice) {
@@ -230,10 +251,10 @@ exports.createInvoice = async (req, res) => {
     } = req.body;
 
     // Validate required fields
-    if (!customer_id || !order_id || !items || items.length === 0) {
+    if (!customer_id || !items || items.length === 0) {
       return res.status(400).json({
         success: false,
-        message: 'Please provide customer ID, order ID, and items'
+        message: 'Please provide customer ID and items'
       });
     }
 
@@ -246,13 +267,15 @@ exports.createInvoice = async (req, res) => {
       });
     }
 
-    // Verify order exists
-    const order = await Order.findById(order_id);
-    if (!order) {
-      return res.status(404).json({
-        success: false,
-        message: 'Order not found'
-      });
+    // Verify order exists (if provided)
+    if (order_id) {
+      const order = await Order.findById(order_id);
+      if (!order) {
+        return res.status(404).json({
+          success: false,
+          message: 'Order not found'
+        });
+      }
     }
 
     // Generate invoice number
@@ -268,7 +291,7 @@ exports.createInvoice = async (req, res) => {
     const invoice = await Invoice.create({
       invoice_number: invoiceNumber,
       customer_id,
-      order_id,
+      order_id: order_id || null, // Order ID is optional
       total_amount: totalAmount,
       payment_status: 'unpaid',
       notes,
