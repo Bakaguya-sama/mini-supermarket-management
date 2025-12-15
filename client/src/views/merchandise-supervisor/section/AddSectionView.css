@@ -1,0 +1,272 @@
+.add-section-view {
+    padding: 0;
+    background: #EFFFE8;
+    min-height: 100vh;
+    width: 100%;
+}
+
+/* Header */
+.add-section-page-header {
+    background: transparent;
+    padding: 2rem 2rem 1rem;
+    margin: 0;
+    width: 100%;
+}
+
+.add-section-page-title {
+    font-size: 2rem;
+    font-weight: 700;
+    color: #1f2937;
+    margin: 0;
+}
+
+/* Add Section Content Layout */
+.add-section-content {
+    display: flex;
+    gap: 3rem;
+    padding: 2rem;
+    align-items: flex-start;
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+/* Form Container */
+.add-section-form-container {
+    flex: 1;
+    max-width: none;
+    margin: 0;
+    padding: 0;
+}
+
+/* Sidebar */
+.add-section-sidebar {
+    width: 300px;
+    position: sticky;
+    top: 2rem;
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+}
+
+/* Action Panel */
+.add-section-action-panel {
+    background-color: white;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    padding: 1.5rem;
+    border-radius: 12px;
+    border: 1px solid #d1d5db;
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+}
+
+.add-section-action-panel .add-section-btn {
+    background: linear-gradient(135deg, #22c55e 0%, #10b981 100%);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    padding: 12px 20px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    width: 100%;
+}
+
+.add-section-action-panel .add-section-btn:hover:not(:disabled) {
+    background: #16a34a;
+}
+
+.add-section-action-panel .add-section-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.add-section-add-icon {
+    font-size: 14px;
+}
+
+.add-section-action-panel .add-section-cancel-btn {
+    background: transparent;
+    color: #6b7280;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    padding: 12px 20px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    width: 100%;
+}
+
+.add-section-action-panel .add-section-cancel-btn:hover:not(:disabled) {
+    background: #f9fafb;
+    color: #374151;
+}
+
+.add-section-action-panel .add-section-cancel-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+/* Form Sections */
+.add-section-form-section {
+    background: white;
+    border-radius: 12px;
+    padding: 2rem;
+    margin-bottom: 2rem;
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+}
+
+.add-section-section-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #1f2937;
+    margin: 0 0 1.5rem 0;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid #f3f4f6;
+}
+
+/* Form Layout */
+.add-section-form-row {
+    display: flex;
+    gap: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.add-section-form-row:last-child {
+    margin-bottom: 0;
+}
+
+.add-section-form-group {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.add-section-form-group.add-section-full-width {
+    flex: 1 1 100%;
+}
+
+/* Form Elements */
+.add-section-form-label {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #374151;
+    margin-bottom: 0.5rem;
+}
+
+.add-section-form-input,
+.add-section-form-select {
+    padding: 0.75rem;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    font-size: 0.875rem;
+    background: white;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.add-section-form-input:focus,
+.add-section-form-select:focus {
+    outline: none;
+    border-color: #8b5cf6;
+    box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.1);
+}
+
+.add-section-form-input::placeholder {
+    color: #9ca3af;
+}
+
+.add-section-form-textarea {
+    padding: 0.75rem;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    font-size: 0.875rem;
+    background: white;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    resize: vertical;
+    font-family: inherit;
+}
+
+.add-section-form-textarea:focus {
+    outline: none;
+    border-color: #8b5cf6;
+    box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.1);
+}
+
+.add-section-form-textarea::placeholder {
+    color: #9ca3af;
+}
+
+/* Responsive Design */
+@media (max-width: 1024px) {
+    .add-section-content {
+        flex-direction: column;
+        padding: 1rem;
+        gap: 1.5rem;
+    }
+
+    .add-section-sidebar {
+        width: 100%;
+        position: static;
+        flex-direction: row;
+        order: -1;
+        margin-bottom: 1rem;
+    }
+
+    .add-section-action-panel {
+        width: 100%;
+    }
+}
+
+@media (max-width: 768px) {
+    .add-section-sidebar {
+        flex-direction: column;
+    }
+
+    .add-section-action-panel {
+        width: 100%;
+        flex-direction: row;
+    }
+
+    .add-section-action-panel .add-section-btn,
+    .add-section-action-panel .add-section-cancel-btn {
+        flex: 1;
+    }
+
+    .add-section-form-container {
+        padding: 0;
+    }
+
+    .add-section-form-section {
+        padding: 1.5rem;
+    }
+
+    .add-section-form-row {
+        flex-direction: column;
+        gap: 1rem;
+    }
+
+    .add-section-form-group.add-section-full-width {
+        flex: 1;
+    }
+
+    .add-section-page-title {
+        font-size: 1.5rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .add-section-action-panel {
+        flex-direction: column;
+        gap: 1rem;
+    }
+
+    .add-section-action-panel .add-section-btn,
+    .add-section-action-panel .add-section-cancel-btn {
+        width: 100%;
+        justify-content: center;
+    }
+}

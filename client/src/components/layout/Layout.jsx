@@ -51,6 +51,11 @@ const Layout = ({ children }) => {
       return "report";
     }
 
+    //Section & Shelf
+    if (path.startsWith("/shelves")) return "shelves";
+
+    if (path.startsWith("/section")) return "sections";
+
     // Delivery staff
     if (path.startsWith("/assigned-orders")) return "assigned-orders";
 

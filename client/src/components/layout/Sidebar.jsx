@@ -17,8 +17,10 @@ import {
   FaHistory,
   FaFileInvoice,
 } from "react-icons/fa";
-import { MdBrokenImage } from "react-icons/md";
+import { MdBrokenImage, MdShelves } from "react-icons/md";
 import { FaUserGroup } from "react-icons/fa6";
+import { PiWarehouseBold } from "react-icons/pi";
+
 import Logo from "../ui/Logo";
 import "./Sidebar.css";
 
@@ -205,6 +207,19 @@ const Sidebar = ({ activeItem, onItemClick, userRole = "manager" }) => {
             icon: <FaTruck />,
             path: "/suppliers",
           },
+          {
+            id: "sections",
+            label: "Section",
+            icon: <PiWarehouseBold />,
+            path: "/sections",
+          },
+          {
+            id: "shelves",
+            label: "Shelves",
+            icon: <MdShelves />,
+            path: "/shelves",
+          },
+
           {
             id: "profile",
             label: "Profile",
