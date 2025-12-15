@@ -45,3 +45,22 @@
 .logo-large .logo-text {
     font-size: 28px;
 }
+
+/* Horizontal Layout */
+.logo-horizontal {
+    flex-direction: row;
+    gap: 0.75rem;
+    margin-bottom: 0;
+}
+
+.logo-horizontal .logo-icon {
+    width: 40px;
+    height: 40px;
+    font-size: 20px;
+    margin-bottom: 0;
+}
+
+.logo-horizontal .logo-text {
+    font-size: 18px;
+    font-weight: 600;
+}

@@ -38,6 +38,14 @@ import AddShelfProduct from "./views/merchandise-supervisor/products-on-shelves/
 import EditDamagedProduct from "./views/merchandise-supervisor/damaged-products/EditDamagedProduct";
 import EditShelfProduct from "./views/merchandise-supervisor/products-on-shelves/EditShelfProduct";
 import CreateInvoice from "./views/cashier/invoice-management/CreateInvoice";
+import ShelfListView from "./views/merchandise-supervisor/shelves/ShelfListView";
+import AddShelfView from "./views/merchandise-supervisor/shelves/AddShelfView";
+import EditShelfView from "./views/merchandise-supervisor/shelves/EditShelfView";
+import SectionListView from "./views/merchandise-supervisor/section/SectionListView";
+import AddSectionView from "./views/merchandise-supervisor/section/AddSectionView";
+import EditSectionView from "./views/merchandise-supervisor/section/EditSectionView";
+import CustomerPortal from "./views/customer/CustomerPortal";
+
 function App() {
   return (
     <Router>
@@ -139,6 +147,60 @@ function App() {
                 <div>
                   <EditStaffView />
                 </div>
+              </Layout>
+            }
+          />
+
+          <Route
+            path="/shelves"
+            element={
+              <Layout>
+                <ShelfListView />
+              </Layout>
+            }
+          />
+
+          <Route
+            path="/shelves/add"
+            element={
+              <Layout>
+                <AddShelfView />
+              </Layout>
+            }
+          />
+
+          <Route
+            path="/shelves/edit/:id"
+            element={
+              <Layout>
+                <EditShelfView />
+              </Layout>
+            }
+          />
+
+          <Route
+            path="/sections"
+            element={
+              <Layout>
+                <SectionListView />
+              </Layout>
+            }
+          />
+
+          <Route
+            path="/sections/add"
+            element={
+              <Layout>
+                <AddSectionView />
+              </Layout>
+            }
+          />
+
+          <Route
+            path="/sections/edit/:id"
+            element={
+              <Layout>
+                <EditSectionView />
               </Layout>
             }
           />
@@ -248,6 +310,16 @@ function App() {
 
           {/* Merchandise supervisor */}
           {/* Damaged product */}
+
+          <Route
+            path="/suppliers/add"
+            element={
+              <Layout>
+                <AddSupplierView />
+              </Layout>
+            }
+          />
+
           <Route
             path="/damaged-product"
             element={
@@ -366,6 +438,9 @@ function App() {
               </Layout>
             }
           />
+
+          {/* Customer Portal - Standalone (no Layout) */}
+          <Route path="/customer-portal" element={<CustomerPortal />} />
 
           {/* Redirect root to signin */}
           <Route path="/" element={<Navigate to="/signin" replace />} />

@@ -1,0 +1,176 @@
+.customer-portal {
+    min-height: 100vh;
+    background: #f9fafb;
+}
+
+/* Header */
+.customer-header {
+    background: white;
+    border-bottom: 1px solid #e5e7eb;
+    position: sticky;
+    top: 0;
+    z-index: 50;
+}
+
+.customer-header-content {
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 0 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 64px;
+}
+
+.customer-header-left {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.customer-header-info h1 {
+    font-size: 16px;
+    font-weight: 600;
+    color: #111827;
+    margin: 0;
+}
+
+.customer-header-info p {
+    font-size: 12px;
+    color: #6b7280;
+    margin: 0;
+}
+
+.customer-header-right {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.customer-user-info {
+    text-align: right;
+}
+
+.customer-user-name {
+    font-size: 14px;
+    font-weight: 500;
+    color: #111827;
+}
+
+.customer-user-points {
+    font-size: 12px;
+    color: #6b7280;
+}
+
+.customer-logout-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    border: 1px solid #e5e7eb;
+    border-radius: 6px;
+    background: white;
+    color: #374151;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.customer-logout-btn:hover {
+    background: #f9fafb;
+    border-color: #d1d5db;
+}
+
+/* Navigation */
+.customer-nav {
+    background: white;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.customer-nav-content {
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 0.5rem 1rem;
+    display: flex;
+    gap: 0.5rem;
+    overflow-x: auto;
+}
+
+.customer-nav-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    background: transparent;
+    border: none;
+    color: #6b7280;
+    font-size: 14px;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+}
+
+.customer-nav-item:hover {
+    background: #f9fafb;
+}
+
+.customer-nav-item.active {
+    background: #dcfce7;
+    color: #15803d;
+}
+
+.customer-nav-item svg {
+    font-size: 18px;
+}
+
+.customer-nav-badge {
+    background: #22c55e;
+    color: white;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 2px 6px;
+    border-radius: 10px;
+    margin-left: 0.25rem;
+}
+
+/* Main Content */
+.customer-main {
+    min-height: calc(100vh - 128px);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .customer-header-content {
+        padding: 0 0.75rem;
+    }
+
+    .customer-header-info h1 {
+        font-size: 14px;
+    }
+
+    .customer-header-info p {
+        display: none;
+    }
+
+    .customer-user-name {
+        font-size: 13px;
+    }
+
+    .customer-user-points {
+        font-size: 11px;
+    }
+
+    .customer-logout-btn span {
+        display: none;
+    }
+
+    .customer-nav-content {
+        padding: 0.5rem 0.75rem;
+    }
+
+    .customer-nav-item span {
+        font-size: 13px;
+    }
+}

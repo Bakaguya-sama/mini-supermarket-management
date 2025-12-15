@@ -75,6 +75,12 @@ const SAMPLE_ACCOUNTS = {
     type: "staff",
   },
   // Customer accounts
+  customer: {
+    password: "customer123",
+    role: "customer",
+    name: "John Smith",
+    type: "customer",
+  },
   customer1: {
     password: "customer123",
     role: "customer",
@@ -179,8 +185,12 @@ const SignIn = () => {
       type: account.type,
     });
 
-    // Navigate to dashboard
-    navigate("/dashboard");
+    // Navigate based on user type
+    if (account.type === "customer") {
+      navigate("/customer-portal");
+    } else {
+      navigate("/dashboard");
+    }
   };
 
   return (
