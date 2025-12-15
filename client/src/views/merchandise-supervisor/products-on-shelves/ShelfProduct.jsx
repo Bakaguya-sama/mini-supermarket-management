@@ -28,7 +28,7 @@ const ShelfProduct = () => {
 
   // Loading states
   const [isLoading, setIsLoading] = useState(true);
-  
+
   // Data from API
   const [shelfProductData, setShelfProductData] = useState([]);
   const [totalRecords, setTotalRecords] = useState(0);
@@ -37,7 +37,7 @@ const ShelfProduct = () => {
   const itemsPerPage = 10;
 
   // ========== API FUNCTIONS ==========
-  
+
   // Load product-shelf mappings from API
   const loadProductShelves = async () => {
     setIsLoading(true);
@@ -45,43 +45,43 @@ const ShelfProduct = () => {
       const params = {
         page: currentPage,
         limit: itemsPerPage,
-        sort: '-createdAt'
+        sort: "-createdAt",
       };
 
       const response = await productShelfService.getAllProductShelves(params);
-      
+
       if (response.success && response.data && Array.isArray(response.data)) {
         // Transform API data to UI format
-        const transformedData = response.data.map(mapping => {
+        const transformedData = response.data.map((mapping) => {
           const product = mapping.product_id;
           const shelf = mapping.shelf_id;
-          
+
           // Determine stock status based on quantity
-          let status = 'In Stock';
+          let status = "In Stock";
           const quantity = mapping.quantity || 0;
           const lowStockThreshold = 20; // Default threshold
-          
+
           if (quantity === 0) {
-            status = 'Out of Stock';
+            status = "Out of Stock";
           } else if (quantity < lowStockThreshold) {
-            status = 'Low Stock';
+            status = "Low Stock";
           }
-          
+
           return {
             id: product?._id || mapping._id,
             mappingId: mapping._id,
-            name: product?.name || 'Unknown Product',
-            category: product?.category || 'N/A',
-            brand: 'N/A', // TODO: Add brand field if available
+            name: product?.name || "Unknown Product",
+            category: product?.category || "N/A",
+            brand: "N/A", // TODO: Add brand field if available
             price: `$${(product?.price || 0).toFixed(2)}`,
             stock: quantity,
             lowStockThreshold: lowStockThreshold,
-            supplier: 'N/A', // TODO: Populate supplier from product
+            supplier: "N/A", // TODO: Populate supplier from product
             status: status,
-            shelfLocation: shelf?.shelf_number || 'N/A',
-            section: shelf?.shelf_number?.charAt(0) || 'N/A',
-            slot: shelf?.note || 'N/A',
-            _original: mapping
+            shelfLocation: shelf?.shelf_number || "N/A",
+            section: shelf?.shelf_number?.charAt(0) || "N/A",
+            slot: shelf?.note || "N/A",
+            _original: mapping,
           };
         });
 
@@ -89,13 +89,13 @@ const ShelfProduct = () => {
         setTotalRecords(response.total || 0);
         setTotalPages(response.pages || 0);
       } else {
-        console.error('Failed to load product shelves:', response.message);
+        console.error("Failed to load product shelves:", response.message);
         setShelfProductData([]);
         setTotalRecords(0);
         setTotalPages(0);
       }
     } catch (error) {
-      console.error('Error loading product shelves:', error);
+      console.error("Error loading product shelves:", error);
       setShelfProductData([]);
       setTotalRecords(0);
       setTotalPages(0);
@@ -110,176 +110,6 @@ const ShelfProduct = () => {
   }, [currentPage]);
 
   // Sample fake shelf product data - REMOVE sau khi test API
-  const oldShelfProductData = [
-    {
-      id: "P001",
-      name: "Coca Cola 330ml",
-      category: "Beverages",
-      brand: "Coca-Cola",
-      price: "$1.99",
-      stock: 45,
-      lowStockThreshold: 50,
-      supplier: "Beverage Co.",
-      status: "Low Stock",
-      shelfLocation: "A1",
-      section: "A",
-      slot: "12",
-    },
-    {
-      id: "P001",
-      name: "Coca Cola 330ml",
-      category: "Beverages",
-      brand: "Coca-Cola",
-      price: "$1.99",
-      stock: 60,
-      lowStockThreshold: 50,
-      supplier: "Beverage Co.",
-      status: "In Stock",
-      shelfLocation: "D2",
-      section: "D",
-      slot: "08",
-    },
-    {
-      id: "P002",
-      name: "White Bread",
-      category: "Bakery",
-      brand: "Wonder Bread",
-      price: "$2.49",
-      stock: 25,
-      lowStockThreshold: 30,
-      supplier: "Bakery Supply",
-      status: "Low Stock",
-      shelfLocation: "C1",
-      section: "C",
-      slot: "15",
-    },
-    {
-      id: "P003",
-      name: "Milk 1L",
-      category: "Dairy",
-      brand: "Fresh Farms",
-      price: "$3.99",
-      stock: 0,
-      lowStockThreshold: 20,
-      supplier: "Dairy Products Inc",
-      status: "Out of Stock",
-      shelfLocation: "A2",
-      section: "A",
-      slot: "20",
-    },
-    {
-      id: "P003",
-      name: "Milk 1L",
-      category: "Dairy",
-      brand: "Fresh Farms",
-      price: "$3.99",
-      stock: 35,
-      lowStockThreshold: 20,
-      supplier: "Dairy Products Inc",
-      status: "In Stock",
-      shelfLocation: "F1",
-      section: "F",
-      slot: "03",
-    },
-    {
-      id: "P004",
-      name: "Banana (per kg)",
-      category: "Fruits",
-      brand: "Fresh Produce",
-      price: "$2.99",
-      stock: 80,
-      lowStockThreshold: 25,
-      supplier: "Fruit Distributors",
-      status: "In Stock",
-      shelfLocation: "B3",
-      section: "B",
-      slot: "14",
-    },
-    {
-      id: "P004",
-      name: "Banana (per kg)",
-      category: "Fruits",
-      brand: "Fresh Produce",
-      price: "$2.99",
-      stock: 40,
-      lowStockThreshold: 25,
-      supplier: "Fruit Distributors",
-      status: "In Stock",
-      shelfLocation: "B1",
-      section: "B",
-      slot: "07",
-    },
-    {
-      id: "P005",
-      name: "Chicken Breast (per kg)",
-      category: "Meat",
-      brand: "Premium Meat",
-      price: "$12.99",
-      stock: 35,
-      lowStockThreshold: 15,
-      supplier: "Meat Suppliers Ltd",
-      status: "In Stock",
-      shelfLocation: "E1",
-      section: "E",
-      slot: "22",
-    },
-    {
-      id: "P006",
-      name: "Shampoo 400ml",
-      category: "Personal Care",
-      brand: "Head & Shoulders",
-      price: "$6.99",
-      stock: 12,
-      lowStockThreshold: 20,
-      supplier: "Beauty Supplies",
-      status: "Low Stock",
-      shelfLocation: "G1",
-      section: "G",
-      slot: "09",
-    },
-    {
-      id: "P007",
-      name: "Rice 5kg",
-      category: "Grains",
-      brand: "Golden Grain",
-      price: "$8.99",
-      stock: 22,
-      lowStockThreshold: 10,
-      supplier: "Grain Wholesale",
-      status: "In Stock",
-      shelfLocation: "C2",
-      section: "C",
-      slot: "18",
-    },
-    {
-      id: "P007",
-      name: "Rice 5kg",
-      category: "Grains",
-      brand: "Golden Grain",
-      price: "$8.99",
-      stock: 18,
-      lowStockThreshold: 10,
-      supplier: "Grain Wholesale",
-      status: "In Stock",
-      shelfLocation: "E2",
-      section: "E",
-      slot: "11",
-    },
-    {
-      id: "P008",
-      name: "Dish Soap 500ml",
-      category: "Household",
-      brand: "Clean & Fresh",
-      price: "$3.49",
-      stock: 55,
-      lowStockThreshold: 20,
-      supplier: "Cleaning Supplies Co",
-      status: "In Stock",
-      shelfLocation: "G2",
-      section: "G",
-      slot: "16",
-    },
-  ]; // End fake data
 
   // Filter data (client-side filtering for now)
   const filteredData = shelfProductData.filter((product) => {
@@ -580,13 +410,15 @@ const ShelfProduct = () => {
       {/* Products Table */}
       <div className="shelf-table-container">
         {isLoading && (
-          <div style={{
-            position: 'absolute',
-            top: '50%',
-            left: '50%',
-            transform: 'translate(-50%, -50%)',
-            zIndex: 10
-          }}>
+          <div
+            style={{
+              position: "absolute",
+              top: "50%",
+              left: "50%",
+              transform: "translate(-50%, -50%)",
+              zIndex: 10,
+            }}
+          >
             <div>Loading products on shelves...</div>
           </div>
         )}
@@ -605,7 +437,10 @@ const ShelfProduct = () => {
           <tbody>
             {!isLoading && paginatedData.length === 0 && (
               <tr>
-                <td colSpan="7" style={{ textAlign: 'center', padding: '2rem' }}>
+                <td
+                  colSpan="7"
+                  style={{ textAlign: "center", padding: "2rem" }}
+                >
                   No products on shelves found
                 </td>
               </tr>

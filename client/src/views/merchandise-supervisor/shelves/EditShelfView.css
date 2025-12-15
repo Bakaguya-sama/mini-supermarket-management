@@ -1,0 +1,288 @@
+.edit-shelf-view {
+    padding: 0;
+    background: #EFFFE8;
+    min-height: 100vh;
+    width: 100%;
+}
+
+/* Header */
+.edit-shelf-page-header {
+    background: transparent;
+    padding: 2rem 2rem 1rem;
+    margin: 0;
+    width: 100%;
+}
+
+.edit-shelf-page-title {
+    font-size: 2rem;
+    font-weight: 700;
+    color: #1f2937;
+    margin: 0;
+}
+
+/* Edit Shelf Content Layout */
+.edit-shelf-content {
+    display: flex;
+    gap: 3rem;
+    padding: 2rem;
+    align-items: flex-start;
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+/* Form Container */
+.edit-shelf-form-container {
+    flex: 1;
+    max-width: none;
+    margin: 0;
+    padding: 0;
+}
+
+/* Sidebar */
+.edit-shelf-sidebar {
+    width: 300px;
+    position: sticky;
+    top: 2rem;
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+}
+
+/* Action Panel */
+.edit-shelf-action-panel {
+    background-color: white;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    padding: 1.5rem;
+    border-radius: 12px;
+    border: 1px solid #d1d5db;
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+}
+
+.edit-shelf-action-panel .edit-shelf-btn {
+    background: #3b82f6;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    padding: 12px 20px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    width: 100%;
+}
+
+.edit-shelf-action-panel .edit-shelf-btn:hover:not(:disabled) {
+    background: #2563eb;
+}
+
+.edit-shelf-action-panel .edit-shelf-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.edit-shelf-save-icon {
+    font-size: 14px;
+}
+
+.edit-shelf-action-panel .edit-shelf-cancel-btn {
+    background: transparent;
+    color: #6b7280;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    padding: 12px 20px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    width: 100%;
+}
+
+.edit-shelf-action-panel .edit-shelf-cancel-btn:hover:not(:disabled) {
+    background: #f9fafb;
+    color: #374151;
+}
+
+.edit-shelf-action-panel .edit-shelf-cancel-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+/* Form Sections */
+.edit-shelf-form-section {
+    background: white;
+    border-radius: 12px;
+    padding: 2rem;
+    margin-bottom: 2rem;
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+}
+
+.edit-shelf-section-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #1f2937;
+    margin: 0 0 1.5rem 0;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid #f3f4f6;
+}
+
+/* Form Layout */
+.edit-shelf-form-row {
+    display: flex;
+    gap: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.edit-shelf-form-row:last-child {
+    margin-bottom: 0;
+}
+
+.edit-shelf-form-group {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.edit-shelf-form-group.edit-shelf-full-width {
+    flex: 1 1 100%;
+}
+
+/* Form Elements */
+.edit-shelf-form-label {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #374151;
+    margin-bottom: 0.5rem;
+}
+
+.edit-shelf-form-input,
+.edit-shelf-form-select {
+    padding: 0.75rem;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    font-size: 0.875rem;
+    background: white;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.edit-shelf-form-input:disabled {
+    background-color: #f3f4f6;
+    color: #6b7280;
+    cursor: not-allowed;
+}
+
+.edit-shelf-form-input:focus:not(:disabled),
+.edit-shelf-form-select:focus {
+    outline: none;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.edit-shelf-form-input::placeholder {
+    color: #9ca3af;
+}
+
+.edit-shelf-form-textarea {
+    padding: 0.75rem;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    font-size: 0.875rem;
+    background: white;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    resize: vertical;
+    font-family: inherit;
+}
+
+.edit-shelf-form-textarea:focus {
+    outline: none;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.edit-shelf-form-textarea::placeholder {
+    color: #9ca3af;
+}
+
+/* Select dropdown styling */
+.edit-shelf-form-select {
+    background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3E%3Cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3E%3C/svg%3E");
+    background-position: right 0.75rem center;
+    background-repeat: no-repeat;
+    background-size: 1rem;
+    padding-right: 2.5rem;
+    appearance: none;
+}
+
+/* Responsive Design */
+@media (max-width: 1024px) {
+    .edit-shelf-content {
+        flex-direction: column;
+        padding: 1rem;
+        gap: 1.5rem;
+    }
+
+    .edit-shelf-sidebar {
+        width: 100%;
+        position: static;
+        flex-direction: row;
+        order: -1;
+        margin-bottom: 1rem;
+    }
+
+    .edit-shelf-action-panel {
+        width: 100%;
+    }
+}
+
+@media (max-width: 768px) {
+    .edit-shelf-sidebar {
+        flex-direction: column;
+    }
+
+    .edit-shelf-action-panel {
+        width: 100%;
+        flex-direction: row;
+    }
+
+    .edit-shelf-action-panel .edit-shelf-btn,
+    .edit-shelf-action-panel .edit-shelf-cancel-btn {
+        flex: 1;
+    }
+
+    .edit-shelf-form-container {
+        padding: 0;
+    }
+
+    .edit-shelf-form-section {
+        padding: 1.5rem;
+    }
+
+    .edit-shelf-form-row {
+        flex-direction: column;
+        gap: 1rem;
+    }
+
+    .edit-shelf-form-group.edit-shelf-full-width {
+        flex: 1;
+    }
+
+    .edit-shelf-page-title {
+        font-size: 1.5rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .edit-shelf-action-panel {
+        flex-direction: column;
+        gap: 1rem;
+    }
+
+    .edit-shelf-action-panel .edit-shelf-btn,
+    .edit-shelf-action-panel .edit-shelf-cancel-btn {
+        width: 100%;
+        justify-content: center;
+    }
+}

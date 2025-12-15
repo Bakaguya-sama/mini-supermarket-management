@@ -465,7 +465,6 @@
     flex-wrap: wrap;
   }
 }
-}
 
 .toggle-btn:hover:not(.active) {
   background: #f3f4f6;
