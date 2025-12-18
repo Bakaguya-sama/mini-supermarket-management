@@ -72,34 +72,34 @@ const CustomerOrdersPage = ({ customerId }) => {
     try {
       setIsLoading(true);
       console.log(`📦 Loading orders for customer: ${customerId}`);
-      
+
       const result = await orderService.getOrdersByCustomer(customerId);
-      
+
       if (result.success && result.data) {
         // Transform backend orders to UI format
-        const formattedOrders = result.data.map(order => ({
+        const formattedOrders = result.data.map((order) => ({
           id: order.order_number || order._id,
           _id: order._id,
           date: order.order_date || order.createdAt,
           status: order.status,
           total: order.total_amount,
-          trackingNumber: order.tracking_number || 'N/A',
+          trackingNumber: order.tracking_number || "N/A",
           deliveryDate: order.delivery_date,
-          items: (order.orderItems || []).map(item => ({
-            name: item.product_id?.name || 'Unknown Product',
+          items: (order.orderItems || []).map((item) => ({
+            name: item.product_id?.name || "Unknown Product",
             quantity: item.quantity,
-            price: item.unit_price
-          }))
+            price: item.unit_price,
+          })),
         }));
-        
+
         setOrders(formattedOrders);
         console.log(`✅ Loaded ${formattedOrders.length} orders`);
       } else {
-        console.error('❌ Failed to load orders:', result.message);
+        console.error("❌ Failed to load orders:", result.message);
         setOrders([]);
       }
     } catch (error) {
-      console.error('❌ Error loading orders:', error);
+      console.error("❌ Error loading orders:", error);
       setOrders([]);
     } finally {
       setIsLoading(false);
@@ -141,39 +141,41 @@ const CustomerOrdersPage = ({ customerId }) => {
 
     try {
       console.log(`📦 Cancelling order: ${confirmCancel}`);
-      
+
       // Find the order _id from order number
-      const orderToCancel = orders.find(o => o.id === confirmCancel);
+      const orderToCancel = orders.find((o) => o.id === confirmCancel);
       if (!orderToCancel) {
-        console.error('❌ Order not found');
+        console.error("❌ Order not found");
         return;
       }
 
       const result = await orderService.cancelOrder(orderToCancel._id);
-      
+
       if (result.success) {
-        console.log('✅ Order cancelled successfully');
-        
+        console.log("✅ Order cancelled successfully");
+
         // Update orders list
         setOrders((prevOrders) =>
           prevOrders.map((order) =>
-            order.id === confirmCancel ? { ...order, status: "cancelled" } : order
+            order.id === confirmCancel
+              ? { ...order, status: "cancelled" }
+              : order
           )
         );
-        
+
         // Close modal if the cancelled order is currently open
         if (modalOrder && modalOrder.id === confirmCancel) {
           setModalOrder(null);
         }
       } else {
-        console.error('❌ Failed to cancel order:', result.message);
-        alert(result.message || 'Failed to cancel order');
+        console.error("❌ Failed to cancel order:", result.message);
+        alert(result.message || "Failed to cancel order");
       }
-      
+
       setConfirmCancel(null);
     } catch (error) {
-      console.error('❌ Error cancelling order:', error);
-      alert('Failed to cancel order. Please try again.');
+      console.error("❌ Error cancelling order:", error);
+      alert("Failed to cancel order. Please try again.");
       setConfirmCancel(null);
     }
   };
@@ -247,79 +249,78 @@ const CustomerOrdersPage = ({ customerId }) => {
         {/* Orders List */}
         {!isLoading && (
           <div className="customer-orders-list">
-          {filteredOrders.map((order) => {
-            const status = statusConfig[order.status] || statusConfig.pending;
-            const StatusIcon = status.icon;
-            const isExpanded = expandedOrder === order.id;
+            {filteredOrders.map((order) => {
+              const status = statusConfig[order.status] || statusConfig.pending;
+              const StatusIcon = status.icon;
+              const isExpanded = expandedOrder === order.id;
 
-            return (
-              <div key={order.id} className="customer-order-card">
-                <div className="order-card-header">
-                  <div className="order-card-left">
-                    <div className="order-id">
-                      <FaBox />
-                      {order.id}
-                    </div>
-                    <span
-                      className="order-status-badge"
-                      style={{
-                        color: status.color,
-                        backgroundColor: status.bgColor,
-                      }}
-                    >
-                      <StatusIcon />
-                      {status.label}
-                    </span>
-                  </div>
-                  <div className="order-card-right">
-                    <div className="order-total-label">Total</div>
-                    <div className="order-total-amount">
-                      ${order.total.toFixed(2)}
-                    </div>
-                  </div>
-                </div>
-
-                <div className="order-card-body">
-                  <div className="order-items-summary">
-                    {order.items.map((item, index) => (
-                      <div key={index} className="order-item-summary">
-                        <span>
-                          {item.name} × {item.quantity}
-                        </span>
-                        <span>${(item.price * item.quantity).toFixed(2)}</span>
+              return (
+                <div key={order.id} className="customer-order-card">
+                  <div className="order-card-header">
+                    <div className="order-card-left">
+                      <div className="order-id">
+                        <FaBox />
+                        {order.id}
                       </div>
-                    ))}
-                  </div>
-
-                  {order.trackingNumber && (
-                    <div className="order-tracking">
-                      <div className="tracking-label">Tracking Number</div>
-                      <div className="tracking-number">
-                        {order.trackingNumber}
-                      </div>
-                    </div>
-                  )}
-
-                  <div className="order-actions">
-                    <button
-                      className="view-details-btn"
-                      onClick={(e) => openModal(order, e)}
-                    >
-                      <FaSearch /> View Details
-                    </button>
-                    {(order.status === "pending" || order.status === "processing") && (
-                      <button
-                        className="cancel-order-btn"
-                        onClick={(e) => handleCancelOrder(order.id, e)}
+                      <span
+                        className="order-status-badge"
+                        style={{
+                          color: status.color,
+                          backgroundColor: status.bgColor,
+                        }}
                       >
-                        <FaTimesCircle /> Cancel Order
-                      </button>
+                        <StatusIcon />
+                        {status.label}
+                      </span>
+                    </div>
+                    <div className="order-card-right">
+                      <div className="order-total-label">Total</div>
+                      <div className="order-total-amount">{order.total}VNĐ</div>
+                    </div>
+                  </div>
+
+                  <div className="order-card-body">
+                    <div className="order-items-summary">
+                      {order.items.map((item, index) => (
+                        <div key={index} className="order-item-summary">
+                          <span>
+                            {item.name} × {item.quantity}
+                          </span>
+                          <span>{item.price * item.quantity}VNĐ</span>
+                        </div>
+                      ))}
+                    </div>
+
+                    {order.trackingNumber && (
+                      <div className="order-tracking">
+                        <div className="tracking-label">Tracking Number</div>
+                        <div className="tracking-number">
+                          {order.trackingNumber}
+                        </div>
+                      </div>
                     )}
+
+                    <div className="order-actions">
+                      <button
+                        className="view-details-btn"
+                        onClick={(e) => openModal(order, e)}
+                      >
+                        <FaSearch /> View Details
+                      </button>
+                      {(order.status === "pending" ||
+                        order.status === "processing") && (
+                        <button
+                          className="cancel-order-btn"
+                          onClick={(e) => handleCancelOrder(order.id, e)}
+                        >
+                          <FaTimesCircle /> Cancel Order
+                        </button>
+                      )}
+                    </div>
                   </div>
                 </div>
-              </div>
-            );
-          })}
+              );
+            })}
           </div>
         )}
 
@@ -407,7 +408,7 @@ const CustomerOrdersPage = ({ customerId }) => {
                         </div>
                       </div>
                       <div className="modal-item-price">
-                        ${(item.price * item.quantity).toFixed(2)}
+                        {item.price * item.quantity}VNĐ
                       </div>
                     </div>
                   ))}
@@ -417,7 +418,7 @@ const CustomerOrdersPage = ({ customerId }) => {
               <div className="modal-total">
                 <span>Total Amount</span>
                 <span className="modal-total-amount">
-                  ${modalOrder.total.toFixed(2)}
+                  {modalOrder.total}VNĐ
                 </span>
               </div>
             </div>
