@@ -10,12 +10,12 @@ const CustomerShopPage = ({ onAddToCart, onViewCart, onViewProduct }) => {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [sortBy, setSortBy] = useState("default");
-  
+
   // States for API data
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState(["all"]);
   const [isLoading, setIsLoading] = useState(true);
-  
+
   // States for messages
   const [successMessage, setSuccessMessage] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
@@ -34,7 +34,7 @@ const CustomerShopPage = ({ onAddToCart, onViewCart, onViewProduct }) => {
       // Prepare API parameters
       const params = {
         limit: 100, // Load all products for customer shop
-        status: 'active' // Only show active products
+        status: "active", // Only show active products
       };
 
       // Add search filter if present
@@ -56,38 +56,44 @@ const CustomerShopPage = ({ onAddToCart, onViewCart, onViewProduct }) => {
         params.sort = "-price";
       }
 
-      console.log('📦 Loading products with params:', params);
+      console.log("📦 Loading products with params:", params);
       const result = await productService.getAll(params);
 
       if (result.success) {
         // Transform API data to UI format
-        const transformedProducts = (result.data || []).map(product => ({
+        const transformedProducts = (result.data || []).map((product) => ({
           id: product._id,
           name: product.name,
           category: product.category,
           price: product.price,
-          description: product.description || `${product.name} - ${product.unit}`,
-          image: product.image_link || "https://placehold.co/400x400/e2e8f0/64748b?text=No+Image",
+          description:
+            product.description || `${product.name} - ${product.unit}`,
+          image:
+            product.image_link ||
+            "https://placehold.co/400x400/e2e8f0/64748b?text=No+Image",
           inStock: product.current_stock > 0,
           stockQuantity: product.current_stock,
           unit: product.unit,
-          supplier: product.supplier_id?.name
+          supplier: product.supplier_id?.name,
         }));
 
         setProducts(transformedProducts);
 
         // Extract unique categories from products
-        const uniqueCategories = ["all", ...new Set(transformedProducts.map(p => p.category))];
+        const uniqueCategories = [
+          "all",
+          ...new Set(transformedProducts.map((p) => p.category)),
+        ];
         setCategories(uniqueCategories);
 
         console.log(`✅ Loaded ${transformedProducts.length} products`);
       } else {
-        setErrorMessage(result.message || 'Failed to load products');
+        setErrorMessage(result.message || "Failed to load products");
         setProducts([]);
       }
     } catch (error) {
-      console.error('❌ Error loading products:', error);
-      setErrorMessage('Failed to load products. Please try again.');
+      console.error("❌ Error loading products:", error);
+      setErrorMessage("Failed to load products. Please try again.");
       setProducts([]);
     } finally {
       setIsLoading(false);
@@ -186,7 +192,7 @@ const CustomerShopPage = ({ onAddToCart, onViewCart, onViewProduct }) => {
                   </p>
                   <div className="customer-product-footer">
                     <div className="customer-product-price">
-                      <span className="price-current">${product.price.toFixed(2)}</span>
+                      <span className="price-current">{product.price}VNĐ</span>
                       {product.unit && (
                         <span className="price-unit">/{product.unit}</span>
                       )}
