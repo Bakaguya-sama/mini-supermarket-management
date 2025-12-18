@@ -29,7 +29,7 @@ const CustomerCartPage = ({
   const [cartId, setCartId] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [availablePromotions, setAvailablePromotions] = useState([]);
-  
+
   // UI states
   const [selectedPromo, setSelectedPromo] = useState(null);
   const [pointsToRedeem, setPointsToRedeem] = useState(0);
@@ -65,18 +65,20 @@ const CustomerCartPage = ({
       if (result.success && result.data) {
         setBackendCart(result.data);
         setCartId(result.data._id);
-        
+
         // Transform backend cart items to UI format
-        const uiCartItems = (result.data.cartItems || []).map(item => ({
+        const uiCartItems = (result.data.cartItems || []).map((item) => ({
           id: item.product_id?._id || item._id,
           cartItemId: item._id, // Store cart item ID for updates
           name: item.product_name || item.product_id?.name,
-          category: item.product_id?.category || 'General',
+          category: item.product_id?.category || "General",
           price: item.unit_price,
           quantity: item.quantity,
-          image: item.product_id?.image_link || "https://placehold.co/100x100/e2e8f0/64748b?text=No+Image",
+          image:
+            item.product_id?.image_link ||
+            "https://placehold.co/100x100/e2e8f0/64748b?text=No+Image",
           unit: item.unit,
-          sku: item.sku
+          sku: item.sku,
         }));
 
         // Update parent component with cart items
@@ -86,11 +88,11 @@ const CustomerCartPage = ({
 
         console.log(`✅ Cart loaded with ${uiCartItems.length} items`);
       } else {
-        setErrorMessage(result.message || 'Failed to load cart');
+        setErrorMessage(result.message || "Failed to load cart");
       }
     } catch (error) {
-      console.error('❌ Error loading cart:', error);
-      setErrorMessage('Failed to load cart. Please try again.');
+      console.error("❌ Error loading cart:", error);
+      setErrorMessage("Failed to load cart. Please try again.");
     } finally {
       setIsLoading(false);
     }
@@ -106,33 +108,37 @@ const CustomerCartPage = ({
         0
       );
 
-      console.log(`🎁 Loading applicable promotions for subtotal: $${subtotal}`);
+      console.log(
+        `🎁 Loading applicable promotions for subtotal: $${subtotal}`
+      );
       const result = await promotionService.getApplicablePromotions(subtotal);
 
       if (result.success && result.data) {
         // Transform backend promotions to UI format
-        const formattedPromotions = result.data.map(promo => ({
+        const formattedPromotions = result.data.map((promo) => ({
           id: promo.id,
           code: promo.code,
-          discount: promo.type === 'percentage' ? promo.discountValue / 100 : 0,
+          discount: promo.type === "percentage" ? promo.discountValue / 100 : 0,
           discountAmount: promo.discountAmount, // Calculated discount in dollars
           description: promo.description,
           type: promo.type, // 'percentage' or 'fixed'
           discountValue: promo.discountValue,
           minOrder: promo.minPurchase,
-          validUntil: new Date(promo.endDate).toLocaleDateString('en-US', {
-            month: 'short',
-            day: 'numeric',
-            year: 'numeric'
+          validUntil: new Date(promo.endDate).toLocaleDateString("en-US", {
+            month: "short",
+            day: "numeric",
+            year: "numeric",
           }),
-          terms: promo.terms
+          terms: promo.terms,
         }));
 
         setAvailablePromotions(formattedPromotions);
-        console.log(`✅ Loaded ${formattedPromotions.length} applicable promotions`);
+        console.log(
+          `✅ Loaded ${formattedPromotions.length} applicable promotions`
+        );
       }
     } catch (error) {
-      console.error('❌ Error loading promotions:', error);
+      console.error("❌ Error loading promotions:", error);
       // Don't show error to user, just use empty promotions list
       setAvailablePromotions([]);
     }
@@ -143,13 +149,15 @@ const CustomerCartPage = ({
    */
   const handleUpdateQuantity = async (cartItemId, newQuantity) => {
     if (!cartItemId) {
-      console.error('❌ No cart item ID provided');
+      console.error("❌ No cart item ID provided");
       return;
     }
 
     try {
-      console.log(`🛒 Updating quantity for item ${cartItemId} to ${newQuantity}`);
-      
+      console.log(
+        `🛒 Updating quantity for item ${cartItemId} to ${newQuantity}`
+      );
+
       if (newQuantity <= 0) {
         // Remove item if quantity is 0
         await handleRemoveItem(cartItemId);
@@ -159,14 +167,14 @@ const CustomerCartPage = ({
       const result = await cartService.updateQuantity(cartItemId, newQuantity);
 
       if (result.success) {
-        setSuccessMessage('Cart updated!');
+        setSuccessMessage("Cart updated!");
         await loadCart(); // Reload cart to sync
       } else {
-        setErrorMessage(result.message || 'Failed to update quantity');
+        setErrorMessage(result.message || "Failed to update quantity");
       }
     } catch (error) {
-      console.error('❌ Error updating quantity:', error);
-      setErrorMessage('Failed to update quantity. Please try again.');
+      console.error("❌ Error updating quantity:", error);
+      setErrorMessage("Failed to update quantity. Please try again.");
     }
   };
 
@@ -175,7 +183,7 @@ const CustomerCartPage = ({
    */
   const handleRemoveItem = async (cartItemId) => {
     if (!cartItemId) {
-      console.error('❌ No cart item ID provided');
+      console.error("❌ No cart item ID provided");
       return;
     }
 
@@ -184,14 +192,14 @@ const CustomerCartPage = ({
       const result = await cartService.removeItem(cartItemId);
 
       if (result.success) {
-        setSuccessMessage('Item removed from cart');
+        setSuccessMessage("Item removed from cart");
         await loadCart(); // Reload cart to sync
       } else {
-        setErrorMessage(result.message || 'Failed to remove item');
+        setErrorMessage(result.message || "Failed to remove item");
       }
     } catch (error) {
-      console.error('❌ Error removing item:', error);
-      setErrorMessage('Failed to remove item. Please try again.');
+      console.error("❌ Error removing item:", error);
+      setErrorMessage("Failed to remove item. Please try again.");
     }
   };
 
@@ -200,7 +208,7 @@ const CustomerCartPage = ({
    */
   const handleClearAllItems = async () => {
     if (!cartId) {
-      console.error('❌ No cart ID available');
+      console.error("❌ No cart ID available");
       return;
     }
 
@@ -209,14 +217,14 @@ const CustomerCartPage = ({
       const result = await cartService.clearCart(cartId);
 
       if (result.success) {
-        setSuccessMessage('Cart cleared!');
+        setSuccessMessage("Cart cleared!");
         await loadCart(); // Reload cart to sync
       } else {
-        setErrorMessage(result.message || 'Failed to clear cart');
+        setErrorMessage(result.message || "Failed to clear cart");
       }
     } catch (error) {
-      console.error('❌ Error clearing cart:', error);
-      setErrorMessage('Failed to clear cart. Please try again.');
+      console.error("❌ Error clearing cart:", error);
+      setErrorMessage("Failed to clear cart. Please try again.");
     }
   };
 
@@ -234,23 +242,27 @@ const CustomerCartPage = ({
   const displayedPromotions = showAllPromotions
     ? applicablePromotions
     : applicablePromotions.slice(0, 1);
-  
+
   // Calculate promo discount (supports both percentage and fixed)
   let promoDiscount = 0;
   if (selectedPromo) {
-    if (selectedPromo.type === 'percentage') {
+    if (selectedPromo.type === "percentage") {
       promoDiscount = subtotal * selectedPromo.discount;
-    } else if (selectedPromo.type === 'fixed') {
+    } else if (selectedPromo.type === "fixed") {
       promoDiscount = Math.min(selectedPromo.discountValue, subtotal);
     }
   }
-  
-  const pointsDiscount = pointsToRedeem * 0.01; // 100 points = $1
+
+  // Points conversion for this app:
+  // - Redeem: 1 point = 1000 VNĐ
+  // - Earning (used below on checkout): 1 point earned per 10000 VNĐ spent
+  const pointsDiscount = pointsToRedeem * 1000; // 1 point = 1000 VNĐ
   const total = Math.max(0, subtotal - promoDiscount - pointsDiscount);
 
+  // Max points user can apply is limited by their balance and subtotal (in points)
   const maxPointsRedeemable = Math.min(
     membershipPoints,
-    Math.floor(subtotal * 100)
+    Math.floor(subtotal / 1000)
   );
 
   const handleSelectPromo = (promo) => {
@@ -269,53 +281,79 @@ const CustomerCartPage = ({
 
     try {
       setIsLoading(true);
-      console.log('🛒 Starting checkout process...');
+      console.log("🛒 Starting checkout process...");
 
       // Prepare order notes with promotion and points info
       const orderNotes = [];
       if (selectedPromo) {
-        orderNotes.push(`Promo: ${selectedPromo.code} - ${selectedPromo.description}`);
-        orderNotes.push(`Discount: ${selectedPromo.type === 'percentage' ? `${selectedPromo.discountValue}%` : `$${selectedPromo.discountValue}`} = -$${promoDiscount.toFixed(2)}`);
+        orderNotes.push(
+          `Promo: ${selectedPromo.code} - ${selectedPromo.description}`
+        );
+        orderNotes.push(
+          `Discount: ${
+            selectedPromo.type === "percentage"
+              ? `${selectedPromo.discountValue}%`
+              : `$${selectedPromo.discountValue}`
+          } = -${promoDiscount}VNĐ`
+        );
       }
       if (pointsToRedeem > 0) {
-        orderNotes.push(`Points Redeemed: ${pointsToRedeem} points = -$${pointsDiscount.toFixed(2)}`);
+        orderNotes.push(
+          `Points Redeemed: ${pointsToRedeem} points = -${pointsDiscount}VNĐ`
+        );
+      }
+
+      // Calculate points earned from this order (frontend estimation)
+      // Earning rule: 1 point per 10000 VNĐ spent
+      const pointsEarned = Math.floor(total / 10000);
+      if (pointsEarned > 0) {
+        orderNotes.push(`Points Earned: ${pointsEarned} points`);
       }
 
       // Create order from cart
       const result = await orderService.createOrder({
         customer_id: customerId,
         cart_id: cartId,
-        notes: orderNotes.length > 0 ? orderNotes.join(' | ') : 'No discounts applied'
+        notes:
+          orderNotes.length > 0
+            ? orderNotes.join(" | ")
+            : "No discounts applied",
       });
 
       if (result.success) {
-        setSuccessMessage(`Order placed successfully! Total: $${total.toFixed(2)}`);
-        console.log('✅ Order created:', result.data);
-        console.log(`💰 Original: $${subtotal.toFixed(2)} → Final: $${total.toFixed(2)} (Saved: $${(subtotal - total).toFixed(2)})`);
-        
+        setSuccessMessage(`Order placed successfully! Total: ${total}`);
+        console.log("✅ Order created:", result.data);
+        console.log(
+          `💰 Original: ${subtotal}VNĐ → Final: $${total.toFixed(
+            2
+          )} (Saved: $${(subtotal - total).toFixed(2)})`
+        );
+
         // TODO: Deduct points from customer balance (will be handled by backend later)
         if (pointsToRedeem > 0) {
-          console.log(`🎁 ${pointsToRedeem} points redeemed (to be deducted from customer)`);
+          console.log(
+            `🎁 ${pointsToRedeem} points redeemed (to be deducted from customer)`
+          );
         }
-        
+
         // Clear cart UI
         setSelectedPromo(null);
         setPointsToRedeem(0);
-        
+
         // Reload cart (should be empty after checkout)
         await loadCart();
-        
+
         // Call parent callback
         if (onCheckout) {
           onCheckout(result.data);
         }
       } else {
-        setErrorMessage(result.message || 'Failed to create order');
-        console.error('❌ Checkout failed:', result.message);
+        setErrorMessage(result.message || "Failed to create order");
+        console.error("❌ Checkout failed:", result.message);
       }
     } catch (error) {
-      console.error('❌ Error during checkout:', error);
-      setErrorMessage('Failed to complete checkout. Please try again.');
+      console.error("❌ Error during checkout:", error);
+      setErrorMessage("Failed to complete checkout. Please try again.");
     } finally {
       setIsLoading(false);
     }
@@ -357,33 +395,42 @@ const CustomerCartPage = ({
           {/* Cart Items */}
           <div className="customer-cart-items">
             {cartItems.map((item) => (
-              <div key={item.cartItemId || item.id} className="customer-cart-item">
+              <div
+                key={item.cartItemId || item.id}
+                className="customer-cart-item"
+              >
                 <div className="cart-item-image">
                   <img src={item.image} alt={item.name} />
                 </div>
                 <div className="cart-item-details">
                   <h3>{item.name}</h3>
                   <p className="cart-item-category">{item.category}</p>
-                  <p className="cart-item-price">${item.price.toFixed(2)}{item.unit && `/${item.unit}`}</p>
+                  <p className="cart-item-price">
+                    {item.price}VNĐ{item.unit && `/${item.unit}`}
+                  </p>
                 </div>
                 <div className="cart-item-actions">
                   <div className="cart-item-quantity">
                     <button
-                      onClick={() => handleUpdateQuantity(item.cartItemId, item.quantity - 1)}
+                      onClick={() =>
+                        handleUpdateQuantity(item.cartItemId, item.quantity - 1)
+                      }
                       className="quantity-btn"
                     >
                       <FaMinus />
                     </button>
                     <span className="quantity-value">{item.quantity}</span>
                     <button
-                      onClick={() => handleUpdateQuantity(item.cartItemId, item.quantity + 1)}
+                      onClick={() =>
+                        handleUpdateQuantity(item.cartItemId, item.quantity + 1)
+                      }
                       className="quantity-btn"
                     >
                       <FaPlus />
                     </button>
                   </div>
                   <div className="cart-item-total">
-                    ${(item.price * item.quantity).toFixed(2)}
+                    {item.price * item.quantity}VNĐ
                   </div>
                   <button
                     onClick={() => handleRemoveItem(item.cartItemId)}
@@ -421,10 +468,9 @@ const CustomerCartPage = ({
                     >
                       <div className="promo-card-header">
                         <div className="promo-discount-badge">
-                          {promo.type === 'percentage' 
+                          {promo.type === "percentage"
                             ? `${promo.discountValue}% OFF`
-                            : `$${promo.discountValue.toFixed(0)} OFF`
-                          }
+                            : `$${promo.discountValue.toFixed(0)} OFF`}
                         </div>
                         <div className="promo-code-label">{promo.code}</div>
                       </div>
@@ -489,9 +535,7 @@ const CustomerCartPage = ({
                   setPointsToRedeem(value);
                 }}
               />
-              <span className="points-value">
-                = ${(pointsToRedeem * 0.01).toFixed(2)}
-              </span>
+              <span className="points-value">= {pointsToRedeem * 0.01}VNĐ</span>
             </div>
           </div>
 
@@ -499,23 +543,23 @@ const CustomerCartPage = ({
           <div className="cart-summary-breakdown">
             <div className="breakdown-row">
               <span>Subtotal</span>
-              <span>${subtotal.toFixed(2)}</span>
+              <span>{subtotal}VNĐ</span>
             </div>
             {selectedPromo && (
               <div className="breakdown-row discount">
                 <span>Promo Discount ({selectedPromo.code})</span>
-                <span>-${promoDiscount.toFixed(2)}</span>
+                <span>-{promoDiscount}VNĐ</span>
               </div>
             )}
             {pointsToRedeem > 0 && (
               <div className="breakdown-row discount">
                 <span>Points Discount</span>
-                <span>-${pointsDiscount.toFixed(2)}</span>
+                <span>-{pointsDiscount}VNĐ</span>
               </div>
             )}
             <div className="breakdown-row total">
               <span>Total</span>
-              <span>${total.toFixed(2)}</span>
+              <span>{total}VNĐ</span>
             </div>
           </div>
 
