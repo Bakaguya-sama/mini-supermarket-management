@@ -59,6 +59,8 @@ app.use('/api/damaged-products', require('./routes/damagedProductRoutes'));
 app.use('/api/shelves', require('./routes/shelfRoutes'));
 app.use('/api/product-shelves', require('./routes/productShelfRoutes'));
 app.use('/api/product-stocks', require('./routes/productStockRoutes'));
+app.use('/api/promotions', require('./routes/promotionRoutes'));
+app.use('/api/feedbacks', require('./routes/feedbackRoutes'));
 
 // Future routes
 // app.use('/api/accounts', require('./routes/accountRoutes'));

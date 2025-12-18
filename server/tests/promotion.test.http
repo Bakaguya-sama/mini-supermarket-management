@@ -1,0 +1,65 @@
+### Promotion API Tests
+
+# Get all active promotions
+GET http://localhost:5000/api/promotions
+###
+
+# Get all promotions (including inactive)
+GET http://localhost:5000/api/promotions?status=
+###
+
+# Get applicable promotions for cart subtotal
+GET http://localhost:5000/api/promotions/applicable?subtotal=500000
+###
+
+# Get applicable promotions for small cart
+GET http://localhost:5000/api/promotions/applicable?subtotal=100000
+###
+
+# Get applicable promotions for large cart
+GET http://localhost:5000/api/promotions/applicable?subtotal=2000000
+###
+
+# Get promotion by ID (replace with actual ID from database)
+GET http://localhost:5000/api/promotions/674c8b72c4a3b2d1e5f68901
+###
+
+# Validate promo code - FLASH50
+POST http://localhost:5000/api/promotions/validate
+Content-Type: application/json
+
+{
+  "code": "FLASH50",
+  "subtotal": 500000
+}
+###
+
+# Validate promo code - GOLD15
+POST http://localhost:5000/api/promotions/validate
+Content-Type: application/json
+
+{
+  "code": "GOLD15",
+  "subtotal": 250000
+}
+###
+
+# Validate promo code - below minimum
+POST http://localhost:5000/api/promotions/validate
+Content-Type: application/json
+
+{
+  "code": "FLASH50",
+  "subtotal": 100000
+}
+###
+
+# Validate invalid promo code
+POST http://localhost:5000/api/promotions/validate
+Content-Type: application/json
+
+{
+  "code": "INVALID123",
+  "subtotal": 500000
+}
+###

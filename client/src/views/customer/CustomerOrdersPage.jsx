@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   FaBox,
   FaClock,
@@ -8,69 +8,27 @@ import {
   FaSearch,
 } from "react-icons/fa";
 import ConfirmationMessage from "../../components/Messages/ConfirmationMessage";
+import orderService from "../../services/orderService";
 import "./CustomerOrdersPage.css";
 
-// Mock Orders Data
-const mockOrders = [
-  {
-    id: "ORD-2024-001",
-    date: "2024-01-15",
-    status: "delivered",
-    total: 45.97,
-    trackingNumber: "TRK-123456",
-    deliveryDate: "2024-01-14",
-    items: [
-      { name: "Fresh Organic Milk", quantity: 2, price: 4.99 },
-      { name: "Whole Wheat Bread", quantity: 3, price: 3.49 },
-      { name: "Greek Yogurt", quantity: 4, price: 6.49 },
-    ],
-  },
-  {
-    id: "ORD-2024-002",
-    date: "2024-01-18",
-    status: "shipping",
-    total: 32.47,
-    trackingNumber: "TRK-789012",
-    deliveryDate: "2024-01-22",
-    items: [
-      { name: "Premium Coffee Beans", quantity: 1, price: 12.99 },
-      { name: "Fresh Red Apples", quantity: 2, price: 5.99 },
-      { name: "Orange Juice", quantity: 1, price: 5.49 },
-    ],
-  },
-  {
-    id: "ORD-2024-003",
-    date: "2024-01-20",
-    status: "processing",
-    total: 28.47,
-    trackingNumber: "TRK-345678",
-    deliveryDate: null,
-    items: [
-      { name: "Organic Tomatoes", quantity: 3, price: 3.99 },
-      { name: "Chocolate Chip Cookies", quantity: 2, price: 4.99 },
-      { name: "Greek Yogurt", quantity: 2, price: 6.49 },
-    ],
-  },
-  {
-    id: "ORD-2024-004",
-    date: "2024-01-12",
-    status: "cancelled",
-    total: 18.48,
-    trackingNumber: "TRK-901234",
-    deliveryDate: null,
-    items: [
-      { name: "Whole Wheat Bread", quantity: 2, price: 3.49 },
-      { name: "Orange Juice", quantity: 2, price: 5.49 },
-    ],
-  },
-];
-
 const statusConfig = {
+  pending: {
+    label: "Processing",
+    icon: FaClock,
+    color: "#f59e0b",
+    bgColor: "#fef3c7",
+  },
   processing: {
     label: "Processing",
     icon: FaClock,
     color: "#f59e0b",
     bgColor: "#fef3c7",
+  },
+  confirmed: {
+    label: "Confirmed",
+    icon: FaCheckCircle,
+    color: "#3b82f6",
+    bgColor: "#dbeafe",
   },
   shipping: {
     label: "Shipping",
@@ -92,17 +50,66 @@ const statusConfig = {
   },
 };
 
-const CustomerOrdersPage = () => {
-  const [orders, setOrders] = useState(mockOrders);
+const CustomerOrdersPage = ({ customerId }) => {
+  const [orders, setOrders] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
   const [expandedOrder, setExpandedOrder] = useState(null);
   const [modalOrder, setModalOrder] = useState(null);
   const [confirmCancel, setConfirmCancel] = useState(null);
 
+  /**
+   * Load customer orders from API
+   */
+  useEffect(() => {
+    if (customerId) {
+      loadOrders();
+    }
+  }, [customerId]);
+
+  const loadOrders = async () => {
+    try {
+      setIsLoading(true);
+      console.log(`📦 Loading orders for customer: ${customerId}`);
+      
+      const result = await orderService.getOrdersByCustomer(customerId);
+      
+      if (result.success && result.data) {
+        // Transform backend orders to UI format
+        const formattedOrders = result.data.map(order => ({
+          id: order.order_number || order._id,
+          _id: order._id,
+          date: order.order_date || order.createdAt,
+          status: order.status,
+          total: order.total_amount,
+          trackingNumber: order.tracking_number || 'N/A',
+          deliveryDate: order.delivery_date,
+          items: (order.orderItems || []).map(item => ({
+            name: item.product_id?.name || 'Unknown Product',
+            quantity: item.quantity,
+            price: item.unit_price
+          }))
+        }));
+        
+        setOrders(formattedOrders);
+        console.log(`✅ Loaded ${formattedOrders.length} orders`);
+      } else {
+        console.error('❌ Failed to load orders:', result.message);
+        setOrders([]);
+      }
+    } catch (error) {
+      console.error('❌ Error loading orders:', error);
+      setOrders([]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const filteredOrders = orders
     .filter((order) => {
       const matchesSearch = order.id
+        .toString()
         .toLowerCase()
         .includes(searchTerm.toLowerCase());
       const matchesStatus =
@@ -129,17 +136,44 @@ const CustomerOrdersPage = () => {
     setConfirmCancel(orderId);
   };
 
-  const confirmCancelOrder = () => {
-    if (confirmCancel) {
-      setOrders((prevOrders) =>
-        prevOrders.map((order) =>
-          order.id === confirmCancel ? { ...order, status: "cancelled" } : order
-        )
-      );
-      // If the cancelled order is currently in the modal, close it
-      if (modalOrder && modalOrder.id === confirmCancel) {
-        setModalOrder(null);
+  const confirmCancelOrder = async () => {
+    if (!confirmCancel) return;
+
+    try {
+      console.log(`📦 Cancelling order: ${confirmCancel}`);
+      
+      // Find the order _id from order number
+      const orderToCancel = orders.find(o => o.id === confirmCancel);
+      if (!orderToCancel) {
+        console.error('❌ Order not found');
+        return;
       }
+
+      const result = await orderService.cancelOrder(orderToCancel._id);
+      
+      if (result.success) {
+        console.log('✅ Order cancelled successfully');
+        
+        // Update orders list
+        setOrders((prevOrders) =>
+          prevOrders.map((order) =>
+            order.id === confirmCancel ? { ...order, status: "cancelled" } : order
+          )
+        );
+        
+        // Close modal if the cancelled order is currently open
+        if (modalOrder && modalOrder.id === confirmCancel) {
+          setModalOrder(null);
+        }
+      } else {
+        console.error('❌ Failed to cancel order:', result.message);
+        alert(result.message || 'Failed to cancel order');
+      }
+      
+      setConfirmCancel(null);
+    } catch (error) {
+      console.error('❌ Error cancelling order:', error);
+      alert('Failed to cancel order. Please try again.');
       setConfirmCancel(null);
     }
   };
@@ -155,40 +189,66 @@ const CustomerOrdersPage = () => {
           </div>
         </div>
 
+        {/* Loading State */}
+        {isLoading && (
+          <div className="customer-orders-loading">
+            <div className="loading-spinner"></div>
+            <p>Loading your orders...</p>
+          </div>
+        )}
+
         {/* Filters */}
-        <div className="customer-orders-filters">
-          <div className="orders-search">
-            <FaSearch className="search-icon" />
-            <input
-              type="text"
-              placeholder="Search by order ID..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
-          </div>
-          <div className="orders-status-filter">
-            <button
-              className={filterStatus === "all" ? "active" : ""}
-              onClick={() => setFilterStatus("all")}
-            >
-              All Orders
-            </button>
-            {Object.entries(statusConfig).map(([status, config]) => (
+        {!isLoading && (
+          <div className="customer-orders-filters">
+            <div className="orders-search">
+              <FaSearch className="search-icon" />
+              <input
+                type="text"
+                placeholder="Search by order ID..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            </div>
+            <div className="orders-status-filter">
               <button
-                key={status}
-                className={filterStatus === status ? "active" : ""}
-                onClick={() => setFilterStatus(status)}
+                className={filterStatus === "all" ? "active" : ""}
+                onClick={() => setFilterStatus("all")}
               >
-                {config.label}
+                All Orders
               </button>
-            ))}
+              <button
+                className={filterStatus === "pending" ? "active" : ""}
+                onClick={() => setFilterStatus("pending")}
+              >
+                Processing
+              </button>
+              <button
+                className={filterStatus === "shipping" ? "active" : ""}
+                onClick={() => setFilterStatus("shipping")}
+              >
+                Shipping
+              </button>
+              <button
+                className={filterStatus === "delivered" ? "active" : ""}
+                onClick={() => setFilterStatus("delivered")}
+              >
+                Delivered
+              </button>
+              <button
+                className={filterStatus === "cancelled" ? "active" : ""}
+                onClick={() => setFilterStatus("cancelled")}
+              >
+                Cancelled
+              </button>
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Orders List */}
-        <div className="customer-orders-list">
+        {!isLoading && (
+          <div className="customer-orders-list">
           {filteredOrders.map((order) => {
-            const status = statusConfig[order.status];
+            const status = statusConfig[order.status] || statusConfig.pending;
             const StatusIcon = status.icon;
             const isExpanded = expandedOrder === order.id;
 
@@ -247,7 +307,7 @@ const CustomerOrdersPage = () => {
                     >
                       <FaSearch /> View Details
                     </button>
-                    {order.status === "processing" && (
+                    {(order.status === "pending" || order.status === "processing") && (
                       <button
                         className="cancel-order-btn"
                         onClick={(e) => handleCancelOrder(order.id, e)}
@@ -260,9 +320,10 @@ const CustomerOrdersPage = () => {
               </div>
             );
           })}
-        </div>
+          </div>
+        )}
 
-        {filteredOrders.length === 0 && (
+        {!isLoading && filteredOrders.length === 0 && (
           <div className="customer-orders-empty">
             <FaBox className="empty-icon" />
             <p>No orders found</p>
