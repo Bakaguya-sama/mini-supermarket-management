@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   FaShoppingCart,
@@ -17,34 +17,126 @@ import CustomerMembershipPage from "./CustomerMembershipPage";
 import CustomerFeedbackPage from "./CustomerFeedbackPage";
 import CustomerProductDetailPage from "./CustomerProductDetailPage";
 import Logo from "../../components/ui/Logo";
+import apiClient from "../../services/apiClient";
+import { cartService } from "../../services/cartService";
 import "./CustomerPortal.css";
 
 const CustomerPortal = () => {
   const navigate = useNavigate();
   const [activeView, setActiveView] = useState("shop");
   const [selectedProductId, setSelectedProductId] = useState(null);
+  
+  // Demo customer ID (first customer from seed data - will be replaced with real login later)
+  const [customerId, setCustomerId] = useState(null);
+  const [customerData, setCustomerData] = useState(null);
+  const [cartId, setCartId] = useState(null); // Cart ID for backend operations
+  const [customerName, setCustomerName] = useState("Loading...");
+  const [membershipPoints, setMembershipPoints] = useState(0);
+  
+  // Cart states (for badge count)
   const [cartItems, setCartItems] = useState([]);
-  const [customerName] = useState("John Smith");
-  const [membershipPoints] = useState(1250);
+
+  // Load demo customer ID on mount
+  useEffect(() => {
+    loadDemoCustomer();
+  }, []);
+
+  /**
+   * Load first customer from database as demo customer
+   * (Will be replaced with real authentication later)
+   */
+  const loadDemoCustomer = async () => {
+    try {
+      console.log('👤 Loading demo customer...');
+      const response = await apiClient.get('/customers', { params: { limit: 1 } });
+      
+      if (response.data && response.data.length > 0) {
+        const firstCustomer = response.data[0];
+        setCustomerId(firstCustomer._id);
+        setCustomerData(firstCustomer);
+        
+        // Set customer info
+        setCustomerName(firstCustomer.account_id?.full_name || 'Guest Customer');
+        setMembershipPoints(firstCustomer.points_balance || 0);
+        
+        console.log(`✅ Loaded customer: ${firstCustomer.account_id?.full_name}`);
+        console.log(`💎 Points balance: ${firstCustomer.points_balance || 0}`);
+        
+        // Load cart for this customer
+        await loadCustomerCart(firstCustomer._id);
+      } else {
+        console.error('❌ No customers found in database');
+      }
+    } catch (error) {
+      console.error('❌ Error loading demo customer:', error);
+    }
+  };
+
+  /**
+   * Load cart for customer (auto-creates if not exists)
+   */
+  const loadCustomerCart = async (customerId) => {
+    try {
+      console.log('🛒 Loading cart for customer:', customerId);
+      const result = await cartService.getCartByCustomer(customerId);
+      
+      if (result.success && result.data) {
+        setCartId(result.data._id);
+        console.log('✅ Cart loaded:', result.data._id);
+        
+        // Transform cart items to UI format
+        const uiCartItems = (result.data.cartItems || []).map(item => ({
+          id: item.product_id?._id || item._id,
+          cartItemId: item._id,
+          name: item.product_name || item.product_id?.name,
+          category: item.product_id?.category || 'General',
+          price: item.unit_price,
+          quantity: item.quantity,
+          image: item.product_id?.image_link || "https://placehold.co/100x100/e2e8f0/64748b?text=No+Image",
+          unit: item.unit,
+          sku: item.sku
+        }));
+        
+        setCartItems(uiCartItems);
+      }
+    } catch (error) {
+      console.error('❌ Error loading cart:', error);
+    }
+  };
+
+  /**
+   * Add product to cart (backend API call)
+   */
+  const handleAddToCart = async (product) => {
+    if (!cartId) {
+      console.error('❌ No cart ID available');
+      return;
+    }
+
+    try {
+      console.log('🛒 Adding product to cart:', product);
+      const result = await cartService.addItem(
+        cartId, 
+        product.id, 
+        product.quantity || 1
+      );
+
+      if (result.success) {
+        console.log('✅ Product added to cart');
+        // Reload cart to sync with backend
+        await loadCustomerCart(customerId);
+      } else {
+        console.error('❌ Failed to add product to cart:', result.message);
+      }
+    } catch (error) {
+      console.error('❌ Error adding product to cart:', error);
+    }
+  };
 
   const cartItemCount = cartItems.reduce(
     (total, item) => total + item.quantity,
     0
   );
-
-  const handleAddToCart = (product) => {
-    setCartItems((prev) => {
-      const existing = prev.find((item) => item.id === product.id);
-      if (existing) {
-        return prev.map((item) =>
-          item.id === product.id
-            ? { ...item, quantity: item.quantity + (product.quantity || 1) }
-            : item
-        );
-      }
-      return [...prev, { ...product, quantity: product.quantity || 1 }];
-    });
-  };
 
   const handleUpdateCartItem = (id, quantity) => {
     if (quantity <= 0) {
@@ -72,6 +164,28 @@ const CustomerPortal = () => {
   const handleBackToShop = () => {
     setSelectedProductId(null);
     setActiveView("shop");
+  };
+
+  const handleCheckout = async () => {
+    // Switch to orders view
+    setActiveView("orders");
+    
+    // Reload customer data to get updated points balance
+    if (customerId) {
+      await loadCustomerCart(customerId);
+      
+      // Reload customer info to update points
+      try {
+        const response = await apiClient.get(`/customers/${customerId}`);
+        if (response.data) {
+          setCustomerData(response.data);
+          setMembershipPoints(response.data.points_balance || 0);
+          console.log(`💎 Updated points balance: ${response.data.points_balance || 0}`);
+        }
+      } catch (error) {
+        console.error('❌ Error reloading customer data:', error);
+      }
+    }
   };
 
   const handleLogout = () => {
@@ -161,20 +275,28 @@ const CustomerPortal = () => {
             onViewProduct={handleViewProduct}
           />
         )}
-        {activeView === "cart" && (
+        {activeView === "cart" && customerId && (
           <CustomerCartPage
+            customerId={customerId}
             cartItems={cartItems}
             onUpdateItem={handleUpdateCartItem}
             onRemoveItem={handleRemoveFromCart}
             onClearCart={handleClearCart}
-            onCheckout={() => setActiveView("orders")}
+            onCheckout={handleCheckout}
             membershipPoints={membershipPoints}
+            onCartLoaded={setCartItems}
           />
         )}
-        {activeView === "orders" && <CustomerOrdersPage />}
-        {activeView === "profile" && <CustomerProfilePage />}
-        {activeView === "membership" && (
-          <CustomerMembershipPage membershipPoints={membershipPoints} />
+        {activeView === "orders" && customerId && <CustomerOrdersPage customerId={customerId} />}
+        {activeView === "profile" && customerId && (
+          <CustomerProfilePage customerId={customerId} customerData={customerData} />
+        )}
+        {activeView === "membership" && customerId && (
+          <CustomerMembershipPage 
+            customerId={customerId} 
+            customerData={customerData}
+            membershipPoints={membershipPoints} 
+          />
         )}
         {activeView === "feedback" && <CustomerFeedbackPage />}
       </main>

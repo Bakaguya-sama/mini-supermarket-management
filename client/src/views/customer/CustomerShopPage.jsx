@@ -1,110 +1,98 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { FaSearch, FaShoppingCart, FaFilter } from "react-icons/fa";
 import SuccessMessage from "../../components/Messages/SuccessMessage";
+import ErrorMessage from "../../components/Messages/ErrorMessage";
+import { productService } from "../../services/productService";
 import "./CustomerShopPage.css";
 
-// Mock Products Data
-const mockProducts = [
-  {
-    id: 1,
-    name: "Fresh Organic Milk",
-    category: "Dairy",
-    price: 4.99,
-    originalPrice: 5.99,
-    description: "Farm fresh organic whole milk",
-    image: "https://images.unsplash.com/photo-1550583724-b2692b85b150?w=400",
-    inStock: true,
-  },
-  {
-    id: 2,
-    name: "Whole Wheat Bread",
-    category: "Bakery",
-    price: 3.49,
-    description: "Freshly baked whole wheat bread",
-    image: "https://images.unsplash.com/photo-1509440159596-0249088772ff?w=400",
-    inStock: true,
-  },
-  {
-    id: 3,
-    name: "Premium Coffee Beans",
-    category: "Beverages",
-    price: 12.99,
-    originalPrice: 14.99,
-    description: "Arabica coffee beans - 500g",
-    image: "https://images.unsplash.com/photo-1559056199-641a0ac8b55e?w=400",
-    inStock: true,
-  },
-  {
-    id: 4,
-    name: "Fresh Red Apples",
-    category: "Fruits",
-    price: 5.99,
-    description: "Crispy red apples - 1kg",
-    image: "https://images.unsplash.com/photo-1567306226416-28f0efdc88ce?w=400",
-    inStock: true,
-  },
-  {
-    id: 5,
-    name: "Organic Tomatoes",
-    category: "Vegetables",
-    price: 3.99,
-    description: "Fresh organic tomatoes - 500g",
-    image: "https://images.unsplash.com/photo-1546094096-0df4bcaaa337?w=400",
-    inStock: true,
-  },
-  {
-    id: 6,
-    name: "Greek Yogurt",
-    category: "Dairy",
-    price: 6.49,
-    originalPrice: 7.99,
-    description: "Creamy Greek yogurt - 500g",
-    image: "https://images.unsplash.com/photo-1488477181946-6428a0291777?w=400",
-    inStock: true,
-  },
-  {
-    id: 7,
-    name: "Chocolate Chip Cookies",
-    category: "Snacks",
-    price: 4.99,
-    description: "Delicious homemade cookies",
-    image: "https://images.unsplash.com/photo-1499636136210-6f4ee915583e?w=400",
-    inStock: false,
-  },
-  {
-    id: 8,
-    name: "Orange Juice",
-    category: "Beverages",
-    price: 5.49,
-    description: "Freshly squeezed orange juice - 1L",
-    image: "https://images.unsplash.com/photo-1600271886742-f049cd451bba?w=400",
-    inStock: true,
-  },
-];
-
 const CustomerShopPage = ({ onAddToCart, onViewCart, onViewProduct }) => {
+  // States for UI controls
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [sortBy, setSortBy] = useState("default");
+  
+  // States for API data
+  const [products, setProducts] = useState([]);
+  const [categories, setCategories] = useState(["all"]);
+  const [isLoading, setIsLoading] = useState(true);
+  
+  // States for messages
   const [successMessage, setSuccessMessage] = useState("");
+  const [errorMessage, setErrorMessage] = useState("");
 
-  const categories = ["all", ...new Set(mockProducts.map((p) => p.category))];
+  // Load products from backend on component mount or when filters change
+  useEffect(() => {
+    loadProducts();
+  }, [searchTerm, selectedCategory, sortBy]);
 
-  const filteredProducts = mockProducts
-    .filter((product) => {
-      const matchesSearch = product.name
-        .toLowerCase()
-        .includes(searchTerm.toLowerCase());
-      const matchesCategory =
-        selectedCategory === "all" || product.category === selectedCategory;
-      return matchesSearch && matchesCategory;
-    })
-    .sort((a, b) => {
-      if (sortBy === "price-asc") return a.price - b.price;
-      if (sortBy === "price-desc") return b.price - a.price;
-      if (sortBy === "name") return a.name.localeCompare(b.name);
-      return 0;
-    });
+  /**
+   * Load products from backend API
+   */
+  const loadProducts = async () => {
+    setIsLoading(true);
+    try {
+      // Prepare API parameters
+      const params = {
+        limit: 100, // Load all products for customer shop
+        status: 'active' // Only show active products
+      };
+
+      // Add search filter if present
+      if (searchTerm.trim()) {
+        params.search = searchTerm.trim();
+      }
+
+      // Add category filter if selected (API uses category field)
+      if (selectedCategory && selectedCategory !== "all") {
+        params.category = selectedCategory;
+      }
+
+      // Add sort parameter
+      if (sortBy === "name") {
+        params.sort = "name";
+      } else if (sortBy === "price-asc") {
+        params.sort = "price";
+      } else if (sortBy === "price-desc") {
+        params.sort = "-price";
+      }
+
+      console.log('📦 Loading products with params:', params);
+      const result = await productService.getAll(params);
+
+      if (result.success) {
+        // Transform API data to UI format
+        const transformedProducts = (result.data || []).map(product => ({
+          id: product._id,
+          name: product.name,
+          category: product.category,
+          price: product.price,
+          description: product.description || `${product.name} - ${product.unit}`,
+          image: product.image_link || "https://placehold.co/400x400/e2e8f0/64748b?text=No+Image",
+          inStock: product.current_stock > 0,
+          stockQuantity: product.current_stock,
+          unit: product.unit,
+          supplier: product.supplier_id?.name
+        }));
+
+        setProducts(transformedProducts);
+
+        // Extract unique categories from products
+        const uniqueCategories = ["all", ...new Set(transformedProducts.map(p => p.category))];
+        setCategories(uniqueCategories);
+
+        console.log(`✅ Loaded ${transformedProducts.length} products`);
+      } else {
+        setErrorMessage(result.message || 'Failed to load products');
+        setProducts([]);
+      }
+    } catch (error) {
+      console.error('❌ Error loading products:', error);
+      setErrorMessage('Failed to load products. Please try again.');
+      setProducts([]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const handleAddToCart = (product) => {
     if (!product.inStock) return;
@@ -162,75 +150,88 @@ const CustomerShopPage = ({ onAddToCart, onViewCart, onViewProduct }) => {
           </div>
         </div>
 
-        {/* Products Grid */}
-        <div className="customer-shop-grid">
-          {filteredProducts.map((product) => (
-            <div
-              key={product.id}
-              className="customer-product-card"
-              onClick={() => onViewProduct && onViewProduct(product.id)}
-              style={{ cursor: "pointer" }}
-            >
-              <div className="customer-product-image">
-                <img src={product.image} alt={product.name} />
-                {/* {product.discount && (
-                  <span className="customer-product-discount">
-                    -{product.discount}%
-                  </span>
-                )} */}
-                {!product.inStock && (
-                  <div className="customer-product-out-of-stock">
-                    Out of Stock
-                  </div>
-                )}
-              </div>
-              <div className="customer-product-content">
-                <div className="customer-product-category">
-                  {product.category}
-                </div>
-                <h3 className="customer-product-name">{product.name}</h3>
-                <p className="customer-product-description">
-                  {product.description}
-                </p>
-                <div className="customer-product-footer">
-                  <div className="customer-product-price">
-                    <span className="price-current">${product.price}</span>
-                    {product.originalPrice && (
-                      <span className="price-original">
-                        ${product.originalPrice}
-                      </span>
-                    )}
-                  </div>
-                  <button
-                    className={`customer-product-btn ${
-                      !product.inStock ? "disabled" : ""
-                    }`}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleAddToCart(product);
-                    }}
-                    disabled={!product.inStock}
-                  >
-                    <FaShoppingCart />
-                    Add to Cart
-                  </button>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
+        {/* Loading State */}
+        {isLoading && (
+          <div className="customer-shop-loading">
+            <div className="loading-spinner"></div>
+            <p>Loading products...</p>
+          </div>
+        )}
 
-        {filteredProducts.length === 0 && (
+        {/* Products Grid */}
+        {!isLoading && (
+          <div className="customer-shop-grid">
+            {products.map((product) => (
+              <div
+                key={product.id}
+                className="customer-product-card"
+                onClick={() => onViewProduct && onViewProduct(product.id)}
+                style={{ cursor: "pointer" }}
+              >
+                <div className="customer-product-image">
+                  <img src={product.image} alt={product.name} />
+                  {!product.inStock && (
+                    <div className="customer-product-out-of-stock">
+                      Out of Stock
+                    </div>
+                  )}
+                </div>
+                <div className="customer-product-content">
+                  <div className="customer-product-category">
+                    {product.category}
+                  </div>
+                  <h3 className="customer-product-name">{product.name}</h3>
+                  <p className="customer-product-description">
+                    {product.description}
+                  </p>
+                  <div className="customer-product-footer">
+                    <div className="customer-product-price">
+                      <span className="price-current">${product.price.toFixed(2)}</span>
+                      {product.unit && (
+                        <span className="price-unit">/{product.unit}</span>
+                      )}
+                    </div>
+                    <button
+                      className={`customer-product-btn ${
+                        !product.inStock ? "disabled" : ""
+                      }`}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleAddToCart(product);
+                      }}
+                      disabled={!product.inStock}
+                    >
+                      <FaShoppingCart />
+                      Add to Cart
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Empty State */}
+        {!isLoading && products.length === 0 && (
           <div className="customer-shop-empty">
             <p>No products found matching your criteria.</p>
           </div>
         )}
       </div>
 
+      {/* Success Message */}
       {successMessage && (
         <SuccessMessage
           message={successMessage}
           onClose={() => setSuccessMessage("")}
+        />
+      )}
+
+      {/* Error Message */}
+      {errorMessage && (
+        <ErrorMessage
+          message={errorMessage}
+          onClose={() => setErrorMessage("")}
         />
       )}
     </div>

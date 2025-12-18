@@ -379,11 +379,11 @@ const ProductListView = () => {
               }}>
                 <td>
                   <img
-                    src={product.image_link || "https://via.placeholder.com/80x80?text=No+Image"}
+                    src={product.image_link || "https://placehold.co/80x80/e2e8f0/64748b?text=No+Image"}
                     alt={product.name}
                     className="product-image-cell"
                     onError={(e) => {
-                      e.target.src = "https://via.placeholder.com/80x80?text=No+Image";
+                      e.target.src = "https://placehold.co/80x80/e2e8f0/64748b?text=No+Image";
                     }}
                   />
                 </td>

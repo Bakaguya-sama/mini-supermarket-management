@@ -245,13 +245,15 @@ exports.createOrder = async (req, res) => {
       });
     }
 
-    const customer = await Customer.findById(customer_id);
+    const customer = await Customer.findById(customer_id).populate('account_id');
     if (!customer) {
       return res.status(404).json({
         success: false,
         message: 'Customer not found'
       });
     }
+    
+    console.log(`👤 Customer: ${customer.account_id?.full_name || 'Unknown'} (Points: ${customer.points_balance})`);
 
     // Get cart items
     let cartItems = [];
@@ -283,8 +285,15 @@ exports.createOrder = async (req, res) => {
       totalAmount += item.line_total;
     });
 
-    // Generate order number
+    // Count total orders để tạo tracking number sequential
+    const totalOrders = await Order.countDocuments();
+    const orderSequence = totalOrders + 1;
+    
+    // Generate order number và tracking number
     const orderNumber = `ORD-${Date.now()}`;
+    const trackingNumber = `TRK-${String(orderSequence).padStart(6, '0')}`; // TRK-000001, TRK-000002, ...
+
+    console.log(`📦 Creating order #${orderSequence} with tracking: ${trackingNumber}`);
 
     // ✅ Create order WITH empty orderItems array
     const order = await Order.create({
@@ -292,6 +301,7 @@ exports.createOrder = async (req, res) => {
       customer_id,
       orderItems: [],  // ← IMPORTANT: Initialize empty array
       total_amount: totalAmount,
+      tracking_number: trackingNumber, // ← AUTO GENERATED
       notes,
       status: 'pending'
     });
@@ -327,10 +337,55 @@ exports.createOrder = async (req, res) => {
       console.log(`🛒 Cart checked out`);
     }
 
-    // Update customer total spent
-    customer.total_spent += totalAmount;
+    // Parse notes to extract promotion and points info
+    let pointsRedeemed = 0;
+    let promoDiscount = 0;
+    let pointsDiscount = 0;
+    
+    if (notes) {
+      // Extract points redeemed: "Points Redeemed: 500 points = -$5.00"
+      const pointsMatch = notes.match(/Points Redeemed: (\d+) points = -\$([0-9.]+)/);
+      if (pointsMatch) {
+        pointsRedeemed = parseInt(pointsMatch[1]);
+        pointsDiscount = parseFloat(pointsMatch[2]);
+      }
+      
+      // Extract promo discount: "Discount: 20% = -$6400.00"
+      const promoMatch = notes.match(/Discount: .*? = -\$([0-9.]+)/);
+      if (promoMatch) {
+        promoDiscount = parseFloat(promoMatch[1]);
+      }
+    }
+
+    // Calculate actual amount paid (after all discounts)
+    const actualAmountPaid = totalAmount - promoDiscount - pointsDiscount;
+    
+    console.log(`💰 Order breakdown:`);
+    console.log(`   Subtotal: $${totalAmount.toFixed(2)}`);
+    if (promoDiscount > 0) console.log(`   Promo discount: -$${promoDiscount.toFixed(2)}`);
+    if (pointsDiscount > 0) console.log(`   Points discount: -$${pointsDiscount.toFixed(2)}`);
+    console.log(`   Final paid: $${actualAmountPaid.toFixed(2)}`);
+
+    // Update customer
+    const oldPointsBalance = customer.points_balance;
+    
+    // Step 1: Deduct redeemed points
+    if (pointsRedeemed > 0) {
+      customer.points_balance = Math.max(0, customer.points_balance - pointsRedeemed);
+      console.log(`🎁 Deducted ${pointsRedeemed} points (${oldPointsBalance} → ${customer.points_balance})`);
+    }
+    
+    // Step 2: Award points for purchase (1 point per $1 actually paid)
+    const pointsEarned = Math.floor(actualAmountPaid);
+    customer.points_balance += pointsEarned;
+    console.log(`⭐ Earned ${pointsEarned} points from $${actualAmountPaid.toFixed(2)} purchase`);
+    console.log(`💎 Final points balance: ${oldPointsBalance} - ${pointsRedeemed} + ${pointsEarned} = ${customer.points_balance}`);
+    
+    // Step 3: Update total spent (based on actual amount paid)
+    customer.total_spent += actualAmountPaid;
+    
     await customer.save();
-    console.log(`💰 Updated customer total spent to ${customer.total_spent}`);
+    console.log(`💰 Updated customer total spent to $${customer.total_spent.toFixed(2)}`);
 
     // Fetch complete order with items
     const completeOrder = await Order.findById(order._id)

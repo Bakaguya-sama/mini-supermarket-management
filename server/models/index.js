@@ -275,6 +275,8 @@ const customerFeedbackSchema = new mongoose.Schema({
   subject: { type: String, required: true },
   detail: { type: String },
   customer_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Customer' },
+  rating: { type: Number, min: 1, max: 5 }, // 1-5 star rating
+  sentiment: { type: String, enum: ['positive', 'neutral', 'negative'] }, // User experience
   status: { type: String, default: 'open', enum: ['open', 'in_progress', 'resolved', 'closed'] },
   assigned_to_staff_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Staff' },
   isDelete: { type: Boolean, default: false }
