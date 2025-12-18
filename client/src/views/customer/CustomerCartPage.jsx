@@ -11,6 +11,7 @@ import SuccessMessage from "../../components/Messages/SuccessMessage";
 import ErrorMessage from "../../components/Messages/ErrorMessage";
 import { cartService } from "../../services/cartService";
 import promotionService from "../../services/promotionService";
+import orderService from "../../services/orderService";
 import "./CustomerCartPage.css";
 
 const CustomerCartPage = ({
@@ -43,7 +44,7 @@ const CustomerCartPage = ({
     }
   }, [customerId]);
 
-  // Load promotions when cart subtotal changes
+  // Load promotions when cart loads or items change
   useEffect(() => {
     if (cartItems.length > 0) {
       loadApplicablePromotions();
@@ -260,16 +261,64 @@ const CustomerCartPage = ({
     }
   };
 
-  const handleCheckout = () => {
+  const handleCheckout = async () => {
     if (cartItems.length === 0) {
       setErrorMessage("Your cart is empty!");
       return;
     }
-    setSuccessMessage(`Order placed! Total: $${total.toFixed(2)}`);
-    handleClearAllItems(); // Clear cart in backend
-    setSelectedPromo(null);
-    setPointsToRedeem(0);
-    onCheckout();
+
+    try {
+      setIsLoading(true);
+      console.log('🛒 Starting checkout process...');
+
+      // Prepare order notes with promotion and points info
+      const orderNotes = [];
+      if (selectedPromo) {
+        orderNotes.push(`Promo: ${selectedPromo.code} - ${selectedPromo.description}`);
+        orderNotes.push(`Discount: ${selectedPromo.type === 'percentage' ? `${selectedPromo.discountValue}%` : `$${selectedPromo.discountValue}`} = -$${promoDiscount.toFixed(2)}`);
+      }
+      if (pointsToRedeem > 0) {
+        orderNotes.push(`Points Redeemed: ${pointsToRedeem} points = -$${pointsDiscount.toFixed(2)}`);
+      }
+
+      // Create order from cart
+      const result = await orderService.createOrder({
+        customer_id: customerId,
+        cart_id: cartId,
+        notes: orderNotes.length > 0 ? orderNotes.join(' | ') : 'No discounts applied'
+      });
+
+      if (result.success) {
+        setSuccessMessage(`Order placed successfully! Total: $${total.toFixed(2)}`);
+        console.log('✅ Order created:', result.data);
+        console.log(`💰 Original: $${subtotal.toFixed(2)} → Final: $${total.toFixed(2)} (Saved: $${(subtotal - total).toFixed(2)})`);
+        
+        // TODO: Deduct points from customer balance (will be handled by backend later)
+        if (pointsToRedeem > 0) {
+          console.log(`🎁 ${pointsToRedeem} points redeemed (to be deducted from customer)`);
+        }
+        
+        // Clear cart UI
+        setSelectedPromo(null);
+        setPointsToRedeem(0);
+        
+        // Reload cart (should be empty after checkout)
+        await loadCart();
+        
+        // Call parent callback
+        if (onCheckout) {
+          onCheckout(result.data);
+        }
+      } else {
+        setErrorMessage(result.message || 'Failed to create order');
+        console.error('❌ Checkout failed:', result.message);
+      }
+    } catch (error) {
+      console.error('❌ Error during checkout:', error);
+      setErrorMessage('Failed to complete checkout. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   // Show loading state

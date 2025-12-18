@@ -28,9 +28,10 @@ const CustomerPortal = () => {
   
   // Demo customer ID (first customer from seed data - will be replaced with real login later)
   const [customerId, setCustomerId] = useState(null);
+  const [customerData, setCustomerData] = useState(null);
   const [cartId, setCartId] = useState(null); // Cart ID for backend operations
-  const [customerName] = useState("John Smith");
-  const [membershipPoints] = useState(1250);
+  const [customerName, setCustomerName] = useState("Loading...");
+  const [membershipPoints, setMembershipPoints] = useState(0);
   
   // Cart states (for badge count)
   const [cartItems, setCartItems] = useState([]);
@@ -52,6 +53,14 @@ const CustomerPortal = () => {
       if (response.data && response.data.length > 0) {
         const firstCustomer = response.data[0];
         setCustomerId(firstCustomer._id);
+        setCustomerData(firstCustomer);
+        
+        // Set customer info
+        setCustomerName(firstCustomer.account_id?.full_name || 'Guest Customer');
+        setMembershipPoints(firstCustomer.points_balance || 0);
+        
+        console.log(`✅ Loaded customer: ${firstCustomer.account_id?.full_name}`);
+        console.log(`💎 Points balance: ${firstCustomer.points_balance || 0}`);
         
         // Load cart for this customer
         await loadCustomerCart(firstCustomer._id);
@@ -157,6 +166,28 @@ const CustomerPortal = () => {
     setActiveView("shop");
   };
 
+  const handleCheckout = async () => {
+    // Switch to orders view
+    setActiveView("orders");
+    
+    // Reload customer data to get updated points balance
+    if (customerId) {
+      await loadCustomerCart(customerId);
+      
+      // Reload customer info to update points
+      try {
+        const response = await apiClient.get(`/customers/${customerId}`);
+        if (response.data) {
+          setCustomerData(response.data);
+          setMembershipPoints(response.data.points_balance || 0);
+          console.log(`💎 Updated points balance: ${response.data.points_balance || 0}`);
+        }
+      } catch (error) {
+        console.error('❌ Error reloading customer data:', error);
+      }
+    }
+  };
+
   const handleLogout = () => {
     // Clear all user data from localStorage
     localStorage.removeItem("userRole");
@@ -251,15 +282,21 @@ const CustomerPortal = () => {
             onUpdateItem={handleUpdateCartItem}
             onRemoveItem={handleRemoveFromCart}
             onClearCart={handleClearCart}
-            onCheckout={() => setActiveView("orders")}
+            onCheckout={handleCheckout}
             membershipPoints={membershipPoints}
             onCartLoaded={setCartItems}
           />
         )}
-        {activeView === "orders" && <CustomerOrdersPage />}
-        {activeView === "profile" && <CustomerProfilePage />}
-        {activeView === "membership" && (
-          <CustomerMembershipPage membershipPoints={membershipPoints} />
+        {activeView === "orders" && customerId && <CustomerOrdersPage customerId={customerId} />}
+        {activeView === "profile" && customerId && (
+          <CustomerProfilePage customerId={customerId} customerData={customerData} />
+        )}
+        {activeView === "membership" && customerId && (
+          <CustomerMembershipPage 
+            customerId={customerId} 
+            customerData={customerData}
+            membershipPoints={membershipPoints} 
+          />
         )}
         {activeView === "feedback" && <CustomerFeedbackPage />}
       </main>

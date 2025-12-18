@@ -1,11 +1,16 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { FaStar, FaPaperPlane, FaSmile, FaMeh, FaFrown } from "react-icons/fa";
 import SuccessMessage from "../../components/Messages/SuccessMessage";
 import ErrorMessage from "../../components/Messages/ErrorMessage";
+import feedbackService from "../../services/feedbackService";
+import { customerService } from "../../services/customerService";
 import "./CustomerFeedbackPage.css";
 
 const CustomerFeedbackPage = () => {
-  const [feedbackType, setFeedbackType] = useState("general");
+  // Demo customer ID (since login is not implemented yet)
+  const DEMO_CUSTOMER_ID = "693eb4f8426223a311761459"; // Võ Thị Hoa - Gold Member
+
+  const [feedbackType, setFeedbackType] = useState("complaint");
   const [rating, setRating] = useState(0);
   const [sentiment, setSentiment] = useState("");
   const [formData, setFormData] = useState({
@@ -14,16 +19,75 @@ const CustomerFeedbackPage = () => {
     subject: "",
     message: "",
   });
+  const [customerData, setCustomerData] = useState(null);
+  const [pastFeedbacks, setPastFeedbacks] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
 
+  // Load customer data and past feedbacks on mount
+  useEffect(() => {
+    loadCustomerData();
+    loadPastFeedbacks();
+  }, []);
+
+  const loadCustomerData = async () => {
+    try {
+      const result = await customerService.getById(DEMO_CUSTOMER_ID);
+      if (result.success && result.data) {
+        setCustomerData(result.data);
+        // Pre-fill form with customer data
+        setFormData({
+          name: result.data.account_id?.full_name || "",
+          email: result.data.account_id?.email || "",
+          subject: "",
+          message: "",
+        });
+        console.log('✅ Customer data loaded:', result.data);
+      } else {
+        console.warn('⚠️ No customer data found');
+      }
+    } catch (error) {
+      console.error('❌ Error loading customer:', error);
+    }
+  };
+
+  const loadPastFeedbacks = async () => {
+    try {
+      setLoading(true);
+      const result = await feedbackService.getCustomerFeedbacks(DEMO_CUSTOMER_ID);
+      if (result.success && result.data) {
+        setPastFeedbacks(result.data);
+        console.log(`✅ Loaded ${result.data.length} past feedbacks`);
+      }
+      setLoading(false);
+    } catch (error) {
+      console.error('❌ Error loading past feedbacks:', error);
+      setLoading(false);
+    }
+  };
+
   const feedbackTypes = [
-    { value: "general", label: "General Feedback" },
-    { value: "product", label: "Product Quality" },
-    { value: "service", label: "Customer Service" },
-    { value: "delivery", label: "Delivery Experience" },
-    { value: "website", label: "Website/App" },
+    { value: "complaint", label: "Complaint", uiLabel: "Complaint" },
+    { value: "suggestion", label: "Suggestion", uiLabel: "Suggestion" },
+    { value: "praise", label: "Praise", uiLabel: "Praise" },
   ];
+
+  // Map UI feedback types to backend category
+  const getFeedbackCategory = (type) => {
+    const mapping = {
+      "general": "suggestion",
+      "product": "complaint",
+      "service": "praise",
+      "delivery": "complaint",
+      "website": "suggestion",
+      "complaint": "complaint",
+      "suggestion": "suggestion",
+      "praise": "praise"
+    };
+    return mapping[type] || "suggestion";
+  };
 
   const sentiments = [
     { value: "positive", label: "Great", icon: FaSmile, color: "#22c55e" },
@@ -35,8 +99,10 @@ const CustomerFeedbackPage = () => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    // Validation
     if (!sentiment) {
       setErrorMessage("Please select your experience rating");
       return;
@@ -45,12 +111,67 @@ const CustomerFeedbackPage = () => {
       setErrorMessage("Please provide a star rating");
       return;
     }
-    setSuccessMessage("Thank you for your feedback! We appreciate your input.");
-    // Reset form
-    setFormData({ name: "", email: "", subject: "", message: "" });
-    setRating(0);
-    setSentiment("");
-    setFeedbackType("general");
+    if (!formData.subject.trim()) {
+      setErrorMessage("Please provide a subject");
+      return;
+    }
+    if (!formData.message.trim()) {
+      setErrorMessage("Please share your feedback details");
+      return;
+    }
+
+    try {
+      setSubmitting(true);
+      setErrorMessage("");
+
+      // Prepare feedback data for API
+      const feedbackData = {
+        category: getFeedbackCategory(feedbackType),
+        subject: formData.subject.trim(),
+        detail: formData.message.trim(),
+        customer_id: DEMO_CUSTOMER_ID,
+        rating: rating,
+        sentiment: sentiment
+      };
+
+      console.log('📤 Submitting feedback:', feedbackData);
+
+      // Submit feedback via API
+      const result = await feedbackService.create(feedbackData);
+
+      if (result.success) {
+        // Show success message with bonus points info
+        const bonusMsg = result.bonusPoints > 0 
+          ? ` You've earned ${result.bonusPoints} bonus points!` 
+          : '';
+        setSuccessMessage(`Thank you for your feedback! We appreciate your input.${bonusMsg}`);
+        
+        // Reset form
+        setFormData({ 
+          ...formData, 
+          subject: "", 
+          message: "" 
+        });
+        setRating(0);
+        setSentiment("");
+        setFeedbackType("complaint");
+
+        // Reload past feedbacks to show the new one
+        setTimeout(() => {
+          loadPastFeedbacks();
+        }, 500);
+
+        console.log('✅ Feedback submitted successfully:', result);
+      } else {
+        setErrorMessage(result.message || 'Failed to submit feedback. Please try again.');
+        console.error('❌ Feedback submission failed:', result.message);
+      }
+    } catch (error) {
+      setErrorMessage('An error occurred while submitting feedback. Please try again.');
+      console.error('❌ Error submitting feedback:', error);
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -194,12 +315,58 @@ const CustomerFeedbackPage = () => {
             </div>
 
             {/* Submit Button */}
-            <button type="submit" className="submit-feedback-btn">
+            <button 
+              type="submit" 
+              className="submit-feedback-btn"
+              disabled={submitting}
+            >
               <FaPaperPlane />
-              Submit Feedback
+              {submitting ? 'Submitting...' : 'Submit Feedback'}
             </button>
           </form>
         </div>
+
+        {/* Past Feedbacks Section */}
+        {pastFeedbacks.length > 0 && (
+          <div className="past-feedbacks-section">
+            <h3>Your Previous Feedback</h3>
+            <div className="feedbacks-list">
+              {pastFeedbacks.map((feedback) => (
+                <div key={feedback._id} className="feedback-card">
+                  <div className="feedback-card-header">
+                    <span className={`feedback-category ${feedback.category}`}>
+                      {feedback.category === 'complaint' && '⚠️ Complaint'}
+                      {feedback.category === 'suggestion' && '💡 Suggestion'}
+                      {feedback.category === 'praise' && '⭐ Praise'}
+                    </span>
+                    <span className={`feedback-status ${feedback.status}`}>
+                      {feedback.status === 'open' && '🔵 Open'}
+                      {feedback.status === 'in_progress' && '🟡 In Progress'}
+                      {feedback.status === 'resolved' && '✅ Resolved'}
+                      {feedback.status === 'closed' && '⚫ Closed'}
+                    </span>
+                  </div>
+                  <h4>{feedback.subject}</h4>
+                  <p>{feedback.detail}</p>
+                  <div className="feedback-card-footer">
+                    <span className="feedback-date">
+                      {new Date(feedback.createdAt).toLocaleDateString('en-US', {
+                        year: 'numeric',
+                        month: 'short',
+                        day: 'numeric'
+                      })}
+                    </span>
+                    {feedback.assigned_to_staff_id && (
+                      <span className="feedback-assigned">
+                        📋 Assigned to {feedback.assigned_to_staff_id.account_id?.full_name || 'Staff'}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Additional Info */}
         <div className="feedback-info">

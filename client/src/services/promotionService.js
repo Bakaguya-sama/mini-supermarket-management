@@ -15,8 +15,8 @@ const promotionService = {
       });
       return {
         success: true,
-        data: response.data.data || [],
-        total: response.data.total || 0
+        data: response.data || [],
+        total: response.total || 0
       };
     } catch (error) {
       console.error('❌ Error getting promotions:', error);
@@ -33,13 +33,17 @@ const promotionService = {
    */
   getApplicablePromotions: async (subtotal) => {
     try {
+      console.log(`🎁 Fetching promotions for subtotal: $${subtotal}`);
       const response = await apiClient.get('/promotions/applicable', {
         params: { subtotal }
       });
+      
+      console.log('📦 Promotions response:', response);
+      
       return {
         success: true,
-        data: response.data.data || [],
-        total: response.data.total || 0
+        data: response.data || [],
+        total: response.total || 0
       };
     } catch (error) {
       console.error('❌ Error getting applicable promotions:', error);

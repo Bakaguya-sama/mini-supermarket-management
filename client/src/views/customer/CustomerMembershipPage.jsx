@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import {
   FaStar,
   FaGift,
@@ -8,9 +8,19 @@ import {
   FaCalendar,
   FaTag,
 } from "react-icons/fa";
+import { customerService } from "../../services/customerService";
+import promotionService from "../../services/promotionService";
 import "./CustomerMembershipPage.css";
 
-const CustomerMembershipPage = ({ membershipPoints = 1250 }) => {
+const CustomerMembershipPage = ({ customerId, customerData: initialCustomerData, membershipPoints: initialPoints = 0 }) => {
+  // State management
+  const [customerData, setCustomerData] = useState(initialCustomerData || null);
+  const [membershipPoints, setMembershipPoints] = useState(initialPoints);
+  const [activePromotions, setActivePromotions] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  // Membership tiers configuration (hardcoded UI logic)
   const membershipTiers = [
     { name: "Regular", min: 0, max: 499, color: "#9ca3af", icon: FaStar },
     { name: "Bronze", min: 500, max: 999, color: "#cd7f32", icon: FaTrophy },
@@ -25,6 +35,7 @@ const CustomerMembershipPage = ({ membershipPoints = 1250 }) => {
     },
   ];
 
+  // Calculate current tier based on points
   const currentTier = membershipTiers.find(
     (tier) => membershipPoints >= tier.min && membershipPoints <= tier.max
   );
@@ -32,47 +43,7 @@ const CustomerMembershipPage = ({ membershipPoints = 1250 }) => {
   const nextTier = membershipTiers.find((tier) => tier.min > membershipPoints);
   const pointsToNextTier = nextTier ? nextTier.min - membershipPoints : 0;
 
-  const promotions = [
-    {
-      id: 1,
-      title: "Weekend Special",
-      description: "20% off on all fresh produce",
-      discount: "20% OFF",
-      category: "Fresh Produce",
-      validUntil: "Nov 10, 2025",
-    },
-    {
-      id: 2,
-      title: "Weekend Special",
-      description: "20% off on all fresh produce",
-      discount: "20% OFF",
-      category: "Fresh Produce",
-      validUntil: "Nov 10, 2025",
-    },
-    {
-      id: 3,
-      title: "Weekend Special",
-      description: "20% off on all fresh produce",
-      discount: "20% OFF",
-      category: "Fresh Produce",
-      validUntil: "Nov 10, 2025",
-    },
-  ];
-
-  const recentActivities = [
-    {
-      date: "Nov 03, 2025",
-      description: "Purchase reward",
-      points: +105,
-    },
-    { date: "Nov 03, 2025", description: "Order discount", points: -200 },
-    {
-      date: "Oct 29, 2025",
-      description: "Birthday Bonus",
-      points: +105,
-    },
-  ];
-
+  // How to earn points (hardcoded UI content)
   const earnPoints = [
     {
       id: 1,
@@ -91,12 +62,142 @@ const CustomerMembershipPage = ({ membershipPoints = 1250 }) => {
     },
   ];
 
+  // Recent activities (TODO: will be integrated with order history API later)
+  const recentActivities = [
+    {
+      date: "Nov 03, 2025",
+      description: "Purchase reward",
+      points: +105,
+    },
+    { date: "Nov 03, 2025", description: "Order discount", points: -200 },
+    {
+      date: "Oct 29, 2025",
+      description: "Birthday Bonus",
+      points: +105,
+    },
+  ];
+
+  /**
+   * Load customer data from backend
+   */
+  useEffect(() => {
+    const loadCustomerData = async () => {
+      if (!customerId) {
+        console.error('❌ No customerId provided');
+        setError('Customer ID is required');
+        setLoading(false);
+        return;
+      }
+
+      try {
+        setLoading(true);
+        console.log('👤 Loading customer data for membership page:', customerId);
+
+        // Load customer details
+        const customerResult = await customerService.getById(customerId);
+
+        if (customerResult.success && customerResult.data) {
+          const customer = customerResult.data;
+          setCustomerData(customer);
+          setMembershipPoints(customer.points_balance || 0);
+          console.log('✅ Customer data loaded:', customer);
+          console.log('💎 Points balance:', customer.points_balance);
+        } else {
+          console.error('❌ Failed to load customer:', customerResult.message);
+          setError(customerResult.message || 'Failed to load customer data');
+        }
+
+        // Load active promotions
+        const promotionsResult = await promotionService.getAllPromotions('active');
+
+        if (promotionsResult.success && promotionsResult.data) {
+          // Transform backend promotions to UI format
+          const formattedPromotions = promotionsResult.data.map(promo => ({
+            id: promo._id,
+            title: promo.name,
+            description: promo.description,
+            discount: promo.promotion_type === 'percentage' 
+              ? `${promo.discount_value}% OFF` 
+              : `$${promo.discount_value} OFF`,
+            category: promo.applicable_to_category || 'All Products',
+            validUntil: new Date(promo.end_date).toLocaleDateString('en-US', { 
+              month: 'short', 
+              day: 'numeric', 
+              year: 'numeric' 
+            }),
+            code: promo.promo_code,
+            type: promo.promotion_type,
+            value: promo.discount_value,
+            minPurchase: promo.minimum_purchase_amount
+          }));
+
+          setActivePromotions(formattedPromotions);
+          console.log(`✅ Loaded ${formattedPromotions.length} active promotions`);
+        } else {
+          console.warn('⚠️ No active promotions found');
+          setActivePromotions([]);
+        }
+
+        setLoading(false);
+      } catch (err) {
+        console.error('❌ Error loading membership data:', err);
+        setError('Failed to load membership data');
+        setLoading(false);
+      }
+    };
+
+    loadCustomerData();
+  }, [customerId]);
+
+  /**
+   * Format member since date
+   */
+  const getMemberSinceDate = () => {
+    if (!customerData || !customerData.registered_at) {
+      return 'Member since Jan 2024'; // Fallback
+    }
+
+    const date = new Date(customerData.registered_at);
+    return `Member since ${date.toLocaleDateString('en-US', { 
+      month: 'short', 
+      year: 'numeric' 
+    })}`;
+  };
+
   const TierIcon = currentTier?.icon || FaStar;
   const progressPercentage = nextTier
     ? ((membershipPoints - currentTier.min) /
         (nextTier.min - currentTier.min)) *
       100
     : 100;
+
+  // Loading state
+  if (loading) {
+    return (
+      <div className="customer-membership">
+        <div className="customer-membership-container">
+          <div className="membership-page-header">
+            <h2>Membership & Promotions</h2>
+            <p>Loading your membership data...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Error state
+  if (error) {
+    return (
+      <div className="customer-membership">
+        <div className="customer-membership-container">
+          <div className="membership-page-header">
+            <h2>Membership & Promotions</h2>
+            <p style={{ color: '#ef4444' }}>Error: {error}</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="customer-membership">
@@ -128,7 +229,7 @@ const CustomerMembershipPage = ({ membershipPoints = 1250 }) => {
                   </div>
                   <h3>{currentTier?.name} Member</h3>
                   <div className="membership-tier-badge">
-                    <FaCrown /> Member since Jan 2024
+                    <FaCrown /> {getMemberSinceDate()}
                   </div>
                 </div>
 
@@ -158,23 +259,29 @@ const CustomerMembershipPage = ({ membershipPoints = 1250 }) => {
                 <FaTag /> Active Promotions
               </div>
               <div className="promotions-list">
-                {promotions.map((promo) => (
-                  <div key={promo.id} className="promotion-item">
-                    <div className="promotion-discount">{promo.discount}</div>
-                    <div className="promotion-details">
-                      <h4>{promo.title}</h4>
-                      <p>{promo.description}</p>
-                      <div className="promotion-meta">
-                        <span className="promotion-category">
-                          {promo.category}
-                        </span>
-                        <span className="promotion-validity">
-                          <FaCalendar /> Valid until {promo.validUntil}
-                        </span>
+                {activePromotions.length > 0 ? (
+                  activePromotions.map((promo) => (
+                    <div key={promo.id} className="promotion-item">
+                      <div className="promotion-discount">{promo.discount}</div>
+                      <div className="promotion-details">
+                        <h4>{promo.title}</h4>
+                        <p>{promo.description}</p>
+                        <div className="promotion-meta">
+                          <span className="promotion-category">
+                            {promo.category}
+                          </span>
+                          <span className="promotion-validity">
+                            <FaCalendar /> Valid until {promo.validUntil}
+                          </span>
+                        </div>
                       </div>
                     </div>
+                  ))
+                ) : (
+                  <div className="empty-promotions">
+                    <p>No active promotions at the moment</p>
                   </div>
-                ))}
+                )}
               </div>
             </div>
           </div>
