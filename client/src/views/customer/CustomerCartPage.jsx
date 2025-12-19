@@ -535,7 +535,7 @@ const CustomerCartPage = ({
                   setPointsToRedeem(value);
                 }}
               />
-              <span className="points-value">= {pointsToRedeem * 0.01}VNĐ</span>
+              <span className="points-value">= {pointsToRedeem * 1000}VNĐ</span>
             </div>
           </div>
 
