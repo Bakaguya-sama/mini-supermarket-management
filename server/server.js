@@ -29,6 +29,7 @@ app.get('/', (req, res) => {
     status: 'running',
     endpoints: {
       health: '/api/health',
+      auth: '/api/auth',
       staff: '/api/staff',
       products: '/api/products',
       suppliers: '/api/suppliers',
@@ -47,6 +48,10 @@ app.get('/api/health', (req, res) => {
 });
 
 // API Routes
+// Authentication routes (Public)
+app.use('/api/auth', require('./routes/authRoutes'));
+
+// Other routes
 app.use('/api/staff', require('./routes/staffRoutes'));
 app.use('/api/products', require('./routes/productRoutes'));
 app.use('/api/suppliers', require('./routes/supplierRoutes'));
@@ -61,9 +66,6 @@ app.use('/api/product-shelves', require('./routes/productShelfRoutes'));
 app.use('/api/product-stocks', require('./routes/productStockRoutes'));
 app.use('/api/promotions', require('./routes/promotionRoutes'));
 app.use('/api/feedbacks', require('./routes/feedbackRoutes'));
-
-// Future routes
-// app.use('/api/accounts', require('./routes/accountRoutes'));
 
 // Error handling middleware
 app.use((err, req, res, next) => {
@@ -94,6 +96,9 @@ app.listen(PORT, () => {
 ║   📊 MongoDB: Connected               ║
 ║                                       ║
 ║   📍 Available Routes:                ║
+║   • POST /api/auth/login              ║
+║   • POST /api/auth/register/customer  ║
+║   • POST /api/auth/register/staff     ║
 ║   • GET  /api/staff                   ║
 ║   • GET  /api/products                ║
 ║   • GET  /api/suppliers               ║

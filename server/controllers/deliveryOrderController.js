@@ -5,14 +5,13 @@ const mongoose = require('mongoose');
 /**
  * @desc    Get all delivery orders with filters
  * @route   GET /api/delivery-orders
- * @access  Public
+ * @access  Protected (Staff/Admin)
  */
 exports.getAllDeliveryOrders = async (req, res) => {
   try {
     const {
       page = 1,
       limit = 10,
-      staff_id,
       status,
       search,
       startDate,
@@ -22,7 +21,16 @@ exports.getAllDeliveryOrders = async (req, res) => {
 
     // Build query
     const query = {};
-    if (staff_id) query.staff_id = staff_id;
+    
+    // IMPORTANT: Nếu user là staff (delivery), CHỈ cho xem orders của họ
+    if (req.user.role === 'staff' && req.user.staffId) {
+      query.staff_id = req.user.staffId;
+    }
+    // Admin có thể xem tất cả, hoặc filter theo staff_id nếu có trong query
+    else if (req.user.role === 'admin' && req.query.staff_id) {
+      query.staff_id = req.query.staff_id;
+    }
+    
     if (status) query.status = status;
     if (search) {
       query.$or = [
