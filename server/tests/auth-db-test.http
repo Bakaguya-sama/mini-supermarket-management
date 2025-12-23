@@ -1,0 +1,59 @@
+###############################################
+# TEST ĐĂNG NHẬP VỚI ACCOUNTS TỪ DATABASE
+###############################################
+
+@baseUrl = http://localhost:5000/api
+
+### 1. Test Login với Admin account từ DB
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "username": "admin",
+  "password": "password123"
+}
+
+### 2. Test Login với Customer 1
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "username": "customer1",
+  "password": "password123"
+}
+
+### 3. Test Login với Customer 2
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "username": "customer2",
+  "password": "password123"
+}
+
+### 4. Test Login với Staff 1
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "username": "staff1",
+  "password": "password123"
+}
+
+### 5. Test Login với Staff 2
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "username": "staff2",
+  "password": "password123"
+}
+
+### 6. Test Demo Admin (sẽ không dùng DB)
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "username": "admin",
+  "password": "admin123"
+}

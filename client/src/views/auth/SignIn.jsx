@@ -5,89 +5,8 @@ import Input from "../../components/ui/Input";
 import Button from "../../components/ui/Button";
 import Checkbox from "../../components/ui/Checkbox";
 import ErrorMessage from "../../components/Messages/ErrorMessage";
+import apiClient from "../../services/apiClient";
 import "./SignIn.css";
-
-// Sample user accounts for different roles
-const SAMPLE_ACCOUNTS = {
-  // Manager accounts
-  admin: {
-    password: "admin123",
-    role: "manager",
-    name: "Admin Manager",
-    type: "staff",
-  },
-  manager: {
-    password: "manager123",
-    role: "manager",
-    name: "Store Manager",
-    type: "staff",
-  },
-  // Delivery staff accounts
-  delivery: {
-    password: "delivery123",
-    role: "delivery_staff",
-    name: "John Delivery",
-    type: "staff",
-  },
-  "john.delivery": {
-    password: "delivery123",
-    role: "delivery_staff",
-    name: "John Smith",
-    type: "staff",
-  },
-  // Merchandise supervisor accounts
-  merchandise: {
-    password: "merchandise123",
-    role: "merchandise_supervisor",
-    name: "Sarah Merchandise",
-    type: "staff",
-  },
-  "sarah.merch": {
-    password: "merch123",
-    role: "merchandise_supervisor",
-    name: "Sarah Wilson",
-    type: "staff",
-  },
-  // Warehouse staff accounts
-  warehouse: {
-    password: "warehouse123",
-    role: "warehouse_staff",
-    name: "Mike Warehouse",
-    type: "staff",
-  },
-  "mike.warehouse": {
-    password: "warehouse123",
-    role: "warehouse_staff",
-    name: "Mike Johnson",
-    type: "staff",
-  },
-  // Cashier accounts
-  cashier: {
-    password: "cashier123",
-    role: "cashier",
-    name: "Emma Cashier",
-    type: "staff",
-  },
-  "emma.cash": {
-    password: "cashier123",
-    role: "cashier",
-    name: "Emma Davis",
-    type: "staff",
-  },
-  // Customer accounts
-  customer: {
-    password: "customer123",
-    role: "customer",
-    name: "John Smith",
-    type: "customer",
-  },
-  customer1: {
-    password: "customer123",
-    role: "customer",
-    name: "Regular Customer",
-    type: "customer",
-  },
-};
 
 const SignIn = () => {
   // Load remembered credentials from localStorage
@@ -127,7 +46,7 @@ const SignIn = () => {
     }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     console.log("Sign in attempt:", formData);
     console.log("User type:", activeTab);
@@ -138,58 +57,126 @@ const SignIn = () => {
       return;
     }
 
-    // Check against sample accounts
-    const account = SAMPLE_ACCOUNTS[formData.username.toLowerCase()];
+    try {
+      // Call backend API
+      const response = await apiClient.post("/auth/login", {
+        username: formData.username,
+        password: formData.password
+      });
 
-    if (!account) {
-      setErrorMessage(
-        "Username not found. Please check your username and try again."
-      );
-      return;
-    }
+      console.log("Full response:", response);
+      console.log("Success flag:", response.success);
 
-    if (account.password !== formData.password) {
-      setErrorMessage("Incorrect password. Please try again.");
-      return;
-    }
+      // apiClient interceptor already unwraps response.data, so response = response.data
+      if (response.success) {
+        const { token, user } = response.data;
+        
+        console.log("Login successful:", user);
+        console.log("User role:", user.role, "Active tab:", activeTab);
 
-    // Check if user type matches account type
-    if (account.type !== activeTab) {
-      setErrorMessage(
-        `This account is for ${account.type}, please select the correct tab`
-      );
-      return;
-    }
+        // Check if user type matches selected tab
+        if (user.role === 'customer' && activeTab !== 'customer') {
+          setErrorMessage("This is a customer account. Please select the Customer tab.");
+          return;
+        }
+        if ((user.role === 'staff' || user.role === 'admin') && activeTab !== 'staff') {
+          setErrorMessage("This is a staff/admin account. Please select the Staff tab.");
+          return;
+        }
 
-    // Store user data in localStorage for demo purposes
-    localStorage.setItem("userRole", account.role);
-    localStorage.setItem("userName", account.name);
-    localStorage.setItem("userUsername", formData.username);
-    localStorage.setItem("isLoggedIn", "true");
+        console.log("Role validation passed, storing data...");
 
-    // Handle remember me
-    if (formData.rememberMe) {
-      localStorage.setItem("rememberedUsername", formData.username);
-      localStorage.setItem("rememberedPassword", formData.password);
-      localStorage.setItem("rememberedTab", activeTab);
-    } else {
-      localStorage.removeItem("rememberedUsername");
-      localStorage.removeItem("rememberedPassword");
-      localStorage.removeItem("rememberedTab");
-    }
+        // Store token and user data
+        localStorage.setItem("token", token);
+        localStorage.setItem("userRole", user.role);
+        localStorage.setItem("userName", user.full_name || user.username);
+        localStorage.setItem("userUsername", user.username);
+        localStorage.setItem("userId", user.id);
+        localStorage.setItem("userEmail", user.email);
+        localStorage.setItem("isLoggedIn", "true");
 
-    console.log("Login successful:", {
-      username: formData.username,
-      role: account.role,
-      name: account.name,
-      type: account.type,
-    });
+        // Store additional data based on role
+        if (user.role === 'customer') {
+          localStorage.setItem("customerId", user.customer_id);
+          localStorage.setItem("membershipType", user.membership_type || 'basic');
+          localStorage.setItem("pointsBalance", user.points_balance || 0);
+        } else if (user.role === 'staff' || user.role === 'admin') {
+          localStorage.setItem("staffId", user.staff_id || '');
+          localStorage.setItem("position", user.position || '');
+          localStorage.setItem("isManager", user.is_manager || false);
+          
+          // Store manager-specific data if exists
+          if (user.is_manager) {
+            localStorage.setItem("managerId", user.manager_id || '');
+            localStorage.setItem("accessLevel", user.access_level || '');
+            localStorage.setItem("isSuperuser", user.is_superuser || false);
+          }
+        }
 
-    // Navigate based on user type
-    if (account.type === "customer") {
-      navigate("/customer-portal");
-    } else {
-      navigate("/dashboard");
+        // Handle remember me
+        if (formData.rememberMe) {
+          localStorage.setItem("rememberedUsername", formData.username);
+          localStorage.setItem("rememberedPassword", formData.password);
+          localStorage.setItem("rememberedTab", activeTab);
+        } else {
+          localStorage.removeItem("rememberedUsername");
+          localStorage.removeItem("rememberedPassword");
+          localStorage.removeItem("rememberedTab");
+        }
+
+        // Set token to axios default headers for future requests
+        apiClient.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+
+        // Navigate based on user role and position
+        let redirectPath = "/dashboard"; // default
+        
+        if (user.role === 'customer') {
+          redirectPath = "/customer-portal";
+        } else if (user.role === 'admin') {
+          // Admin role - check if manager
+          if (user.is_manager) {
+            redirectPath = "/dashboard"; // Manager dashboard
+          } else {
+            // Admin nhưng không phải manager - điều hướng về signin
+            setErrorMessage("Account configuration error. Please contact administrator.");
+            return;
+          }
+        } else if (user.role === 'staff') {
+          // Staff role - điều hướng theo position
+          const position = user.position?.toLowerCase();
+          
+          if (position === 'delivery' || position === 'delivery staff') {
+            redirectPath = "/assigned-orders";
+          } else if (position === 'cashier') {
+            redirectPath = "/invoice";
+          } else if (position === 'merchandise supervisor' || position === 'supervisor') {
+            redirectPath = "/shelf-product";
+          } else if (position === 'warehouse' || position === 'warehouse staff') {
+            redirectPath = "/products";
+          } else {
+            // Position không xác định - mặc định dashboard
+            redirectPath = "/dashboard";
+          }
+        }
+
+        console.log("Navigating to:", redirectPath, "| Role:", user.role, "| Position:", user.position, "| isManager:", user.is_manager);
+        navigate(redirectPath);
+      }
+    } catch (error) {
+      console.error("Login error:", error);
+      
+      // apiClient interceptor rejects with error.response.data or custom error object
+      let errorMsg = "An error occurred. Please try again.";
+      
+      if (typeof error === 'string') {
+        errorMsg = error;
+      } else if (error.message) {
+        errorMsg = error.message;
+      } else if (error.error) {
+        errorMsg = error.error;
+      }
+      
+      setErrorMessage(errorMsg);
     }
   };
 

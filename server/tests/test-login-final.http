@@ -1,0 +1,149 @@
+### ===============================================
+### TEST ĐĂNG NHẬP CUỐI CÙNG
+### Manager: demo account (admin/admin123)
+### Staff & Customer: từ database (password123)
+### ===============================================
+
+@baseUrl = http://localhost:5000/api
+
+### ========== 1. MANAGER (DEMO ACCOUNT) ==========
+
+### 1.1 Login Manager - Demo Account
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "username": "admin",
+  "password": "admin123"
+}
+
+### ========== 2. CUSTOMER (DATABASE) ==========
+
+### 2.1 Login Customer 1 (Võ Thị Hoa)
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "username": "customer1",
+  "password": "password123"
+}
+
+### 2.2 Login Customer 2 (Đặng Văn Khoa)
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "username": "customer2",
+  "password": "password123"
+}
+
+### 2.3 Login Customer 3 (Mai Thị Lan)
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "username": "customer3",
+  "password": "password123"
+}
+
+### ========== 3. STAFF (DATABASE) ==========
+
+### 3.1 Login Staff 1 - Cashier (Nguyễn Văn An)
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "username": "staff1",
+  "password": "password123"
+}
+
+### 3.2 Login Staff 2 - Warehouse Manager (Trần Thị Bình)
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "username": "staff2",
+  "password": "password123"
+}
+
+### 3.3 Login Staff 3 - Delivery (Lê Văn Cường)
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "username": "staff3",
+  "password": "password123"
+}
+
+### 3.4 Login Staff 5 - Merchandise Supervisor (Hoàng Văn Em)
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "username": "staff5",
+  "password": "password123"
+}
+
+### ========== 4. TEST SAU KHI LOGIN ==========
+
+### 4.1 Get current user info (thay YOUR_TOKEN bằng token từ response trên)
+GET {{baseUrl}}/auth/me
+Authorization: Bearer YOUR_TOKEN_HERE
+
+### 4.2 Register Customer mới
+POST {{baseUrl}}/auth/register/customer
+Content-Type: application/json
+
+{
+  "username": "newcustomer",
+  "password": "123456",
+  "email": "newcustomer@example.com",
+  "full_name": "Khách Hàng Mới",
+  "phone": "0901234567"
+}
+
+### 4.3 Register Staff mới (cần admin token)
+POST {{baseUrl}}/auth/register/staff
+Authorization: Bearer ADMIN_TOKEN_HERE
+Content-Type: application/json
+
+{
+  "username": "newstaff",
+  "password": "staff123",
+  "email": "newstaff@supermarket.com",
+  "full_name": "Nhân Viên Mới",
+  "position": "Cashier",
+  "employment_type": "full-time"
+}
+
+### ========== 5. ERROR TESTS ==========
+
+### 5.1 Login với password sai
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "username": "customer1",
+  "password": "wrongpassword"
+}
+
+### 5.2 Login với username không tồn tại
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "username": "notexist",
+  "password": "password123"
+}
+
+### ========== CHEAT SHEET ==========
+# Manager (Demo):  admin / admin123
+# Customer 1:      customer1 / password123
+# Customer 2:      customer2 / password123
+# Customer 3:      customer3 / password123
+# Customer 4:      customer4 / password123
+# Staff 1:         staff1 / password123
+# Staff 2:         staff2 / password123
+# Staff 3:         staff3 / password123
+# Staff 4:         staff4 / password123
+# Staff 5:         staff5 / password123

@@ -30,8 +30,8 @@ const staffSchema = new mongoose.Schema({
 
 // ==================== 3. MANAGERS ====================
 const managerSchema = new mongoose.Schema({
-  staff_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Staff', required: true, unique: true },
-  account_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Account' },
+  staff_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Staff' }, // Optional - manager có thể không phải staff
+  account_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Account', required: true, unique: true },
   access_level: { type: String, enum: ['super', 'admin', 'manager'] },
   is_superuser: { type: Boolean, default: false },
   permissions: { type: mongoose.Schema.Types.Mixed },

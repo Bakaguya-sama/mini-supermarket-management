@@ -1,0 +1,30 @@
+### TEST ĐĂNG NHẬP ADMIN1
+
+@baseUrl = http://localhost:5000/api
+
+### Login với admin1 / 12345678
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "username": "admin1",
+  "password": "12345678"
+}
+
+### Login với admin1 viết hoa
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "username": "ADMIN1",
+  "password": "12345678"
+}
+
+### Login với demo admin
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "username": "admin",
+  "password": "admin123"
+}
