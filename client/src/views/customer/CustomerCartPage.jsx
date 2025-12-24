@@ -318,6 +318,9 @@ const CustomerCartPage = ({
           orderNotes.length > 0
             ? orderNotes.join(" | ")
             : "No discounts applied",
+        // Request backend to auto-assign a delivery staff (least-loaded) for this order
+        auto_assign_delivery: true,
+        delivery_notes: orderNotes.join(" | "),
       });
 
       if (result.success) {

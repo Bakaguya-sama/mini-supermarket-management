@@ -10,6 +10,7 @@ const {
   Payment,
   Cart,
   CartItem,
+  Staff,
 } = require("../models");
 const mongoose = require("mongoose");
 
@@ -367,6 +368,37 @@ exports.createOrder = async (req, res) => {
       });
       await CartItem.updateMany({ cart_id: cart._id }, { status: "purchased" });
       console.log(`🛒 Cart checked out`);
+    }
+
+    // If caller requested automatic delivery assignment, create a DeliveryOrder and assign staff (least-loaded by default)
+    if (req.body.auto_assign_delivery) {
+      try {
+        const assignedStaff = await Staff.findOneAndUpdate(
+          { position: "Delivery", is_active: true },
+          { $inc: { current_assignments: 1 } },
+          { sort: { current_assignments: 1 }, new: true }
+        );
+        if (assignedStaff) {
+          const trackingNumberDO = `TRACK-${Date.now()}`;
+          await DeliveryOrder.create({
+            order_id: order._id,
+            staff_id: assignedStaff._id,
+            tracking_number: trackingNumberDO,
+            notes: req.body.delivery_notes || "",
+            status: "assigned",
+          });
+          // Mark order as confirmed for delivery
+          order.status = "confirmed";
+          await order.save();
+          console.log(
+            `🚚 Auto-assigned delivery to staff ${assignedStaff._id}`
+          );
+        } else {
+          console.warn("No delivery staff available for auto-assignment");
+        }
+      } catch (err) {
+        console.error("Error during auto-assignment of delivery:", err);
+      }
     }
 
     // Parse notes to extract promotion and points info
