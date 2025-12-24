@@ -53,11 +53,12 @@ const DamagedProduct = () => {
         const transformedData = response.data.map(damaged => {
           const product = damaged.product_id;
           const supplier = product?.supplier_id;
+          const shelf = damaged.shelf_id;
           
-          // Get first shelf location if available
-          let shelfLocation = 'N/A';
-          let section = 'N/A';
-          let slot = 'N/A';
+          // Get shelf location information
+          const shelfLocation = shelf?.shelf_number || 'N/A';
+          const section = shelf?.section_number || 'N/A';
+          const slot = shelf?.slot_number || 'N/A';
           
           return {
             id: damaged._id,
@@ -101,131 +102,6 @@ const DamagedProduct = () => {
   useEffect(() => {
     loadDamagedProducts();
   }, [currentPage, reasonFilter, searchTerm]);
-
-  // Sample fake damaged product data - REMOVE sau khi test API
-  const oldDamagedProductData = [
-    {
-      id: "P001",
-      name: "Fresh Milk 1L",
-      supplier: "Dairy Co.",
-      shelfLocation: "A1",
-      section: "A",
-      slot: "12",
-      damagedQty: 5,
-      reason: "Expired",
-    },
-    {
-      id: "P002",
-      name: "Organic Bananas",
-      supplier: "Fresh Farms",
-      shelfLocation: "B3",
-      section: "B",
-      slot: "08",
-      damagedQty: 12,
-      reason: "Damaged",
-    },
-    {
-      id: "P003",
-      name: "Whole Wheat Bread",
-      supplier: "Bakery Plus",
-      shelfLocation: "C2",
-      section: "C",
-      slot: "15",
-      damagedQty: 8,
-      reason: "Expired",
-    },
-    {
-      id: "P004",
-      name: "Greek Yogurt",
-      supplier: "Dairy Co.",
-      shelfLocation: "A2",
-      section: "A",
-      slot: "20",
-      damagedQty: 3,
-      reason: "Other reason",
-    },
-    {
-      id: "P005",
-      name: "Orange Juice 1L",
-      supplier: "Juice World",
-      shelfLocation: "D1",
-      section: "D",
-      slot: "05",
-      damagedQty: 7,
-      reason: "Damaged",
-    },
-    {
-      id: "P006",
-      name: "Chicken Breast",
-      supplier: "Meat Market",
-      shelfLocation: "F1",
-      section: "F",
-      slot: "03",
-      damagedQty: 4,
-      reason: "Expired",
-      status: "Processed",
-    },
-    {
-      id: "P007",
-      name: "Pasta Sauce",
-      supplier: "Italian Foods",
-      shelfLocation: "E3",
-      section: "E",
-      slot: "18",
-      damagedQty: 2,
-      reason: "Damaged",
-    },
-    {
-      id: "P008",
-      name: "Frozen Pizza",
-      supplier: "Frozen Co.",
-      shelfLocation: "G2",
-      section: "G",
-      slot: "11",
-      damagedQty: 6,
-      reason: "Other reason",
-    },
-    {
-      id: "P009",
-      name: "Fresh Apples",
-      supplier: "Fresh Farms",
-      shelfLocation: "B1",
-      section: "B",
-      slot: "14",
-      damagedQty: 15,
-      reason: "Damaged",
-    },
-    {
-      id: "P010",
-      name: "Cereal Box",
-      supplier: "Breakfast Co.",
-      shelfLocation: "C1",
-      section: "C",
-      slot: "07",
-      damagedQty: 4,
-      reason: "Expired",
-    },
-    {
-      id: "P011",
-      name: "Canned Tomatoes",
-      supplier: "Canned Goods",
-      shelfLocation: "E1",
-      section: "E",
-      slot: "22",
-      damagedQty: 3,
-      reason: "Other reason",
-    },
-    {
-      id: "P012",
-      name: "Ice Cream",
-      supplier: "Frozen Co.",
-      shelfLocation: "G1",
-      section: "G",
-      slot: "09",
-      damagedQty: 8,
-      reason: "Damaged",
-    },
-  ]; // End fake data
 
   // Filter data first (now using API data)
   const filteredData = damagedProductData.filter((product) => {

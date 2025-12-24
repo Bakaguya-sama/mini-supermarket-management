@@ -280,6 +280,39 @@ export const bulkAssignToShelf = async (bulkAssignData) => {
   }
 };
 
+/**
+ * Get products on shelves for damaged product recording
+ * @param {Object} params - Query parameters (page, limit, supplier_id, shelf_id, section, search)
+ * @returns {Promise<Object>} Response with products data for damaged recording
+ */
+export const getProductsForDamagedRecord = async (params = {}) => {
+  try {
+    const response = await apiClient.get("/product-shelves/for-damaged-record", { params });
+    return {
+      success: true,
+      data: response.data || [],
+      total: response.total || 0,
+      page: response.page || 1,
+      pages: response.pages || 1,
+      count: response.count || 0,
+      message: "Products for damaged record fetched successfully",
+    };
+  } catch (error) {
+    console.error("Error fetching products for damaged record:", error);
+    return {
+      success: false,
+      data: [],
+      total: 0,
+      page: 1,
+      pages: 1,
+      count: 0,
+      message:
+        error.response?.data?.message ||
+        "Failed to fetch products for damaged record",
+    };
+  }
+};
+
 export const productShelfService = {
   getAllProductShelves,
   getProductShelfStats,
@@ -291,6 +324,7 @@ export const productShelfService = {
   moveProductToShelf,
   deleteProductShelf,
   bulkAssignToShelf,
+  getProductsForDamagedRecord,
 };
 
 export default productShelfService;

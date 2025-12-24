@@ -109,7 +109,7 @@ const InvoiceListView = () => {
             items: `${itemCount} item${itemCount !== 1 ? 's' : ''}`,
             itemsList: invoice.notes || 'Invoice items',
             amount: `$${invoice.total_amount.toFixed(2)}`,
-            paymentMethod: invoice.order_id?.payment_method || 'Cash', // Get from order
+            paymentMethod: invoice.payment_method || invoice.order_id?.payment_method || 'Cash', // Get from invoice first, fallback to order
             status: statusMap[invoice.payment_status] || 'Pending',
             rawStatus: invoice.payment_status,
             rawAmount: invoice.total_amount

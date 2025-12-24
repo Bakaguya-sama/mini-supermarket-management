@@ -11,11 +11,13 @@ const {
   updateProductShelf,
   moveProductToShelf,
   deleteProductShelf,
-  bulkAssignToShelf
+  bulkAssignToShelf,
+  getProductsForDamagedRecord
 } = require('../controllers/productShelfController');
 
 // Stats and bulk operations (must be before :id routes)
 router.get('/stats', getProductShelfStats);
+router.get('/for-damaged-record', getProductsForDamagedRecord);
 router.post('/bulk/assign', bulkAssignToShelf);
 
 // Nested resource routes

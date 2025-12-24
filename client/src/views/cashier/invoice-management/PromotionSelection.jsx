@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import {
   FaSearch,
@@ -7,83 +7,86 @@ import {
   FaExclamationTriangle,
 } from "react-icons/fa";
 import "./PromotionSelection.css";
+import promotionService from "../../../services/promotionService";
 
 const PromotionSelection = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { invoiceId } = location.state || {};
+  const { invoiceId, createInvoice } = location.state || {};
 
   const [searchTerm, setSearchTerm] = useState("");
-  const [categoryFilter, setCategoryFilter] = useState("All Categories");
   const [statusFilter, setStatusFilter] = useState("Available");
   const [selectedPromotion, setSelectedPromotion] = useState(null);
-
-  // Sample promotions data matching the design
-  const promotionsData = [
-    {
-      id: "PROMO001",
-      code: "PROMO001",
-      title: "Weekend Special - Fresh Produce",
-      description: "20% off on all fresh produce",
-      type: "Fresh Produce",
-      discount: "20% OFF",
-      validPeriod: "Valid: 11/8/2025 - 11/10/2025",
-      validStart: "2025-11-08",
-      validEnd: "2025-11-10",
-      conditions: null,
-      isLastDay: true,
-      category: "Fresh Produce",
-    },
-    {
-      id: "PROMO002",
-      code: "PROMO002",
-      title: "Dairy Delight",
-      description: "15% off on all dairy products",
-      type: "Dairy",
-      discount: "15% OFF",
-      validPeriod: "Valid: 11/10/2025 - 11/30/2025",
-      validStart: "2025-11-10",
-      validEnd: "2025-11-30",
-      conditions: null,
-      category: "Dairy",
-    },
-    {
-      id: "PROMO003",
-      code: "PROMO003",
-      title: "Buy 2 Get 1 Free - Snacks",
-      description: "Buy 2, Get 1 Free on selected snacks",
-      type: "Snacks",
-      discount: "BUY 2 GET 1 FREE",
-      validPeriod: "Valid: 11/10/2025 - 11/12/2025",
-      validStart: "2025-11-10",
-      validEnd: "2025-11-12",
-      conditions: "Applies to items of equal or lesser value",
-      category: "Snacks",
-    },
-    {
-      id: "PROMO004",
-      code: "PROMO004",
-      title: "Beverage Bonanza",
-      description: "$5 off on beverage purchases above $20",
-      type: "Beverages",
-      discount: "$5 OFF",
-      validPeriod: "Valid: 11/10/2025 - 11/17/2025",
-      validStart: "2025-11-10",
-      validEnd: "2025-11-17",
-      conditions: "Minimum purchase $20",
-      category: "Beverages",
-    },
-  ];
-
-  const categories = [
-    "All Categories",
-    "Fresh Produce",
-    "Dairy",
-    "Snacks",
-    "Beverages",
-  ];
+  
+  // API data states
+  const [isLoading, setIsLoading] = useState(true);
+  const [promotionsData, setPromotionsData] = useState([]);
+  const [errorMessage, setErrorMessage] = useState("");
 
   const statusOptions = ["All", "Available", "Expired"];
+
+  // Load promotions from API
+  useEffect(() => {
+    loadPromotions();
+  }, []);
+
+  const loadPromotions = async () => {
+    setIsLoading(true);
+    try {
+      const response = await promotionService.getAllPromotions('active');
+      
+      if (response.success && response.data) {
+        // Transform API data to UI format
+        const transformedPromotions = response.data.map(promo => {
+          const startDate = new Date(promo.startDate);
+          const endDate = new Date(promo.endDate);
+          const now = new Date();
+          
+          // Format discount display
+          let discountDisplay = '';
+          if (promo.type === 'percentage') {
+            discountDisplay = `${promo.discountValue}% OFF`;
+          } else if (promo.type === 'fixed') {
+            discountDisplay = `$${promo.discountValue} OFF`;
+          }
+
+          // Check if last day
+          const isLastDay = endDate.toDateString() === now.toDateString();
+
+          // Format valid period
+          const validPeriod = `Valid: ${startDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })} - ${endDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`;
+
+          return {
+            id: promo.id,
+            code: promo.code,
+            title: promo.name,
+            description: promo.description,
+            type: promo.type === 'percentage' ? 'Percentage Discount' : 'Fixed Amount',
+            discount: discountDisplay,
+            discountValue: promo.discountValue,
+            discountType: promo.type,
+            validPeriod: validPeriod,
+            validStart: promo.startDate,
+            validEnd: promo.endDate,
+            conditions: promo.terms || (promo.minPurchase > 0 ? `Minimum purchase $${promo.minPurchase}` : null),
+            isLastDay: isLastDay,
+            minPurchase: promo.minPurchase || 0
+          };
+        });
+
+        setPromotionsData(transformedPromotions);
+      } else {
+        setErrorMessage(response.message || 'Failed to load promotions');
+        setPromotionsData([]);
+      }
+    } catch (error) {
+      console.error('Error loading promotions:', error);
+      setErrorMessage('Failed to load promotions');
+      setPromotionsData([]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const isPromotionValid = (promotion) => {
     const today = new Date();
@@ -92,14 +95,12 @@ const PromotionSelection = () => {
     return today >= startDate && today <= endDate;
   };
 
-  // Filter promotions based on search, category and status
+  // Filter promotions based on search and status
   const filteredPromotions = promotionsData.filter((promo) => {
     const matchesSearch =
       promo.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
       promo.code.toLowerCase().includes(searchTerm.toLowerCase()) ||
       promo.description.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesCategory =
-      categoryFilter === "All Categories" || promo.category === categoryFilter;
 
     const promoIsValid = isPromotionValid(promo);
     const matchesStatus =
@@ -107,7 +108,7 @@ const PromotionSelection = () => {
       (statusFilter === "Available" && promoIsValid) ||
       (statusFilter === "Expired" && !promoIsValid);
 
-    return matchesSearch && matchesCategory && matchesStatus;
+    return matchesSearch && matchesStatus;
   });
 
   const handlePromotionSelect = (promotion) => {
@@ -120,10 +121,18 @@ const PromotionSelection = () => {
 
   const handleApplyPromotion = () => {
     if (selectedPromotion) {
-      // Navigate back to InvoiceDetail with selected promotion
-      navigate(`/invoice/detail/${invoiceId}`, {
-        state: { selectedPromotion },
-      });
+      // Navigate back with selected promotion
+      if (createInvoice) {
+        // From CreateInvoice
+        navigate("/invoice/create", {
+          state: { selectedPromotion },
+        });
+      } else {
+        // From InvoiceDetail
+        navigate(`/invoice/detail/${invoiceId}`, {
+          state: { selectedPromotion },
+        });
+      }
     }
   };
 
@@ -142,6 +151,43 @@ const PromotionSelection = () => {
 
   return (
     <div className="promotion-selection-view">
+      {/* Loading State */}
+      {isLoading && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'rgba(255,255,255,0.9)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 9999
+        }}>
+          <div style={{ textAlign: 'center' }}>
+            <div style={{ fontSize: '32px', marginBottom: '15px' }}>🎁</div>
+            <div style={{ fontSize: '18px', fontWeight: '500' }}>Loading promotions...</div>
+          </div>
+        </div>
+      )}
+
+      {/* Error Message */}
+      {errorMessage && (
+        <div style={{
+          position: 'fixed',
+          top: '20px',
+          right: '20px',
+          background: '#ff4444',
+          color: 'white',
+          padding: '15px 20px',
+          borderRadius: '8px',
+          zIndex: 10000
+        }}>
+          {errorMessage}
+        </div>
+      )}
+
       {/* Header */}
       <div className="promotion-header">
         <div className="promotion-header-left">
@@ -158,7 +204,7 @@ const PromotionSelection = () => {
         <div className="promotion-header-right">
           <div className="promotion-date-display">
             <FaCalendarAlt className="promotion-date-icon" />
-            <span>Monday, November 26, 2025</span>
+            <span>{new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}</span>
           </div>
         </div>
       </div>
@@ -174,19 +220,6 @@ const PromotionSelection = () => {
             onChange={(e) => setSearchTerm(e.target.value)}
             className="promotion-search-input"
           />
-        </div>
-        <div className="promotion-filter-container">
-          <select
-            value={categoryFilter}
-            onChange={(e) => setCategoryFilter(e.target.value)}
-            className="promotion-category-filter"
-          >
-            {categories.map((category) => (
-              <option key={category} value={category}>
-                {category}
-              </option>
-            ))}
-          </select>
         </div>
         <div className="promotion-filter-container">
           <select

@@ -1,8 +1,9 @@
 // controllers/productShelfController.js - UPDATED WITH NEW BUSINESS RULES
 // Business Rules:
-// 1. One product can only be on ONE shelf at a time (unique product_id)
+// 1. One product CAN be on MULTIPLE shelves at the same time (many-to-many relationship)
 // 2. When adding product to shelf, deduct quantity from warehouse inventory (current_stock)
-// 3. When moving product, must move ALL quantity (no partial transfers)
+// 3. Each shelf record (A1, A2, A3, A4) is a separate section with its own capacity and quantity
+// 4. Quantity is tracked PER SHELF/SECTION, not aggregated
 const { ProductShelf, Product, Shelf } = require("../models");
 
 // @desc    Get all product-shelf mappings with filters and pagination
@@ -263,6 +264,7 @@ exports.getProductsByShelf = async (req, res) => {
 // @desc    Create product-shelf mapping (Assign product to shelf)
 // @route   POST /api/product-shelves
 // Business Rule: Deduct quantity from product.current_stock
+// Product CAN be on multiple shelves
 exports.createProductShelf = async (req, res) => {
   try {
     const { product_id, shelf_id, quantity } = req.body;
@@ -275,9 +277,10 @@ exports.createProductShelf = async (req, res) => {
       });
     }
 
-    // Check if product already exists on ANY shelf
+    // Check if product already exists on THIS SPECIFIC shelf (not any shelf)
     const existingMapping = await ProductShelf.findOne({
       product_id,
+      shelf_id,
       isDelete: false,
     });
 
@@ -285,7 +288,7 @@ exports.createProductShelf = async (req, res) => {
       return res.status(400).json({
         success: false,
         message:
-          "Product already exists on another shelf. Please remove it first or use move operation.",
+          "Product already exists on this shelf. Please update quantity instead.",
       });
     }
 
@@ -728,6 +731,109 @@ exports.bulkAssignToShelf = async (req, res) => {
     res.status(500).json({
       success: false,
       message: "Error bulk assigning products to shelf",
+      error: error.message,
+    });
+  }
+};
+
+// @desc    Get products on shelves for damaged product recording
+// @route   GET /api/product-shelves/for-damaged-record
+// @note    Returns all products on shelves with supplier, shelf, section info
+exports.getProductsForDamagedRecord = async (req, res) => {
+  try {
+    const {
+      page = 1,
+      limit = 100,
+      supplier_id,
+      shelf_id,
+      section,
+      search,
+    } = req.query;
+
+    // Build query
+    const query = { isDelete: false, quantity: { $gt: 0 } };
+
+    // Calculate pagination
+    const skip = (parseInt(page) - 1) * parseInt(limit);
+
+    // Execute query with population
+    let productShelves = await ProductShelf.find(query)
+      .populate({
+        path: "product_id",
+        select: "name category unit price supplier_id sku barcode",
+        populate: {
+          path: "supplier_id",
+          select: "name contact_person_name",
+        },
+      })
+      .populate({
+        path: "shelf_id",
+        select: "shelf_number shelf_name section_number slot_number capacity current_quantity",
+      })
+      .sort("shelf_id product_id")
+      .skip(skip)
+      .limit(parseInt(limit));
+
+    // Filter after population
+    if (supplier_id) {
+      productShelves = productShelves.filter(
+        (ps) => ps.product_id?.supplier_id?._id?.toString() === supplier_id
+      );
+    }
+
+    if (shelf_id) {
+      productShelves = productShelves.filter(
+        (ps) => ps.shelf_id?._id?.toString() === shelf_id
+      );
+    }
+
+    if (section) {
+      productShelves = productShelves.filter(
+        (ps) => ps.shelf_id?.section_number === section
+      );
+    }
+
+    if (search) {
+      const searchLower = search.toLowerCase();
+      productShelves = productShelves.filter(
+        (ps) =>
+          ps.product_id?.name?.toLowerCase().includes(searchLower) ||
+          ps.product_id?.sku?.toLowerCase().includes(searchLower) ||
+          ps.product_id?.barcode?.toLowerCase().includes(searchLower)
+      );
+    }
+
+    // Transform to UI format
+    const formattedData = productShelves.map((ps) => ({
+      productShelf_id: ps._id,
+      product_id: ps.product_id?._id,
+      product_name: ps.product_id?.name,
+      category: ps.product_id?.category,
+      unit: ps.product_id?.unit,
+      supplier_id: ps.product_id?.supplier_id?._id,
+      supplier_name: ps.product_id?.supplier_id?.name,
+      shelf_id: ps.shelf_id?._id,
+      shelf_location: ps.shelf_id?.shelf_number,
+      shelf_name: ps.shelf_id?.shelf_name,
+      section: ps.shelf_id?.section_number,
+      slot: ps.shelf_id?.slot_number,
+      available_quantity: ps.quantity,
+    }));
+
+    const total = await ProductShelf.countDocuments(query);
+
+    res.status(200).json({
+      success: true,
+      count: formattedData.length,
+      total,
+      page: parseInt(page),
+      pages: Math.ceil(total / parseInt(limit)),
+      data: formattedData,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Error fetching products for damaged record",
       error: error.message,
     });
   }

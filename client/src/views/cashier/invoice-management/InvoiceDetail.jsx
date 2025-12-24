@@ -108,8 +108,10 @@ const InvoiceDetail = () => {
           });
         }
 
-        // Set payment method from order if available
-        if (invoiceData.order_id && invoiceData.order_id.payment_method) {
+        // Set payment method from invoice (priority) or order (fallback)
+        if (invoiceData.payment_method) {
+          setSelectedPaymentMethod(invoiceData.payment_method);
+        } else if (invoiceData.order_id && invoiceData.order_id.payment_method) {
           setSelectedPaymentMethod(invoiceData.order_id.payment_method);
         } else {
           setSelectedPaymentMethod('Cash'); // Default
@@ -381,6 +383,12 @@ const InvoiceDetail = () => {
 
   const handleConfirmPayment = async () => {
     try {
+      // First update payment method if changed
+      await invoiceService.updateInvoice(invoiceId, {
+        payment_method: selectedPaymentMethod
+      });
+      
+      // Then mark as paid
       const response = await invoiceService.markInvoiceAsPaid(invoiceId);
       
       if (response.success) {
@@ -421,10 +429,25 @@ const InvoiceDetail = () => {
     }
   };
 
-  const handlePaymentMethodChange = (methodId) => {
+  const handlePaymentMethodChange = async (methodId) => {
     if (invoiceData.status === "pending") {
       setSelectedPaymentMethod(methodId);
-      console.log("Payment method changed to:", methodId);
+      
+      // Auto-save payment method to database
+      try {
+        const response = await invoiceService.updateInvoice(invoiceId, {
+          payment_method: methodId
+        });
+        
+        if (response.success) {
+          console.log("Payment method updated to:", methodId);
+        } else {
+          setErrorMessage(response.message || 'Failed to update payment method');
+        }
+      } catch (error) {
+        console.error('Error updating payment method:', error);
+        setErrorMessage('Failed to update payment method');
+      }
     }
   };
 
