@@ -488,6 +488,7 @@ const EditProductView = () => {
                     Current Stock
                   </label>
                   <input
+                    disabled="true"
                     type="number"
                     id="currentStock"
                     name="currentStock"
