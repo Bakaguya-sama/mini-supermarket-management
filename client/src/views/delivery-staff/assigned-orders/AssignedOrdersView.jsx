@@ -13,10 +13,10 @@ const AssignedOrdersView = () => {
 
   // Demo staff - TODO: Replace with authenticated user after login
   const [demoStaffId, setDemoStaffId] = useState(null);
-  
+
   // Loading states
   const [isLoading, setIsLoading] = useState(true);
-  
+
   // Data from API
   const [ordersData, setOrdersData] = useState([]);
   const [totalRecords, setTotalRecords] = useState(0);
@@ -25,79 +25,102 @@ const AssignedOrdersView = () => {
   const itemsPerPage = 10;
 
   // ========== API FUNCTIONS ==========
-  
+
   // Fetch demo delivery staff (first staff with position 'Delivery')
   const fetchDemoStaff = async () => {
     try {
-      const response = await staffService.getAll({ 
-        position: 'Delivery',
+      const response = await staffService.getAll({
+        position: "Delivery",
         limit: 1,
-        is_active: true
+        is_active: true,
       });
-      
+
       if (response.success && response.data && response.data.length > 0) {
         const deliveryStaff = response.data[0];
-        console.log('Demo delivery staff:', deliveryStaff);
+        console.log("Demo delivery staff:", deliveryStaff);
         setDemoStaffId(deliveryStaff._id);
         return deliveryStaff._id;
       } else {
-        console.error('No delivery staff found');
+        console.error("No delivery staff found");
         return null;
       }
     } catch (error) {
-      console.error('Error fetching delivery staff:', error);
+      console.error("Error fetching delivery staff:", error);
       return null;
     }
   };
-  
+
   // Load assigned delivery orders from API
   const loadAssignedOrders = async (staffId) => {
     if (!staffId) {
-      console.log('No staff ID available, skipping load');
+      console.log("No staff ID available, skipping load");
       setIsLoading(false);
       return;
     }
-    
+
     setIsLoading(true);
     try {
       // Get orders with status 'assigned' or 'in_transit' for this delivery staff
       const params = {
         page: currentPage,
         limit: itemsPerPage,
-        status: 'assigned', // Only assigned orders
-        sort: timeFilter === 'Latest' ? '-order_date' : timeFilter === 'Earliest' ? 'order_date' : '-createdAt'
+        // Only show unaccepted assigned orders here
+        status: "assigned",
+        sort:
+          timeFilter === "Latest"
+            ? "-order_date"
+            : timeFilter === "Earliest"
+            ? "order_date"
+            : "-createdAt",
       };
 
       if (searchTerm) {
         params.search = searchTerm;
       }
 
-      const response = await deliveryOrderService.getDeliveriesByStaff(staffId, params);
-      
+      const response = await deliveryOrderService.getDeliveriesByStaff(
+        staffId,
+        params
+      );
+
       if (response.success && response.data && Array.isArray(response.data)) {
         // Transform API data to UI format
-        const transformedOrders = response.data.map(delivery => {
+        const transformedOrders = response.data.map((delivery) => {
           const order = delivery.order_id;
           const customer = order?.customer_id;
           const accountInfo = customer?.account_id;
-          
+
           const orderDate = new Date(delivery.order_date);
-          const deliveryDate = delivery.delivery_date ? new Date(delivery.delivery_date) : orderDate;
-          
+          const deliveryDate = delivery.delivery_date
+            ? new Date(delivery.delivery_date)
+            : orderDate;
+
           return {
             id: delivery._id,
             orderId: order?.order_number || delivery._id.slice(-6),
-            customer: accountInfo?.full_name || 'Guest Customer',
-            deliveryDate: deliveryDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
-            address: accountInfo?.address || 'No address provided',
-            phone: accountInfo?.phone || 'No phone',
-            items: delivery.notes || 'Delivery items',
-            totalAmount: order?.total_amount ? `${order.total_amount.toLocaleString()} VND` : '0 VND',
-            assignedTime: orderDate.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
-            estimatedDelivery: deliveryDate.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
+            customer: accountInfo?.full_name || "Guest Customer",
+            deliveryDate: deliveryDate.toLocaleDateString("en-US", {
+              month: "short",
+              day: "numeric",
+              year: "numeric",
+            }),
+            address: accountInfo?.address || "No address provided",
+            phone: accountInfo?.phone || "No phone",
+            items: delivery.notes || "Delivery items",
+            totalAmount: order?.total_amount
+              ? `${order.total_amount.toLocaleString()} VND`
+              : "0 VND",
+            assignedTime: orderDate.toLocaleTimeString("en-US", {
+              hour: "2-digit",
+              minute: "2-digit",
+            }),
+            estimatedDelivery: deliveryDate.toLocaleTimeString("en-US", {
+              hour: "2-digit",
+              minute: "2-digit",
+            }),
             dateSort: orderDate,
             trackingNumber: delivery.tracking_number,
-            status: delivery.status
+            status: delivery.status,
           };
         });
 
@@ -105,13 +128,13 @@ const AssignedOrdersView = () => {
         setTotalRecords(response.total || 0);
         setTotalPages(response.pages || 0);
       } else {
-        console.error('Failed to load assigned orders:', response.message);
+        console.error("Failed to load assigned orders:", response.message);
         setOrdersData([]);
         setTotalRecords(0);
         setTotalPages(0);
       }
     } catch (error) {
-      console.error('Error loading assigned orders:', error);
+      console.error("Error loading assigned orders:", error);
       setOrdersData([]);
       setTotalRecords(0);
       setTotalPages(0);
@@ -130,7 +153,7 @@ const AssignedOrdersView = () => {
     };
     initStaff();
   }, []);
-  
+
   // Load orders when filters change (only if we have staffId)
   useEffect(() => {
     if (demoStaffId) {
@@ -272,13 +295,15 @@ const AssignedOrdersView = () => {
       {/* Table */}
       <div className="orders-table-container">
         {isLoading && (
-          <div style={{
-            position: 'absolute',
-            top: '50%',
-            left: '50%',
-            transform: 'translate(-50%, -50%)',
-            zIndex: 10
-          }}>
+          <div
+            style={{
+              position: "absolute",
+              top: "50%",
+              left: "50%",
+              transform: "translate(-50%, -50%)",
+              zIndex: 10,
+            }}
+          >
             <div>Loading assigned orders...</div>
           </div>
         )}
@@ -295,7 +320,10 @@ const AssignedOrdersView = () => {
           <tbody>
             {!isLoading && paginatedData.length === 0 && (
               <tr>
-                <td colSpan="5" style={{ textAlign: 'center', padding: '2rem' }}>
+                <td
+                  colSpan="5"
+                  style={{ textAlign: "center", padding: "2rem" }}
+                >
                   No assigned orders found
                 </td>
               </tr>

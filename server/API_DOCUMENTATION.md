@@ -9,6 +9,7 @@
 ## 🏗️ Kiến trúc Dữ liệu
 
 ### 1. Cart (Giỏ hàng)
+
 ```
 Cart {
   _id: ObjectId,
@@ -39,6 +40,7 @@ CartItem {
 ```
 
 ### 2. Order (Đơn hàng)
+
 ```
 Order {
   _id: ObjectId,
@@ -67,6 +69,7 @@ OrderItem {
 ```
 
 ### 3. Delivery Order (Đơn hàng giao hàng)
+
 ```
 DeliveryOrder {
   _id: ObjectId,
@@ -87,12 +90,15 @@ DeliveryOrder {
 ## 🛒 CART API
 
 ### GET /api/carts/:customerId
+
 **Mô tả:** Lấy giỏ hàng của customer. Nếu giỏ chưa tồn tại, tự động tạo giỏ mới.
 
 **Parameters:**
+
 - `customerId` (path, required): ID của customer
 
 **Response:**
+
 ```json
 {
   "success": true,
@@ -117,12 +123,15 @@ DeliveryOrder {
 ```
 
 ### POST /api/carts/:customerId/items
+
 **Mô tả:** Thêm sản phẩm vào giỏ hàng. Nếu sản phẩm đã tồn tại, cộng số lượng.
 
 **Parameters:**
+
 - `customerId` (path, required)
 
 **Body:**
+
 ```json
 {
   "product_id": "64f5...",
@@ -132,11 +141,13 @@ DeliveryOrder {
 ```
 
 **Validation:**
+
 - Kiểm tra sản phẩm tồn tại
 - Kiểm tra stock đủ
 - quantity > 0
 
 **Response:**
+
 ```json
 {
   "success": true,
@@ -152,12 +163,15 @@ DeliveryOrder {
 ```
 
 ### PUT /api/carts/items/:cartItemId
+
 **Mô tả:** Cập nhật số lượng sản phẩm trong giỏ.
 
 **Parameters:**
+
 - `cartItemId` (path, required)
 
 **Body:**
+
 ```json
 {
   "quantity": 5
@@ -165,6 +179,7 @@ DeliveryOrder {
 ```
 
 **Response:**
+
 ```json
 {
   "success": true,
@@ -177,9 +192,11 @@ DeliveryOrder {
 ```
 
 ### DELETE /api/carts/items/:cartItemId
+
 **Mô tả:** Xóa sản phẩm khỏi giỏ (soft delete, status='removed').
 
 **Response:**
+
 ```json
 {
   "success": true,
@@ -188,9 +205,11 @@ DeliveryOrder {
 ```
 
 ### POST /api/carts/:customerId/apply-promo
+
 **Mô tả:** Áp dụng mã khuyến mãi cho giỏ hàng.
 
 **Body:**
+
 ```json
 {
   "promo_code": "SUMMER2024"
@@ -198,12 +217,14 @@ DeliveryOrder {
 ```
 
 **Validation:**
+
 - Mã promotion tồn tại
 - Promotion đang hoạt động
 - Ngày hiện tại nằm trong khoảng start_date → end_date
 - Tổng tiền giỏ hàng >= minimum purchase
 
 **Response:**
+
 ```json
 {
   "success": true,
@@ -218,9 +239,11 @@ DeliveryOrder {
 ```
 
 ### DELETE /api/carts/:customerId/clear
+
 **Mô tả:** Xóa toàn bộ sản phẩm trong giỏ.
 
 **Response:**
+
 ```json
 {
   "success": true,
@@ -229,9 +252,11 @@ DeliveryOrder {
 ```
 
 ### GET /api/carts/:cartId/details
+
 **Mô tả:** Lấy chi tiết giỏ hàng theo ID.
 
 **Response:**
+
 ```json
 {
   "success": true,
@@ -247,9 +272,11 @@ DeliveryOrder {
 ## 📦 ORDER API
 
 ### GET /api/orders
+
 **Mô tả:** Lấy danh sách tất cả đơn hàng với phân trang và lọc.
 
 **Query Parameters:**
+
 - `page` (optional, default: 1)
 - `limit` (optional, default: 10)
 - `status` (optional): pending/confirmed/shipped/delivered/cancelled
@@ -257,6 +284,7 @@ DeliveryOrder {
 - `sort` (optional): -order_date, -total_amount, v.v.
 
 **Response:**
+
 ```json
 {
   "success": true,
@@ -280,9 +308,11 @@ DeliveryOrder {
 ```
 
 ### GET /api/orders/:id
+
 **Mô tả:** Lấy chi tiết đơn hàng cùng với các sản phẩm trong đó.
 
 **Response:**
+
 ```json
 {
   "success": true,
@@ -310,24 +340,30 @@ DeliveryOrder {
 ```
 
 ### POST /api/orders/checkout
+
 **Mô tả:** Tạo đơn hàng từ giỏ hàng (Checkout). **QUAN TRỌNG:** Stock tự động bị trừ.
 
 **Body:**
+
 ```json
 {
   "customer_id": "64f5...",
   "delivery_address": "123 Đường Lê Lợi, Quận 1, TP.HCM",
-  "notes": "Giao hàng vào buổi chiều"
+  "notes": "Giao hàng vào buổi chiều",
+  "auto_assign_delivery": true, // optional - if true, the system will auto-assign the order to a delivery staff (default: least_loaded)
+  "delivery_notes": "Leave package at guard" // optional notes for delivery
 }
 ```
 
 **Validation:**
+
 - Customer tồn tại
 - Giỏ hàng tồn tại và không rỗng
 - Tất cả sản phẩm có stock đủ
 - Stock trừ tự động sau checkout
 
 **Response:**
+
 ```json
 {
   "success": true,
@@ -343,6 +379,7 @@ DeliveryOrder {
 ```
 
 **Thay đổi trên Database:**
+
 1. Tạo Order mới (status='pending')
 2. Tạo OrderItem cho mỗi CartItem
 3. **Trừ stock** từ Product: `product.current_stock -= quantity`
@@ -350,9 +387,11 @@ DeliveryOrder {
 5. Cập nhật CartItem: status='purchased'
 
 ### PUT /api/orders/:id
+
 **Mô tả:** Cập nhật đơn hàng (status, tracking_number, delivery_date, notes).
 
 **Body:**
+
 ```json
 {
   "status": "confirmed",
@@ -363,6 +402,7 @@ DeliveryOrder {
 ```
 
 **Response:**
+
 ```json
 {
   "success": true,
@@ -376,13 +416,16 @@ DeliveryOrder {
 ```
 
 ### DELETE /api/orders/:id
+
 **Mô tả:** Hủy đơn hàng. **QUAN TRỌNG:** Stock tự động được hoàn trả.
 
 **Validation:**
+
 - Order phải ở status: pending hoặc confirmed
 - Không thể hủy đơn hàng đã shipped hoặc delivered
 
 **Response:**
+
 ```json
 {
   "success": true,
@@ -391,17 +434,21 @@ DeliveryOrder {
 ```
 
 **Thay đổi trên Database:**
+
 1. Cập nhật Order: status='cancelled'
 2. **Hoàn trả stock** cho Product: `product.current_stock += quantity`
 
 ### GET /api/orders/customer/:customerId
+
 **Mô tả:** Lấy danh sách đơn hàng của một customer.
 
 **Query Parameters:**
+
 - `page` (optional, default: 1)
 - `limit` (optional, default: 10)
 
 **Response:**
+
 ```json
 {
   "success": true,
@@ -419,9 +466,11 @@ DeliveryOrder {
 ```
 
 ### GET /api/orders/stats
+
 **Mô tả:** Lấy thống kê đơn hàng.
 
 **Response:**
+
 ```json
 {
   "success": true,
@@ -442,9 +491,11 @@ DeliveryOrder {
 ## 🚚 DELIVERY ORDER API
 
 ### GET /api/delivery-orders
+
 **Mô tả:** Lấy danh sách tất cả đơn hàng giao hàng.
 
 **Query Parameters:**
+
 - `page` (optional, default: 1)
 - `limit` (optional, default: 10)
 - `status` (optional): assigned/in_transit/delivered/failed
@@ -452,6 +503,7 @@ DeliveryOrder {
 - `sort` (optional): -order_date
 
 **Response:**
+
 ```json
 {
   "success": true,
@@ -473,9 +525,11 @@ DeliveryOrder {
 ```
 
 ### GET /api/delivery-orders/:id
+
 **Mô tả:** Lấy chi tiết đơn hàng giao hàng.
 
 **Response:**
+
 ```json
 {
   "success": true,
@@ -502,14 +556,17 @@ DeliveryOrder {
 ```
 
 ### GET /api/delivery-orders/staff/:staffId
+
 **Mô tả:** Lấy danh sách đơn hàng giao hàng của một delivery staff.
 
 **Query Parameters:**
+
 - `status` (optional)
 - `page` (optional, default: 1)
 - `limit` (optional, default: 10)
 
 **Response:**
+
 ```json
 {
   "success": true,
@@ -528,12 +585,15 @@ DeliveryOrder {
 ```
 
 ### GET /api/delivery-orders/status/:status
+
 **Mô tả:** Lấy danh sách đơn hàng giao hàng theo trạng thái.
 
 **URL Parameters:**
+
 - `status` (required): assigned | in_transit | delivered | failed
 
 **Response:**
+
 ```json
 {
   "success": true,
@@ -544,9 +604,11 @@ DeliveryOrder {
 ```
 
 ### POST /api/delivery-orders
+
 **Mô tả:** Tạo đơn hàng giao hàng (gán đơn hàng cho delivery staff).
 
 **Body:**
+
 ```json
 {
   "order_id": "64f5...",
@@ -557,6 +619,7 @@ DeliveryOrder {
 ```
 
 **Validation:**
+
 - Order tồn tại
 - Order status là pending hoặc confirmed
 - Staff tồn tại
@@ -564,6 +627,7 @@ DeliveryOrder {
 - Delivery order chưa tồn tại cho order này
 
 **Response:**
+
 ```json
 {
   "success": true,
@@ -580,13 +644,16 @@ DeliveryOrder {
 ```
 
 **Thay đổi trên Database:**
+
 1. Tạo DeliveryOrder (status='assigned')
 2. Cập nhật Order: status='confirmed', tracking_number=...
 
 ### PUT /api/delivery-orders/:id
+
 **Mô tả:** Cập nhật trạng thái giao hàng.
 
 **Body:**
+
 ```json
 {
   "status": "in_transit",
@@ -596,10 +663,12 @@ DeliveryOrder {
 ```
 
 **Validation:**
+
 - status phải trong: assigned, in_transit, delivered, failed
 - DeliveryOrder tồn tại
 
 **Response:**
+
 ```json
 {
   "success": true,
@@ -613,18 +682,22 @@ DeliveryOrder {
 ```
 
 **Thay đổi trên Database theo Status:**
+
 - `in_transit` → Order.status = 'shipped'
 - `delivered` → Order.status = 'delivered'
 - `failed` → Order.status = 'pending' (reset để assign lại)
 
 ### DELETE /api/delivery-orders/:id
+
 **Mô tả:** Hủy gán đơn hàng giao hàng (unassign).
 
 **Validation:**
+
 - Status phải là: assigned hoặc failed
 - Không thể hủy nếu đang giao (in_transit) hoặc đã giao (delivered)
 
 **Response:**
+
 ```json
 {
   "success": true,
@@ -633,13 +706,16 @@ DeliveryOrder {
 ```
 
 **Thay đổi trên Database:**
+
 1. Xóa DeliveryOrder
 2. Cập nhật Order: status='pending'
 
 ### GET /api/delivery-orders/stats
+
 **Mô tả:** Lấy thống kê giao hàng.
 
 **Response:**
+
 ```json
 {
   "success": true,
@@ -660,6 +736,7 @@ DeliveryOrder {
 ## 🔄 Luồng Công việc Hoàn Chỉnh
 
 ### 1. Customer thêm sản phẩm vào giỏ
+
 ```
 POST /api/carts/:customerId/items
 {
@@ -669,6 +746,7 @@ POST /api/carts/:customerId/items
 ```
 
 ### 2. Customer áp dụng mã khuyến mãi (tùy chọn)
+
 ```
 POST /api/carts/:customerId/apply-promo
 {
@@ -677,6 +755,7 @@ POST /api/carts/:customerId/apply-promo
 ```
 
 ### 3. Customer checkout - Tạo đơn hàng
+
 ```
 POST /api/orders/checkout
 {
@@ -690,6 +769,7 @@ POST /api/orders/checkout
 ```
 
 ### 4. Staff (Merchandise Supervisor) xác nhận đơn hàng
+
 ```
 PUT /api/orders/:orderId
 {
@@ -698,6 +778,7 @@ PUT /api/orders/:orderId
 ```
 
 ### 5. Manager gán đơn hàng cho delivery staff
+
 ```
 POST /api/delivery-orders
 {
@@ -711,6 +792,7 @@ POST /api/delivery-orders
 ```
 
 ### 6. Delivery staff nhận đơn hàng và cập nhật trạng thái
+
 ```
 PUT /api/delivery-orders/:deliveryOrderId
 {
@@ -721,6 +803,7 @@ PUT /api/delivery-orders/:deliveryOrderId
 ```
 
 ### 7. Delivery staff hoàn thành giao hàng
+
 ```
 PUT /api/delivery-orders/:deliveryOrderId
 {
@@ -735,6 +818,7 @@ PUT /api/delivery-orders/:deliveryOrderId
 ## 🧪 Testing với Postman/REST Client
 
 ### Cài đặt biến môi trường trong Postman:
+
 ```
 @baseUrl = http://localhost:5000/api
 @customerId = [thay bằng ID thực tế]
@@ -745,6 +829,7 @@ PUT /api/delivery-orders/:deliveryOrderId
 ```
 
 ### Import File Test HTTP
+
 - Sử dụng file `api-test.http` trong thư mục `server/tests/`
 - Mở bằng VS Code với extension REST Client hoặc Postman
 - Chỉnh sửa các biến theo dữ liệu thực tế trong database
@@ -754,6 +839,7 @@ PUT /api/delivery-orders/:deliveryOrderId
 ## ⚠️ Error Responses
 
 ### 400 Bad Request
+
 ```json
 {
   "success": false,
@@ -762,6 +848,7 @@ PUT /api/delivery-orders/:deliveryOrderId
 ```
 
 ### 404 Not Found
+
 ```json
 {
   "success": false,
@@ -770,6 +857,7 @@ PUT /api/delivery-orders/:deliveryOrderId
 ```
 
 ### 500 Server Error
+
 ```json
 {
   "success": false,
@@ -783,19 +871,23 @@ PUT /api/delivery-orders/:deliveryOrderId
 ## 📝 Ghi chú quan trọng
 
 1. **Stock Management:**
+
    - Stock trừ khi checkout (tạo order)
    - Stock hoàn trả khi hủy order
    - Không thể thêm sản phẩm vào giỏ nếu stock không đủ
 
 2. **Status Flow:**
+
    - Order: pending → confirmed → shipped → delivered (hoặc cancelled)
    - DeliveryOrder: assigned → in_transit → delivered (hoặc failed)
 
 3. **Soft Deletes:**
+
    - CartItem không bị xóa cứng mà chỉ thay đổi status='removed'
    - Giúp theo dõi lịch sử và phân tích
 
 4. **Timestamps:**
+
    - Tất cả entities có `created_at` và `updated_at`
    - Cart có `last_activity_at` để theo dõi hoạt động
 
