@@ -147,7 +147,9 @@ const AddStaffView = () => {
         avatar_link: imagePreview || null,
         position: formData.position,
         employment_type: formData.employment_type,
-        annual_salary: formData.annual_salary ? parseFloat(formData.annual_salary) : 0,
+        annual_salary: formData.annual_salary
+          ? parseFloat(formData.annual_salary)
+          : 0,
         hire_date: formData.hire_date || new Date().toISOString().split("T")[0],
         notes: formData.notes,
         is_active: formData.is_active,
@@ -206,7 +208,9 @@ const AddStaffView = () => {
 
               <div className="add-staff-form-group add-staff-form-group-full">
                 <label htmlFor="username" className="add-staff-form-label">
-                  <span className="add-staff-form-label-required">Username</span>
+                  <span className="add-staff-form-label-required">
+                    Username
+                  </span>
                 </label>
                 <input
                   type="text"
@@ -221,7 +225,9 @@ const AddStaffView = () => {
 
               <div className="add-staff-form-group add-staff-form-group-full">
                 <label htmlFor="password" className="add-staff-form-label">
-                  <span className="add-staff-form-label-required">Password</span>
+                  <span className="add-staff-form-label-required">
+                    Password
+                  </span>
                 </label>
                 <input
                   type="password"
@@ -256,7 +262,9 @@ const AddStaffView = () => {
 
               <div className="add-staff-form-group add-staff-form-group-full">
                 <label htmlFor="full_name" className="add-staff-form-label">
-                  <span className="add-staff-form-label-required">Full Name</span>
+                  <span className="add-staff-form-label-required">
+                    Full Name
+                  </span>
                 </label>
                 <input
                   type="text"
@@ -320,7 +328,9 @@ const AddStaffView = () => {
 
               <div className="add-staff-form-group">
                 <label htmlFor="position" className="add-staff-form-label">
-                  <span className="add-staff-form-label-required">Position</span>
+                  <span className="add-staff-form-label-required">
+                    Position
+                  </span>
                 </label>
                 <select
                   id="position"
@@ -331,14 +341,19 @@ const AddStaffView = () => {
                 >
                   <option value="">Select position</option>
                   <option value="Delivery">Delivery</option>
-                  <option value="Merchandise">Merchandise</option>
+                  <option value="Merchandise Supervisor">
+                    Merchandise Supervisor
+                  </option>
                   <option value="Warehouse">Warehouse</option>
                   <option value="Cashier">Cashier</option>
                 </select>
               </div>
 
               <div className="add-staff-form-group">
-                <label htmlFor="employment_type" className="add-staff-form-label">
+                <label
+                  htmlFor="employment_type"
+                  className="add-staff-form-label"
+                >
                   Employment Type
                 </label>
                 <select
@@ -389,7 +404,9 @@ const AddStaffView = () => {
 
             {/* Additional Information Section */}
             <div className="add-staff-form-section">
-              <h2 className="add-staff-section-title">Additional Information</h2>
+              <h2 className="add-staff-section-title">
+                Additional Information
+              </h2>
 
               <div className="add-staff-form-group add-staff-form-group-full">
                 <label htmlFor="notes" className="add-staff-form-label">
@@ -407,15 +424,26 @@ const AddStaffView = () => {
               </div>
 
               <div className="add-staff-form-group add-staff-form-group-full">
-                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+                <label
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "8px",
+                    cursor: "pointer",
+                  }}
+                >
                   <input
                     type="checkbox"
                     name="is_active"
                     checked={formData.is_active}
-                    onChange={(e) => setFormData({ ...formData, is_active: e.target.checked })}
-                    style={{ width: '18px', height: '18px', cursor: 'pointer' }}
+                    onChange={(e) =>
+                      setFormData({ ...formData, is_active: e.target.checked })
+                    }
+                    style={{ width: "18px", height: "18px", cursor: "pointer" }}
                   />
-                  <span className="add-staff-form-label" style={{ margin: 0 }}>Staff is Active</span>
+                  <span className="add-staff-form-label" style={{ margin: 0 }}>
+                    Staff is Active
+                  </span>
                 </label>
               </div>
             </div>
@@ -448,7 +476,11 @@ const AddStaffView = () => {
             onClick={() => document.getElementById("avatar-input").click()}
           >
             {imagePreview ? (
-              <img src={imagePreview} alt="Avatar preview" className="add-staff-image-preview-img" />
+              <img
+                src={imagePreview}
+                alt="Avatar preview"
+                className="add-staff-image-preview-img"
+              />
             ) : (
               <div className="add-staff-image-upload-placeholder">
                 <div className="add-staff-image-upload-icon">👤</div>

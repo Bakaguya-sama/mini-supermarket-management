@@ -54,7 +54,7 @@ const EditProductView = () => {
         if (productResponse.success && productResponse.data) {
           const product = productResponse.data;
           setProductData(product);
-          
+
           // Populate form with product data
           setFormData({
             productName: product.name || "",
@@ -113,17 +113,17 @@ const EditProductView = () => {
         return;
       }
       setProductImage(file);
-      
+
       // Read and compress image
       const reader = new FileReader();
       reader.onloadend = () => {
         // Compress image using canvas
         const img = new Image();
         img.onload = () => {
-          const canvas = document.createElement('canvas');
+          const canvas = document.createElement("canvas");
           let width = img.width;
           let height = img.height;
-          
+
           // Resize if too large
           const maxSize = 800;
           if (width > height) {
@@ -137,14 +137,14 @@ const EditProductView = () => {
               height = maxSize;
             }
           }
-          
+
           canvas.width = width;
           canvas.height = height;
-          const ctx = canvas.getContext('2d');
+          const ctx = canvas.getContext("2d");
           ctx.drawImage(img, 0, 0, width, height);
-          
+
           // Convert to base64 with compression
-          const compressedImage = canvas.toDataURL('image/jpeg', 0.8);
+          const compressedImage = canvas.toDataURL("image/jpeg", 0.8);
           setImagePreview(compressedImage);
         };
         img.src = reader.result;
@@ -191,7 +191,7 @@ const EditProductView = () => {
         minimumStockLevel: formData.minimumStockLevel,
         maximumStockLevel: formData.maximumStockLevel,
         storageLocation: formData.storageLocation,
-        image_link: image_link
+        image_link: image_link,
       };
 
       console.log("Updating product with name:", formData.productName);
@@ -201,7 +201,9 @@ const EditProductView = () => {
       console.log("✅ Update response received:", response.success);
 
       if (response.success) {
-        setSuccessMessage(`Product "${formData.productName}" updated successfully!`);
+        setSuccessMessage(
+          `Product "${formData.productName}" updated successfully!`
+        );
         // Navigate back to products list
         setTimeout(() => {
           navigate("/products");
@@ -214,8 +216,8 @@ const EditProductView = () => {
       console.error("❌ Error updating product:", error.message);
       setErrorMessage(
         error.response?.data?.message ||
-        error.message ||
-        "Failed to update product. Please try again."
+          error.message ||
+          "Failed to update product. Please try again."
       );
     } finally {
       setIsSubmitting(false);
@@ -256,6 +258,14 @@ const EditProductView = () => {
 
     if (maxStock > 0 && minStock > maxStock) {
       setErrorMessage("Minimum stock level cannot be greater than maximum");
+      return false;
+    }
+
+    // Ensure current stock does not exceed maximum stock level
+    if (maxStock > 0 && currentStock > maxStock) {
+      setErrorMessage(
+        "Current stock cannot be greater than maximum stock level"
+      );
       return false;
     }
 
@@ -367,7 +377,9 @@ const EditProductView = () => {
                     disabled={isLoadingSuppliers}
                   >
                     <option value="">
-                      {isLoadingSuppliers ? "Loading suppliers..." : "Select supplier"}
+                      {isLoadingSuppliers
+                        ? "Loading suppliers..."
+                        : "Select supplier"}
                     </option>
                     {suppliers.map((supplier) => (
                       <option key={supplier._id} value={supplier._id}>
@@ -629,32 +641,36 @@ const EditProductView = () => {
             <h2 className="edit-product-status-title">Current Status</h2>
 
             <div className="edit-product-status-item">
-              <label className="edit-product-status-label">
-                Product ID
-              </label>
+              <label className="edit-product-status-label">Product ID</label>
               <span className="edit-product-status-value">
-                {productData?._id || 'N/A'}
+                {productData?._id || "N/A"}
               </span>
             </div>
 
             <div className="edit-product-status-item">
               <label className="edit-product-status-label">Current Price</label>
               <span className="edit-product-status-value">
-                {formData.price ? `$${parseFloat(formData.price).toFixed(2)}` : '$0.00'}
+                {formData.price
+                  ? `$${parseFloat(formData.price).toFixed(2)}`
+                  : "$0.00"}
               </span>
             </div>
 
             <div className="edit-product-status-item">
               <label className="edit-product-status-label">Created At</label>
               <span className="edit-product-status-value">
-                {productData?.createdAt ? new Date(productData.createdAt).toLocaleDateString() : 'N/A'}
+                {productData?.createdAt
+                  ? new Date(productData.createdAt).toLocaleDateString()
+                  : "N/A"}
               </span>
             </div>
 
             <div className="edit-product-status-item">
               <label className="edit-product-status-label">Updated At</label>
               <span className="edit-product-status-value">
-                {productData?.updatedAt ? new Date(productData.updatedAt).toLocaleDateString() : 'N/A'}
+                {productData?.updatedAt
+                  ? new Date(productData.updatedAt).toLocaleDateString()
+                  : "N/A"}
               </span>
             </div>
 

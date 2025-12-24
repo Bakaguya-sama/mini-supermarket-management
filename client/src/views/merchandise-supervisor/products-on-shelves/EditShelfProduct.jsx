@@ -32,10 +32,10 @@ const EditShelfProduct = () => {
   const loadProductShelfData = async () => {
     try {
       setIsLoading(true);
-      
+
       // Get current mapping
       const mappingResponse = await productShelfService.getProductShelfById(id);
-      
+
       if (mappingResponse.success && mappingResponse.data) {
         const mapping = mappingResponse.data;
         setProductInfo(mapping.product_id);
@@ -46,19 +46,16 @@ const EditShelfProduct = () => {
         return;
       }
 
-      // Load all shelves (excluding current one)
-      const shelvesResponse = await productShelfService.getAllProductShelves({
-        limit: 100
-      });
-      
-      // Get all unique shelves from API or load from shelves endpoint
-      const allShelvesRes = await fetch('http://localhost:5000/api/shelves?limit=100');
-      const shelvesData = await allShelvesRes.json();
-      
-      if (shelvesData.success) {
-        setShelves(shelvesData.data || []);
+      // Load all shelves using shelf service
+      const shelfService = (await import("../../../services/shelfService"))
+        .default;
+      const shelvesResp = await shelfService.getAll({ limit: 100 });
+      if (shelvesResp && shelvesResp.success && shelvesResp.data) {
+        setShelves(shelvesResp.data || []);
+      } else {
+        console.warn("Failed to load shelves list", shelvesResp);
+        setShelves([]);
       }
-
     } catch (error) {
       console.error("Error loading data:", error);
       setErrorMessage("Error loading product shelf data");
@@ -75,14 +72,16 @@ const EditShelfProduct = () => {
 
     try {
       setIsSubmitting(true);
-      
+
       // Call move API
       const response = await productShelfService.moveProductToShelf(id, {
-        new_shelf_id: selectedNewShelf._id
+        new_shelf_id: selectedNewShelf._id,
       });
-      
+
       if (response.success) {
-        setSuccessMessage(`Successfully moved ${mappingQuantity} units to ${selectedNewShelf.shelf_number}!`);
+        setSuccessMessage(
+          `Successfully moved ${mappingQuantity} units to ${selectedNewShelf.shelf_number}!`
+        );
         setTimeout(() => navigate("/shelf-product"), 1500);
       } else {
         setErrorMessage(response.message || "Failed to move product");
@@ -98,9 +97,22 @@ const EditShelfProduct = () => {
   if (isLoading) {
     return (
       <div className="edit-shelf-product-view">
-        <div style={{ padding: '2rem', textAlign: 'center' }}>
-          <div className="spinner" style={{ margin: '0 auto', width: '40px', height: '40px', border: '4px solid #f3f3f3', borderTop: '4px solid #2563eb', borderRadius: '50%', animation: 'spin 1s linear infinite' }}></div>
-          <p style={{ marginTop: '1rem', color: '#64748b' }}>Loading product data...</p>
+        <div style={{ padding: "2rem", textAlign: "center" }}>
+          <div
+            className="spinner"
+            style={{
+              margin: "0 auto",
+              width: "40px",
+              height: "40px",
+              border: "4px solid #f3f3f3",
+              borderTop: "4px solid #2563eb",
+              borderRadius: "50%",
+              animation: "spin 1s linear infinite",
+            }}
+          ></div>
+          <p style={{ marginTop: "1rem", color: "#64748b" }}>
+            Loading product data...
+          </p>
         </div>
       </div>
     );
@@ -109,7 +121,7 @@ const EditShelfProduct = () => {
   if (!productInfo || !currentShelf) {
     return (
       <div className="edit-shelf-product-view">
-        <div style={{ padding: '2rem', textAlign: 'center', color: '#dc2626' }}>
+        <div style={{ padding: "2rem", textAlign: "center", color: "#dc2626" }}>
           Product or shelf information not found
         </div>
       </div>
@@ -118,7 +130,7 @@ const EditShelfProduct = () => {
 
   // Filter out current shelf from available shelves
   const availableShelves = shelves.filter(
-    shelf => shelf._id !== currentShelf._id
+    (shelf) => shelf._id !== currentShelf._id
   );
 
   return (
@@ -164,27 +176,29 @@ const EditShelfProduct = () => {
             <div className="product-details-grid">
               <div className="detail-item">
                 <label>Product ID</label>
-                <span>{productInfo._id?.slice(-6) || productInfo.sku || 'N/A'}</span>
+                <span>
+                  {productInfo._id?.slice(-6) || productInfo.sku || "N/A"}
+                </span>
               </div>
 
               <div className="detail-item">
                 <label>Section</label>
-                <span>{currentShelf.shelf_name || 'N/A'}</span>
+                <span>{currentShelf.shelf_name || "N/A"}</span>
               </div>
 
               <div className="detail-item">
                 <label>Shelf Location</label>
-                <span>{currentShelf.shelf_number || 'N/A'}</span>
+                <span>{currentShelf.shelf_number || "N/A"}</span>
               </div>
 
               <div className="detail-item">
                 <label>Slot</label>
-                <span>{currentShelf.section_number || 'N/A'}</span>
+                <span>{currentShelf.section_number || "N/A"}</span>
               </div>
 
               <div className="detail-item">
                 <label>Supplier</label>
-                <span>{productInfo.supplier_id?.name || 'Unknown'}</span>
+                <span>{productInfo.supplier_id?.name || "Unknown"}</span>
               </div>
 
               <div className="detail-item">
@@ -200,7 +214,7 @@ const EditShelfProduct = () => {
 
             <div className="description-section">
               <label>Description</label>
-              <p>{productInfo.description || 'No description available'}</p>
+              <p>{productInfo.description || "No description available"}</p>
             </div>
           </div>
         </div>
@@ -208,7 +222,7 @@ const EditShelfProduct = () => {
         {/* Right Panel - Select Shelf */}
         <div className="edit-shelf-right-panel">
           <h2 className="panel-title">Select Shelf</h2>
-          
+
           {availableShelves.length === 0 ? (
             <div className="no-shelves-message">
               <p>No other shelves available</p>
@@ -218,15 +232,19 @@ const EditShelfProduct = () => {
               {availableShelves.map((shelf) => {
                 const isSelected = selectedNewShelf?._id === shelf._id;
                 const currentQty = shelf.current_quantity || 0;
-                const capacity = shelf.capacity || 50;
+                // Use capacity from shelf data (no hard-coded default)
+                const capacity = shelf.capacity ?? 0;
                 const available = capacity - currentQty;
-                const utilization = (currentQty / capacity) * 100;
+                const utilization =
+                  capacity > 0 ? (currentQty / capacity) * 100 : 0;
                 const canFit = available >= mappingQuantity;
 
                 return (
                   <div
                     key={shelf._id}
-                    className={`shelf-card ${isSelected ? 'selected' : ''} ${!canFit ? 'insufficient-space' : ''}`}
+                    className={`shelf-card ${isSelected ? "selected" : ""} ${
+                      !canFit ? "insufficient-space" : ""
+                    }`}
                     onClick={() => canFit && setSelectedNewShelf(shelf)}
                   >
                     <div className="shelf-card-header">
@@ -240,14 +258,18 @@ const EditShelfProduct = () => {
                       />
                       <div className="shelf-info">
                         <h3 className="shelf-id">{shelf.shelf_number}</h3>
-                        <p className="shelf-name">{shelf.description || `Shelf ${shelf.shelf_name}`}</p>
+                        <p className="shelf-name">
+                          {shelf.description || `Shelf ${shelf.shelf_name}`}
+                        </p>
                       </div>
                     </div>
 
                     <div className="shelf-details">
                       <div className="detail-row">
                         <span>Location:</span>
-                        <span className="detail-value">{shelf.shelf_number}</span>
+                        <span className="detail-value">
+                          {shelf.shelf_number}
+                        </span>
                       </div>
                       <div className="detail-row">
                         <span>Section:</span>
@@ -255,7 +277,9 @@ const EditShelfProduct = () => {
                       </div>
                       <div className="detail-row">
                         <span>Slot:</span>
-                        <span className="detail-value">{shelf.section_number}</span>
+                        <span className="detail-value">
+                          {shelf.section_number}
+                        </span>
                       </div>
                     </div>
 
@@ -267,18 +291,24 @@ const EditShelfProduct = () => {
                         </span>
                       </div>
                       <div className="capacity-bar-container">
-                        <div 
+                        <div
                           className="capacity-bar-fill"
                           style={{ width: `${utilization}%` }}
                         ></div>
                       </div>
                       <div className="available-space">
                         <span>Available: </span>
-                        <span className={`available-value ${canFit ? 'positive' : 'negative'}`}>
+                        <span
+                          className={`available-value ${
+                            canFit ? "positive" : "negative"
+                          }`}
+                        >
                           {available}
                         </span>
                         {!canFit && (
-                          <span className="insufficient-label">Insufficient space</span>
+                          <span className="insufficient-label">
+                            Insufficient space
+                          </span>
                         )}
                       </div>
                     </div>
@@ -296,8 +326,13 @@ const EditShelfProduct = () => {
                 onClick={handleMoveProduct}
                 disabled={isSubmitting}
               >
-                <FaArrowLeft className="btn-icon" style={{ transform: 'rotate(180deg)' }} />
-                {isSubmitting ? 'Moving...' : `Move product to ${selectedNewShelf.shelf_number}`}
+                <FaArrowLeft
+                  className="btn-icon"
+                  style={{ transform: "rotate(180deg)" }}
+                />
+                {isSubmitting
+                  ? "Moving..."
+                  : `Move product to ${selectedNewShelf.shelf_number}`}
               </button>
             </div>
           )}

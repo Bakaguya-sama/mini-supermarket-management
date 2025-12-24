@@ -17,14 +17,45 @@ const StaffModal = ({ staff, isOpen, onClose }) => {
     navigate(`/staff/edit/${staff.id}`);
   };
 
+  // Build rows so each field is rendered on its own line
+  const rows = [
+    { label: "Staff ID", value: staff.id },
+    { label: "Position", value: staff.position },
+    { label: "Email", value: staff.email },
+    { label: "Phone", value: staff.phone },
+    { label: "Address", value: staff.address || "N/A" },
+    { label: "Employment type", value: staff.employmentType || "Full-time" },
+    { label: "Salary", value: staff.salary || "$65,000/year" },
+    {
+      label: "Status",
+      value: (
+        <span className={`status-badge ${String(staff.status).toLowerCase()}`}>
+          {staff.status}
+        </span>
+      ),
+    },
+    { label: "Hire date", value: staff.joinDate },
+  ];
+
   return (
     <div className="modal-overlay" onClick={handleOverlayClick}>
       <div className="modal-content">
         {/* Modal Header */}
         <div className="modal-header">
-          <div className="staff-info">
-            <h2 className="staff-name">{staff.name}</h2>
-            <p className="staff-position">{staff.position}</p>
+          <div className="staff-info header-with-avatar">
+            {staff.avatar ? (
+              <img
+                src={staff.avatar}
+                alt="avatar"
+                className="staff-avatar-header"
+              />
+            ) : (
+              <div className="staff-avatar-placeholder">👤</div>
+            )}
+            <div>
+              <h2 className="staff-name">{staff.name}</h2>
+              <p className="staff-position">{staff.position}</p>
+            </div>
           </div>
           <button className="close-btn" onClick={onClose}>
             ×
@@ -33,60 +64,13 @@ const StaffModal = ({ staff, isOpen, onClose }) => {
 
         {/* Modal Body */}
         <div className="modal-body">
-          <div className="info-grid">
-            {/* Basic Information */}
-            <div className="info-row">
-              <div className="info-item">
-                <label>Staff ID</label>
-                <p>{staff.id}</p>
+          <div className="info-list">
+            {rows.map((row) => (
+              <div className="info-row single-line" key={row.label}>
+                <label>{row.label}</label>
+                <p className="value">{row.value}</p>
               </div>
-              <div className="info-item">
-                <label>Position</label>
-                <p>{staff.position}</p>
-              </div>
-            </div>
-
-            <div className="info-row">
-              <div className="info-item">
-                <label>Email</label>
-                <p>{staff.email}</p>
-              </div>
-              <div className="info-item">
-                <label>Phone</label>
-                <p>{staff.phone}</p>
-              </div>
-            </div>
-
-            <div className="info-row">
-              <div className="info-item full-width">
-                <label>Address</label>
-                <p>{staff.address || "123 Manager St, City, CA 94001"}</p>
-              </div>
-            </div>
-
-            <div className="info-row">
-              <div className="info-item">
-                <label>Employment type</label>
-                <p>{staff.employmentType || "Full-time"}</p>
-              </div>
-              <div className="info-item">
-                <label>Salary</label>
-                <p>{staff.salary || "$65,000/year"}</p>
-              </div>
-            </div>
-
-            <div className="info-row">
-              <div className="info-item">
-                <label>Status</label>
-                <span className={`status-badge ${staff.status.toLowerCase()}`}>
-                  {staff.status}
-                </span>
-              </div>
-              <div className="info-item">
-                <label>Hire date</label>
-                <p>{staff.joinDate}</p>
-              </div>
-            </div>
+            ))}
           </div>
         </div>
 

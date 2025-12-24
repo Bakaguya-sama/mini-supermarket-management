@@ -4,9 +4,9 @@
  * Xử lí tất cả CRUD operations: Create, Read, Update, Delete
  */
 
-import apiClient from './apiClient';
+import apiClient from "./apiClient";
 
-const API_BASE_URL = '/staff';
+const API_BASE_URL = "/staff";
 
 export const staffService = {
   /**
@@ -16,18 +16,18 @@ export const staffService = {
    */
   getAll: async (params = {}) => {
     try {
-      console.log('👔 Fetching staff with params:', params);
-      
+      console.log("👔 Fetching staff with params:", params);
+
       const response = await apiClient.get(API_BASE_URL, { params });
-      
-      console.log('✅ Staff fetched successfully:', response);
+
+      console.log("✅ Staff fetched successfully:", response);
       return response;
     } catch (error) {
-      console.error('❌ Error fetching staff:', error);
+      console.error("❌ Error fetching staff:", error);
       return {
         success: false,
-        message: error.message || 'Failed to fetch staff',
-        data: []
+        message: error.message || "Failed to fetch staff",
+        data: [],
       };
     }
   },
@@ -40,10 +40,10 @@ export const staffService = {
   getById: async (id) => {
     try {
       console.log(`👔 Fetching staff with ID: ${id}`);
-      
+
       const response = await apiClient.get(`${API_BASE_URL}/${id}`);
-      
-      console.log('✅ Staff fetched successfully:', response);
+
+      console.log("✅ Staff fetched successfully:", response);
       return response;
     } catch (error) {
       console.error(`❌ Error fetching staff ${id}:`, error);
@@ -58,30 +58,30 @@ export const staffService = {
    */
   create: async (staffData) => {
     try {
-      console.log('👔 Creating new staff:', staffData);
-      
+      console.log("👔 Creating new staff:", staffData);
+
       const payload = {
         username: staffData.username,
         password: staffData.password,
         email: staffData.email,
-        full_name: staffData.full_name || '',
-        phone: staffData.phone || '',
-        address: staffData.address || '',
-        date_of_birth: staffData.date_of_birth || '',
+        full_name: staffData.full_name || "",
+        phone: staffData.phone || "",
+        address: staffData.address || "",
+        date_of_birth: staffData.date_of_birth || "",
         avatar_link: staffData.avatar_link || null,
         position: staffData.position,
-        employment_type: staffData.employment_type || '',
+        employment_type: staffData.employment_type || "",
         annual_salary: staffData.annual_salary || 0,
         hire_date: staffData.hire_date || new Date(),
-        notes: staffData.notes || ''
+        notes: staffData.notes || "",
       };
 
       const response = await apiClient.post(API_BASE_URL, payload);
-      
-      console.log('✅ Staff created successfully:', response);
+
+      console.log("✅ Staff created successfully:", response);
       return response;
     } catch (error) {
-      console.error('❌ Error creating staff:', error);
+      console.error("❌ Error creating staff:", error);
       throw error;
     }
   },
@@ -95,24 +95,29 @@ export const staffService = {
   update: async (id, staffData) => {
     try {
       console.log(`👔 Updating staff ${id}:`, staffData);
-      
+
       const payload = {
         full_name: staffData.full_name,
         phone: staffData.phone,
         address: staffData.address,
         date_of_birth: staffData.date_of_birth,
-        avatar_link: staffData.avatar_link || null,
+        // Only include avatar_link when explicitly provided (avoid sending null which clears existing avatar)
+        avatar_link:
+          staffData.avatar_link !== undefined
+            ? staffData.avatar_link
+            : undefined,
         position: staffData.position,
         employment_type: staffData.employment_type,
         annual_salary: staffData.annual_salary,
         hire_date: staffData.hire_date,
         notes: staffData.notes,
-        is_active: staffData.is_active !== undefined ? staffData.is_active : true
+        is_active:
+          staffData.is_active !== undefined ? staffData.is_active : true,
       };
 
       const response = await apiClient.put(`${API_BASE_URL}/${id}`, payload);
-      
-      console.log('✅ Staff updated successfully:', response);
+
+      console.log("✅ Staff updated successfully:", response);
       return response;
     } catch (error) {
       console.error(`❌ Error updating staff ${id}:`, error);
@@ -128,10 +133,10 @@ export const staffService = {
   delete: async (id) => {
     try {
       console.log(`👔 Deleting staff ${id}`);
-      
+
       const response = await apiClient.delete(`${API_BASE_URL}/${id}`);
-      
-      console.log('✅ Staff deleted successfully:', response);
+
+      console.log("✅ Staff deleted successfully:", response);
       return response;
     } catch (error) {
       console.error(`❌ Error deleting staff ${id}:`, error);
@@ -145,21 +150,21 @@ export const staffService = {
    */
   getStats: async () => {
     try {
-      console.log('👔 Fetching staff statistics');
-      
+      console.log("👔 Fetching staff statistics");
+
       const response = await apiClient.get(`${API_BASE_URL}/stats`);
-      
-      console.log('✅ Staff stats fetched:', response);
+
+      console.log("✅ Staff stats fetched:", response);
       return response;
     } catch (error) {
-      console.error('❌ Error fetching staff stats:', error);
+      console.error("❌ Error fetching staff stats:", error);
       return {
         success: false,
-        message: error.message || 'Failed to fetch staff statistics',
-        data: {}
+        message: error.message || "Failed to fetch staff statistics",
+        data: {},
       };
     }
-  }
+  },
 };
 
 export default staffService;
