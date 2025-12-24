@@ -256,7 +256,7 @@ const AddCustomerView = () => {
                     value={formData.address}
                     onChange={handleInputChange}
                     placeholder="Enter complete address"
-                    className="customer-form-textarea"
+                    className="customer-form-textarea-add"
                     rows="3"
                   />
                 </div>
@@ -314,7 +314,7 @@ const AddCustomerView = () => {
                     value={formData.notes}
                     onChange={handleInputChange}
                     placeholder="Add any additional notes about the customer"
-                    className="customer-form-textarea"
+                    className="customer-form-textarea-add"
                     rows="6"
                   />
                 </div>
