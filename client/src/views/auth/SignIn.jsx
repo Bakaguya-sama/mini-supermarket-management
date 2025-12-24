@@ -61,7 +61,7 @@ const SignIn = () => {
       // Call backend API
       const response = await apiClient.post("/auth/login", {
         username: formData.username,
-        password: formData.password
+        password: formData.password,
       });
 
       console.log("Full response:", response);
@@ -70,17 +70,24 @@ const SignIn = () => {
       // apiClient interceptor already unwraps response.data, so response = response.data
       if (response.success) {
         const { token, user } = response.data;
-        
+
         console.log("Login successful:", user);
         console.log("User role:", user.role, "Active tab:", activeTab);
 
         // Check if user type matches selected tab
-        if (user.role === 'customer' && activeTab !== 'customer') {
-          setErrorMessage("This is a customer account. Please select the Customer tab.");
+        if (user.role === "customer" && activeTab !== "customer") {
+          setErrorMessage(
+            "This is a customer account. Please select the Customer tab."
+          );
           return;
         }
-        if ((user.role === 'staff' || user.role === 'admin') && activeTab !== 'staff') {
-          setErrorMessage("This is a staff/admin account. Please select the Staff tab.");
+        if (
+          (user.role === "staff" || user.role === "admin") &&
+          activeTab !== "staff"
+        ) {
+          setErrorMessage(
+            "This is a staff/admin account. Please select the Staff tab."
+          );
           return;
         }
 
@@ -96,19 +103,22 @@ const SignIn = () => {
         localStorage.setItem("isLoggedIn", "true");
 
         // Store additional data based on role
-        if (user.role === 'customer') {
+        if (user.role === "customer") {
           localStorage.setItem("customerId", user.customer_id);
-          localStorage.setItem("membershipType", user.membership_type || 'basic');
+          localStorage.setItem(
+            "membershipType",
+            user.membership_type || "basic"
+          );
           localStorage.setItem("pointsBalance", user.points_balance || 0);
-        } else if (user.role === 'staff' || user.role === 'admin') {
-          localStorage.setItem("staffId", user.staff_id || '');
-          localStorage.setItem("position", user.position || '');
+        } else if (user.role === "staff" || user.role === "admin") {
+          localStorage.setItem("staffId", user.staff_id || "");
+          localStorage.setItem("position", user.position || "");
           localStorage.setItem("isManager", user.is_manager || false);
-          
+
           // Store manager-specific data if exists
           if (user.is_manager) {
-            localStorage.setItem("managerId", user.manager_id || '');
-            localStorage.setItem("accessLevel", user.access_level || '');
+            localStorage.setItem("managerId", user.manager_id || "");
+            localStorage.setItem("accessLevel", user.access_level || "");
             localStorage.setItem("isSuperuser", user.is_superuser || false);
           }
         }
@@ -125,33 +135,42 @@ const SignIn = () => {
         }
 
         // Set token to axios default headers for future requests
-        apiClient.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+        apiClient.defaults.headers.common["Authorization"] = `Bearer ${token}`;
 
         // Navigate based on user role and position
         let redirectPath = "/dashboard"; // default
-        
-        if (user.role === 'customer') {
+
+        if (user.role === "customer") {
           redirectPath = "/customer-portal";
-        } else if (user.role === 'admin') {
+        } else if (user.role === "admin") {
           // Admin role - check if manager
           if (user.is_manager) {
             redirectPath = "/dashboard"; // Manager dashboard
           } else {
             // Admin nhưng không phải manager - điều hướng về signin
-            setErrorMessage("Account configuration error. Please contact administrator.");
+            setErrorMessage(
+              "Account configuration error. Please contact administrator."
+            );
             return;
           }
-        } else if (user.role === 'staff') {
+        } else if (user.role === "staff") {
           // Staff role - điều hướng theo position
           const position = user.position?.toLowerCase();
-          
-          if (position === 'delivery' || position === 'delivery staff') {
+
+          if (position === "delivery" || position === "delivery staff") {
             redirectPath = "/assigned-orders";
-          } else if (position === 'cashier') {
+          } else if (position === "cashier") {
             redirectPath = "/invoice";
-          } else if (position === 'merchandise supervisor' || position === 'supervisor') {
+          } else if (
+            position === "merchandise supervisor" ||
+            position === "supervisor" ||
+            position === "merchandise"
+          ) {
             redirectPath = "/shelf-product";
-          } else if (position === 'warehouse' || position === 'warehouse staff') {
+          } else if (
+            position === "warehouse" ||
+            position === "warehouse staff"
+          ) {
             redirectPath = "/products";
           } else {
             // Position không xác định - mặc định dashboard
@@ -159,23 +178,32 @@ const SignIn = () => {
           }
         }
 
-        console.log("Navigating to:", redirectPath, "| Role:", user.role, "| Position:", user.position, "| isManager:", user.is_manager);
+        console.log(
+          "Navigating to:",
+          redirectPath,
+          "| Role:",
+          user.role,
+          "| Position:",
+          user.position,
+          "| isManager:",
+          user.is_manager
+        );
         navigate(redirectPath);
       }
     } catch (error) {
       console.error("Login error:", error);
-      
+
       // apiClient interceptor rejects with error.response.data or custom error object
       let errorMsg = "An error occurred. Please try again.";
-      
-      if (typeof error === 'string') {
+
+      if (typeof error === "string") {
         errorMsg = error;
       } else if (error.message) {
         errorMsg = error.message;
       } else if (error.error) {
         errorMsg = error.error;
       }
-      
+
       setErrorMessage(errorMsg);
     }
   };
