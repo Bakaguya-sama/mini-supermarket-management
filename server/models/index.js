@@ -42,6 +42,8 @@ const staffSchema = new mongoose.Schema(
     annual_salary: { type: Number },
     hire_date: { type: Date },
     notes: { type: String },
+    // Tracks how many active delivery assignments this staff currently has
+    current_assignments: { type: Number, default: 0 },
     is_active: { type: Boolean, default: true },
     isDelete: { type: Boolean, default: false },
   },
