@@ -366,7 +366,7 @@ function App() {
           />
 
           <Route
-            path="/shelf-product/edit/:combinedId"
+            path="/shelf-product/edit/:id"
             element={
               <Layout>
                 <EditShelfProduct />

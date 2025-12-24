@@ -47,12 +47,10 @@ const CreateInvoice = () => {
   const [currentCartId, setCurrentCartId] = useState(null);
 
   // Available customers for selection (from API)
-  const [availableCustomers, setAvailableCustomers] = useState([
-  ]);
+  const [availableCustomers, setAvailableCustomers] = useState([]);
 
   // Available products for selection (from API)
-  const [availableProducts, setAvailableProducts] = useState([
-  ]);
+  const [availableProducts, setAvailableProducts] = useState([]);
 
   // Available payment methods
   const paymentMethods = [
@@ -97,33 +95,33 @@ const CreateInvoice = () => {
   });
 
   // ========== API FUNCTIONS ==========
-  
+
   // Load products from API
   const loadProducts = async () => {
     try {
       setIsLoadingProducts(true);
-      console.log('🛒 Loading products from API...');
-      
+      console.log("🛒 Loading products from API...");
+
       const response = await productService.getAll({ limit: 100 });
-      
+
       if (response.success && response.data) {
         // Transform API products to match frontend format
-        const transformedProducts = response.data.map(product => ({
+        const transformedProducts = response.data.map((product) => ({
           id: product._id,
           name: product.name,
-          category: product.category || 'Other',
+          category: product.category || "Other",
           price: product.price,
-          stock: product.stock_quantity || 0
+          stock: product.current_stock ?? product.stock_quantity ?? 0,
         }));
-        
+
         setAvailableProducts(transformedProducts);
-        console.log('✅ Loaded products:', transformedProducts.length);
+        console.log("✅ Loaded products:", transformedProducts.length);
       } else {
-        setErrorMessage('Failed to load products');
+        setErrorMessage("Failed to load products");
       }
     } catch (error) {
-      console.error('❌ Error loading products:', error);
-      setErrorMessage('Error loading products');
+      console.error("❌ Error loading products:", error);
+      setErrorMessage("Error loading products");
     } finally {
       setIsLoadingProducts(false);
     }
@@ -133,39 +131,39 @@ const CreateInvoice = () => {
   const loadCustomers = async () => {
     try {
       setIsLoadingCustomers(true);
-      console.log('🛒 Loading customers from API...');
-      
+      console.log("🛒 Loading customers from API...");
+
       const response = await customerService.getAll({ limit: 100 });
-      
+
       if (response.success && response.data) {
         // Transform API customers to match frontend format
-        const transformedCustomers = response.data.map(customer => ({
+        const transformedCustomers = response.data.map((customer) => ({
           id: customer._id,
-          name: customer.account_id?.full_name || 'N/A',
-          email: customer.account_id?.email || 'N/A',
-          phone: customer.account_id?.phone || 'N/A',
-          type: customer.membership_type || 'Standard'
+          name: customer.account_id?.full_name || "N/A",
+          email: customer.account_id?.email || "N/A",
+          phone: customer.account_id?.phone || "N/A",
+          type: customer.membership_type || "Standard",
         }));
-        
+
         setAvailableCustomers(transformedCustomers);
-        
+
         // Set first customer as demo customer
         if (transformedCustomers.length > 0) {
           const firstCustomer = response.data[0]; // Use original data
           setDemoCustomerId(firstCustomer._id);
-          console.log('✅ Demo customer ID set:', firstCustomer._id);
-          
+          console.log("✅ Demo customer ID set:", firstCustomer._id);
+
           // Load cart for demo customer
           loadCart(firstCustomer._id);
         }
-        
-        console.log('✅ Loaded customers:', transformedCustomers.length);
+
+        console.log("✅ Loaded customers:", transformedCustomers.length);
       } else {
-        setErrorMessage('Failed to load customers');
+        setErrorMessage("Failed to load customers");
       }
     } catch (error) {
-      console.error('❌ Error loading customers:', error);
-      setErrorMessage('Error loading customers');
+      console.error("❌ Error loading customers:", error);
+      setErrorMessage("Error loading customers");
     } finally {
       setIsLoadingCustomers(false);
     }
@@ -175,33 +173,36 @@ const CreateInvoice = () => {
   const loadCart = async (customerId) => {
     try {
       setIsLoadingCart(true);
-      console.log('🛒 Loading cart for customer:', customerId);
-      
+      console.log("🛒 Loading cart for customer:", customerId);
+
       const response = await cartService.getCartByCustomer(customerId);
-      
+
       if (response.success && response.data) {
         setCurrentCart(response.data);
         setCurrentCartId(response.data._id);
-        
+
         // Load cart items into products array
         if (response.data.cartItems && response.data.cartItems.length > 0) {
-          const cartProducts = response.data.cartItems.map(item => ({
+          const cartProducts = response.data.cartItems.map((item) => ({
             id: item.product_id?._id,
             name: item.product_id?.name,
-            category: item.product_id?.category || 'Other',
+            category: item.product_id?.category || "Other",
             price: item.unit_price,
-            stock: item.product_id?.stock_quantity || 0,
+            stock:
+              item.product_id?.current_stock ??
+              item.product_id?.stock_quantity ??
+              0,
             quantity: item.quantity,
             total: item.line_total,
-            cartItemId: item._id // Store cart item ID for updates
+            cartItemId: item._id, // Store cart item ID for updates
           }));
-          
+
           setProducts(cartProducts);
-          console.log('✅ Loaded cart items:', cartProducts.length);
+          console.log("✅ Loaded cart items:", cartProducts.length);
         }
       }
     } catch (error) {
-      console.error('❌ Error loading cart:', error);
+      console.error("❌ Error loading cart:", error);
     } finally {
       setIsLoadingCart(false);
     }
@@ -305,19 +306,23 @@ const CreateInvoice = () => {
 
       // Call Cart API
       if (currentCartId) {
-        const response = await cartService.addItem(currentCartId, product.id, quantity);
-        
+        const response = await cartService.addItem(
+          currentCartId,
+          product.id,
+          quantity
+        );
+
         if (response.success && response.data) {
           // Reload cart to get updated items
           await loadCart(demoCustomerId);
-          setSuccessMessage('Product added to cart');
+          setSuccessMessage("Product added to cart");
         } else {
-          setErrorMessage(response.message || 'Failed to add product to cart');
+          setErrorMessage(response.message || "Failed to add product to cart");
         }
       } else {
-        setErrorMessage('No active cart found');
+        setErrorMessage("No active cart found");
       }
-      
+
       // Reset quantity after adding
       setProductQuantities((prev) => ({
         ...prev,
@@ -349,16 +354,20 @@ const CreateInvoice = () => {
     } else {
       // Call Cart API to add new product
       if (currentCartId) {
-        const response = await cartService.addItem(currentCartId, product.id, 1);
-        
+        const response = await cartService.addItem(
+          currentCartId,
+          product.id,
+          1
+        );
+
         if (response.success && response.data) {
           await loadCart(demoCustomerId);
-          setSuccessMessage('Product added to cart');
+          setSuccessMessage("Product added to cart");
         } else {
-          setErrorMessage(response.message || 'Failed to add product');
+          setErrorMessage(response.message || "Failed to add product");
         }
       } else {
-        setErrorMessage('No active cart found');
+        setErrorMessage("No active cart found");
       }
     }
     setShowProductList(false);
@@ -383,16 +392,19 @@ const CreateInvoice = () => {
     // Find cart item ID
     const cartProduct = products.find((p) => p.id === productId);
     if (cartProduct && cartProduct.cartItemId) {
-      const response = await cartService.updateQuantity(cartProduct.cartItemId, newQuantity);
-      
+      const response = await cartService.updateQuantity(
+        cartProduct.cartItemId,
+        newQuantity
+      );
+
       if (response.success && response.data) {
         await loadCart(demoCustomerId);
-        setSuccessMessage('Quantity updated');
+        setSuccessMessage("Quantity updated");
       } else {
-        setErrorMessage(response.message || 'Failed to update quantity');
+        setErrorMessage(response.message || "Failed to update quantity");
       }
     } else {
-      setErrorMessage('Cart item not found');
+      setErrorMessage("Cart item not found");
     }
   };
 
@@ -401,12 +413,12 @@ const CreateInvoice = () => {
     const cartProduct = products.find((p) => p.id === productId);
     if (cartProduct && cartProduct.cartItemId) {
       const response = await cartService.removeItem(cartProduct.cartItemId);
-      
+
       if (response.success && response.data) {
         await loadCart(demoCustomerId);
-        setSuccessMessage('Product removed from cart');
+        setSuccessMessage("Product removed from cart");
       } else {
-        setErrorMessage(response.message || 'Failed to remove product');
+        setErrorMessage(response.message || "Failed to remove product");
       }
     } else {
       // Fallback to local removal if no cartItemId
@@ -426,19 +438,21 @@ const CreateInvoice = () => {
 
     try {
       // Prepare invoice items from products
-      const items = products.map(product => ({
+      const items = products.map((product) => ({
         product_id: product.id,
         description: product.name,
         quantity: product.quantity,
         unit_price: product.price,
-        line_total: product.total
+        line_total: product.total,
       }));
 
       // Prepare invoice data for API
       const invoiceData = {
         customer_id: customerInfo.id || demoCustomerId,
         items: items,
-        notes: discount ? `Discount applied: ${discount.name} (${discount.percentage}%)` : ''
+        notes: discount
+          ? `Discount applied: ${discount.name} (${discount.percentage}%)`
+          : "",
       };
 
       // Add order_id if cart has been checked out
@@ -458,7 +472,7 @@ const CreateInvoice = () => {
         setErrorMessage(response.message || "Failed to create invoice");
       }
     } catch (error) {
-      console.error('Error creating invoice:', error);
+      console.error("Error creating invoice:", error);
       setErrorMessage("Failed to create invoice. Please try again.");
     }
   };
@@ -481,36 +495,42 @@ const CreateInvoice = () => {
           setErrorMessage("");
         }}
       />
-      
+
       {/* Loading State */}
       {(isLoadingProducts || isLoadingCustomers) && (
-        <div style={{ 
-          position: 'fixed', 
-          top: 0, 
-          left: 0, 
-          right: 0, 
-          bottom: 0, 
-          background: 'rgba(0,0,0,0.3)', 
-          display: 'flex', 
-          alignItems: 'center', 
-          justifyContent: 'center', 
-          zIndex: 9999 
-        }}>
-          <div style={{ 
-            background: 'white', 
-            padding: '40px', 
-            borderRadius: '10px', 
-            textAlign: 'center' 
-          }}>
-            <p style={{ fontSize: '18px', marginBottom: '10px' }}>🔄 Loading...</p>
-            <p style={{ fontSize: '14px', color: '#666' }}>
-              {isLoadingProducts && 'Loading products...'}
-              {isLoadingCustomers && 'Loading customers...'}
+        <div
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: "rgba(0,0,0,0.3)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 9999,
+          }}
+        >
+          <div
+            style={{
+              background: "white",
+              padding: "40px",
+              borderRadius: "10px",
+              textAlign: "center",
+            }}
+          >
+            <p style={{ fontSize: "18px", marginBottom: "10px" }}>
+              🔄 Loading...
+            </p>
+            <p style={{ fontSize: "14px", color: "#666" }}>
+              {isLoadingProducts && "Loading products..."}
+              {isLoadingCustomers && "Loading customers..."}
             </p>
           </div>
         </div>
       )}
-      
+
       {/* Header */}
       <div className="create-invoice-page-header">
         <h1 className="create-invoice-page-title">Create New Invoice</h1>

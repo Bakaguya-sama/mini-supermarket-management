@@ -1,5 +1,5 @@
 // services/productShelfService.js
-import apiClient from './apiClient';
+import apiClient from "./apiClient";
 
 /**
  * Product Shelf Service
@@ -13,7 +13,7 @@ import apiClient from './apiClient';
  */
 export const getAllProductShelves = async (params = {}) => {
   try {
-    const response = await apiClient.get('/product-shelves', { params });
+    const response = await apiClient.get("/product-shelves", { params });
     return {
       success: true,
       data: response.data || [],
@@ -21,10 +21,10 @@ export const getAllProductShelves = async (params = {}) => {
       page: response.page || 1,
       pages: response.pages || 1,
       count: response.count || 0,
-      message: 'Product-shelf mappings fetched successfully'
+      message: "Product-shelf mappings fetched successfully",
     };
   } catch (error) {
-    console.error('Error fetching product-shelf mappings:', error);
+    console.error("Error fetching product-shelf mappings:", error);
     return {
       success: false,
       data: [],
@@ -32,7 +32,9 @@ export const getAllProductShelves = async (params = {}) => {
       page: 1,
       pages: 1,
       count: 0,
-      message: error.response?.data?.message || 'Failed to fetch product-shelf mappings'
+      message:
+        error.response?.data?.message ||
+        "Failed to fetch product-shelf mappings",
     };
   }
 };
@@ -43,18 +45,18 @@ export const getAllProductShelves = async (params = {}) => {
  */
 export const getProductShelfStats = async () => {
   try {
-    const response = await apiClient.get('/product-shelves/stats');
+    const response = await apiClient.get("/product-shelves/stats");
     return {
       success: true,
       data: response.data || {},
-      message: 'Statistics fetched successfully'
+      message: "Statistics fetched successfully",
     };
   } catch (error) {
-    console.error('Error fetching product-shelf stats:', error);
+    console.error("Error fetching product-shelf stats:", error);
     return {
       success: false,
       data: {},
-      message: error.response?.data?.message || 'Failed to fetch statistics'
+      message: error.response?.data?.message || "Failed to fetch statistics",
     };
   }
 };
@@ -70,14 +72,16 @@ export const getProductShelfById = async (productShelfId) => {
     return {
       success: true,
       data: response.data || null,
-      message: 'Product-shelf mapping details fetched successfully'
+      message: "Product-shelf mapping details fetched successfully",
     };
   } catch (error) {
-    console.error('Error fetching product-shelf mapping by ID:', error);
+    console.error("Error fetching product-shelf mapping by ID:", error);
     return {
       success: false,
       data: null,
-      message: error.response?.data?.message || 'Failed to fetch product-shelf mapping details'
+      message:
+        error.response?.data?.message ||
+        "Failed to fetch product-shelf mapping details",
     };
   }
 };
@@ -90,20 +94,24 @@ export const getProductShelfById = async (productShelfId) => {
  */
 export const getShelvesByProduct = async (productId, params = {}) => {
   try {
-    const response = await apiClient.get(`/product-shelves/product/${productId}/shelves`, { params });
+    const response = await apiClient.get(
+      `/product-shelves/product/${productId}/shelves`,
+      { params }
+    );
     return {
       success: true,
       data: response.data || [],
       total: response.total || 0,
-      message: 'Product shelves fetched successfully'
+      message: "Product shelves fetched successfully",
     };
   } catch (error) {
-    console.error('Error fetching shelves by product:', error);
+    console.error("Error fetching shelves by product:", error);
     return {
       success: false,
       data: [],
       total: 0,
-      message: error.response?.data?.message || 'Failed to fetch product shelves'
+      message:
+        error.response?.data?.message || "Failed to fetch product shelves",
     };
   }
 };
@@ -116,20 +124,24 @@ export const getShelvesByProduct = async (productId, params = {}) => {
  */
 export const getProductsByShelf = async (shelfId, params = {}) => {
   try {
-    const response = await apiClient.get(`/product-shelves/shelf/${shelfId}/products`, { params });
+    const response = await apiClient.get(
+      `/product-shelves/shelf/${shelfId}/products`,
+      { params }
+    );
     return {
       success: true,
       data: response.data || [],
       total: response.total || 0,
-      message: 'Shelf products fetched successfully'
+      message: "Shelf products fetched successfully",
     };
   } catch (error) {
-    console.error('Error fetching products by shelf:', error);
+    console.error("Error fetching products by shelf:", error);
     return {
       success: false,
       data: [],
       total: 0,
-      message: error.response?.data?.message || 'Failed to fetch shelf products'
+      message:
+        error.response?.data?.message || "Failed to fetch shelf products",
     };
   }
 };
@@ -141,18 +153,19 @@ export const getProductsByShelf = async (shelfId, params = {}) => {
  */
 export const createProductShelf = async (productShelfData) => {
   try {
-    const response = await apiClient.post('/product-shelves', productShelfData);
+    const response = await apiClient.post("/product-shelves", productShelfData);
     return {
       success: true,
       data: response.data || null,
-      message: response.message || 'Product assigned to shelf successfully'
+      message: response.message || "Product assigned to shelf successfully",
     };
   } catch (error) {
-    console.error('Error creating product-shelf mapping:', error);
+    console.error("Error creating product-shelf mapping:", error);
     return {
       success: false,
       data: null,
-      message: error.response?.data?.message || 'Failed to assign product to shelf'
+      message:
+        error.response?.data?.message || "Failed to assign product to shelf",
     };
   }
 };
@@ -165,18 +178,23 @@ export const createProductShelf = async (productShelfData) => {
  */
 export const updateProductShelf = async (productShelfId, updateData) => {
   try {
-    const response = await apiClient.put(`/product-shelves/${productShelfId}`, updateData);
+    const response = await apiClient.put(
+      `/product-shelves/${productShelfId}`,
+      updateData
+    );
     return {
       success: true,
       data: response.data || null,
-      message: response.message || 'Product-shelf mapping updated successfully'
+      message: response.message || "Product-shelf mapping updated successfully",
     };
   } catch (error) {
-    console.error('Error updating product-shelf mapping:', error);
+    console.error("Error updating product-shelf mapping:", error);
     return {
       success: false,
       data: null,
-      message: error.response?.data?.message || 'Failed to update product-shelf mapping'
+      message:
+        error.response?.data?.message ||
+        "Failed to update product-shelf mapping",
     };
   }
 };
@@ -189,18 +207,22 @@ export const updateProductShelf = async (productShelfId, updateData) => {
  */
 export const moveProductToShelf = async (productShelfId, moveData) => {
   try {
-    const response = await apiClient.put(`/product-shelves/${productShelfId}/move`, moveData);
+    const response = await apiClient.put(
+      `/product-shelves/${productShelfId}/move`,
+      moveData
+    );
     return {
       success: true,
       data: response.data || null,
-      message: response.message || 'Product moved to new shelf successfully'
+      message: response.message || "Product moved to new shelf successfully",
     };
   } catch (error) {
-    console.error('Error moving product to shelf:', error);
+    console.error("Error moving product to shelf:", error);
     return {
       success: false,
       data: null,
-      message: error.response?.data?.message || 'Failed to move product to shelf'
+      message:
+        error.response?.data?.message || "Failed to move product to shelf",
     };
   }
 };
@@ -212,16 +234,19 @@ export const moveProductToShelf = async (productShelfId, moveData) => {
  */
 export const deleteProductShelf = async (productShelfId) => {
   try {
-    const response = await apiClient.delete(`/product-shelves/${productShelfId}`);
+    const response = await apiClient.delete(
+      `/product-shelves/${productShelfId}`
+    );
     return {
       success: true,
-      message: response.message || 'Product removed from shelf successfully'
+      message: response.message || "Product removed from shelf successfully",
     };
   } catch (error) {
-    console.error('Error deleting product-shelf mapping:', error);
+    console.error("Error deleting product-shelf mapping:", error);
     return {
       success: false,
-      message: error.response?.data?.message || 'Failed to remove product from shelf'
+      message:
+        error.response?.data?.message || "Failed to remove product from shelf",
     };
   }
 };
@@ -233,18 +258,24 @@ export const deleteProductShelf = async (productShelfId) => {
  */
 export const bulkAssignToShelf = async (bulkAssignData) => {
   try {
-    const response = await apiClient.post('/product-shelves/bulk/assign', bulkAssignData);
+    const response = await apiClient.post(
+      "/product-shelves/bulk/assign",
+      bulkAssignData
+    );
+    const resData = response.data || response;
     return {
-      success: true,
-      data: response.data || null,
-      message: response.message || 'Products assigned to shelf successfully'
+      success: resData?.success ?? true,
+      data: resData || null,
+      message:
+        resData?.message || response.message || "Products assigned to shelf",
     };
   } catch (error) {
-    console.error('Error bulk assigning products:', error);
+    console.error("Error bulk assigning products:", error);
     return {
       success: false,
       data: null,
-      message: error.response?.data?.message || 'Failed to assign products to shelf'
+      message:
+        error.response?.data?.message || "Failed to assign products to shelf",
     };
   }
 };
@@ -259,7 +290,7 @@ export const productShelfService = {
   updateProductShelf,
   moveProductToShelf,
   deleteProductShelf,
-  bulkAssignToShelf
+  bulkAssignToShelf,
 };
 
 export default productShelfService;

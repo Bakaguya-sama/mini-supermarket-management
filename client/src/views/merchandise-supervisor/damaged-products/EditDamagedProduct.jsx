@@ -49,14 +49,14 @@ const EditDamagedProduct = () => {
     try {
       setIsLoading(true);
       const response = await damagedProductService.getDamagedProductById(id);
-      
+
       if (response.success && response.data) {
         const damaged = response.data;
         const product = damaged.product_id;
         const supplier = product?.supplier_id;
         const shelves = damaged.shelves || [];
         const firstShelf = shelves[0]?.shelf_id;
-        
+
         setFormData({
           productId: product?._id || "",
           productName: product?.name || "Unknown Product",
@@ -64,14 +64,28 @@ const EditDamagedProduct = () => {
           shelfLocation: firstShelf?.shelf_number || "N/A",
           section: firstShelf?.shelf_number?.charAt(0) || "N/A",
           slot: firstShelf?.shelf_number?.slice(1) || "N/A",
-          currentStock: product?.stock_quantity?.toString() || "0",
+          currentStock:
+            (product?.current_stock ?? product?.stock_quantity)?.toString() ||
+            "0",
           damagedQty: damaged.damaged_quantity?.toString() || "0",
           reason: damaged.resolution_action || "",
           customReason: damaged.description || "",
-          reportedDate: damaged.discovery_date ? new Date(damaged.discovery_date).toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" }) : "N/A",
+          reportedDate: damaged.discovery_date
+            ? new Date(damaged.discovery_date).toLocaleDateString("en-US", {
+                year: "numeric",
+                month: "short",
+                day: "numeric",
+              })
+            : "N/A",
           reportedBy: damaged.reported_by || "System",
           status: damaged.status || "reported",
-          lastUpdated: damaged.updatedAt ? new Date(damaged.updatedAt).toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" }) : "N/A",
+          lastUpdated: damaged.updatedAt
+            ? new Date(damaged.updatedAt).toLocaleDateString("en-US", {
+                year: "numeric",
+                month: "short",
+                day: "numeric",
+              })
+            : "N/A",
         });
       } else {
         setErrorMessage(response.message || "Failed to load damaged product");
@@ -115,17 +129,22 @@ const EditDamagedProduct = () => {
     try {
       setShowResolvedModal(false);
       setIsLoading(true);
-      
+
       // Call API to adjust inventory and mark as resolved
-      const response = await damagedProductService.adjustInventoryForDamaged(id, {
-        inventory_adjusted: true
-      });
-      
+      const response = await damagedProductService.adjustInventoryForDamaged(
+        id,
+        {
+          inventory_adjusted: true,
+        }
+      );
+
       if (response.success) {
-        setSuccessMessage("Damaged product marked as resolved and inventory adjusted!");
-        
+        setSuccessMessage(
+          "Damaged product marked as resolved and inventory adjusted!"
+        );
+
         // Update local state
-        setFormData(prev => ({
+        setFormData((prev) => ({
           ...prev,
           status: "resolved",
           lastUpdated: new Date().toLocaleDateString("en-US", {
@@ -134,7 +153,7 @@ const EditDamagedProduct = () => {
             day: "numeric",
           }),
         }));
-        
+
         // Reload data to get fresh info
         setTimeout(() => loadDamagedProduct(), 1000);
       } else {
@@ -151,16 +170,20 @@ const EditDamagedProduct = () => {
   const handleUpdate = async () => {
     try {
       setIsLoading(true);
-      
+
       // Prepare update data
       const updateData = {
         damaged_quantity: parseInt(formData.damagedQty),
         resolution_action: formData.reason,
-        description: formData.reason === "other" ? formData.customReason : formData.reason,
+        description:
+          formData.reason === "other" ? formData.customReason : formData.reason,
       };
-      
-      const response = await damagedProductService.updateDamagedProduct(id, updateData);
-      
+
+      const response = await damagedProductService.updateDamagedProduct(
+        id,
+        updateData
+      );
+
       if (response.success) {
         setSuccessMessage("Damaged product information has been updated!");
         setTimeout(() => navigate(-1), 1500);
@@ -466,16 +489,17 @@ const EditDamagedProduct = () => {
             <h3 className="edit-damaged-product-actions-title">Actions</h3>
 
             <div className="edit-damaged-product-status-actions">
-              {formData.status !== "resolved" && formData.status !== "disposed" && (
-                <button
-                  onClick={handleMarkResolved}
-                  className="edit-damaged-product-resolve-btn"
-                  disabled={isLoading}
-                >
-                  <FaCheckCircle className="edit-damaged-product-resolve-icon" />
-                  Mark as Resolved
-                </button>
-              )}
+              {formData.status !== "resolved" &&
+                formData.status !== "disposed" && (
+                  <button
+                    onClick={handleMarkResolved}
+                    className="edit-damaged-product-resolve-btn"
+                    disabled={isLoading}
+                  >
+                    <FaCheckCircle className="edit-damaged-product-resolve-icon" />
+                    Mark as Resolved
+                  </button>
+                )}
 
               <button
                 onClick={handleUpdate}
@@ -496,7 +520,8 @@ const EditDamagedProduct = () => {
               </button>
             </div>
 
-            {(formData.status === "resolved" || formData.status === "disposed") && (
+            {(formData.status === "resolved" ||
+              formData.status === "disposed") && (
               <div className="edit-damaged-product-resolved-notice">
                 <FaCheckCircle className="edit-damaged-product-resolved-icon" />
                 <span>This issue has been resolved</span>

@@ -1,5 +1,5 @@
 // controllers/productController.js
-const { Product, Supplier, ProductShelf, ProductStock } = require('../models');
+const { Product, Supplier, ProductShelf, ProductStock } = require("../models");
 
 // @desc    Get all products with filters and pagination
 // @route   GET /api/products
@@ -14,7 +14,7 @@ exports.getAllProducts = async (req, res) => {
       search,
       minPrice,
       maxPrice,
-      sort = '-createdAt'
+      sort = "-createdAt",
     } = req.query;
 
     // Build query
@@ -29,8 +29,8 @@ exports.getAllProducts = async (req, res) => {
     }
     if (search) {
       query.$or = [
-        { name: { $regex: search, $options: 'i' } },
-        { description: { $regex: search, $options: 'i' } }
+        { name: { $regex: search, $options: "i" } },
+        { description: { $regex: search, $options: "i" } },
       ];
     }
 
@@ -39,7 +39,7 @@ exports.getAllProducts = async (req, res) => {
 
     // Execute query with population
     const products = await Product.find(query)
-      .populate('supplier_id', 'name contact_person_name email phone')
+      .populate("supplier_id", "name contact_person_name email phone")
       .sort(sort)
       .skip(skip)
       .limit(parseInt(limit));
@@ -52,13 +52,13 @@ exports.getAllProducts = async (req, res) => {
       total,
       page: parseInt(page),
       pages: Math.ceil(total / parseInt(limit)),
-      data: products
+      data: products,
     });
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: 'Error fetching products',
-      error: error.message
+      message: "Error fetching products",
+      error: error.message,
     });
   }
 };
@@ -68,21 +68,36 @@ exports.getAllProducts = async (req, res) => {
 exports.getProductStats = async (req, res) => {
   try {
     const totalProducts = await Product.countDocuments();
-    const activeProducts = await Product.countDocuments({ status: 'active' });
-    const inactiveProducts = await Product.countDocuments({ status: 'inactive' });
-    const discontinuedProducts = await Product.countDocuments({ status: 'discontinued' });
-    
-    const byCategory = await Product.aggregate([
-      { $group: { _id: '$category', count: { $sum: 1 }, totalStock: { $sum: '$current_stock' } } }
-    ]);
-    
-    const lowStockCount = await Product.countDocuments({
-      $expr: { $lte: ['$current_stock', '$minimum_stock_level'] }
+    const activeProducts = await Product.countDocuments({ status: "active" });
+    const inactiveProducts = await Product.countDocuments({
+      status: "inactive",
     });
-    
+    const discontinuedProducts = await Product.countDocuments({
+      status: "discontinued",
+    });
+
+    const byCategory = await Product.aggregate([
+      {
+        $group: {
+          _id: "$category",
+          count: { $sum: 1 },
+          totalStock: { $sum: "$current_stock" },
+        },
+      },
+    ]);
+
+    const lowStockCount = await Product.countDocuments({
+      $expr: { $lte: ["$current_stock", "$minimum_stock_level"] },
+    });
+
     const totalInventoryValue = await Product.aggregate([
-      { $match: { status: 'active' } },
-      { $group: { _id: null, total: { $sum: { $multiply: ['$current_stock', '$price'] } } } }
+      { $match: { status: "active" } },
+      {
+        $group: {
+          _id: null,
+          total: { $sum: { $multiply: ["$current_stock", "$price"] } },
+        },
+      },
     ]);
 
     res.status(200).json({
@@ -94,14 +109,14 @@ exports.getProductStats = async (req, res) => {
         discontinued: discontinuedProducts,
         lowStockCount,
         totalInventoryValue: totalInventoryValue[0]?.total || 0,
-        byCategory
-      }
+        byCategory,
+      },
     });
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: 'Error fetching product statistics',
-      error: error.message
+      message: "Error fetching product statistics",
+      error: error.message,
     });
   }
 };
@@ -113,23 +128,23 @@ exports.getLowStockProducts = async (req, res) => {
     const { limit = 50 } = req.query;
 
     const products = await Product.find({
-      $expr: { $lte: ['$current_stock', '$minimum_stock_level'] },
-      status: 'active'
+      $expr: { $lte: ["$current_stock", "$minimum_stock_level"] },
+      status: "active",
     })
-      .populate('supplier_id', 'name contact_person_name phone email')
+      .populate("supplier_id", "name contact_person_name phone email")
       .limit(parseInt(limit))
-      .sort('current_stock');
+      .sort("current_stock");
 
     res.status(200).json({
       success: true,
       count: products.length,
-      data: products
+      data: products,
     });
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: 'Error fetching low stock products',
-      error: error.message
+      message: "Error fetching low stock products",
+      error: error.message,
     });
   }
 };
@@ -143,16 +158,16 @@ exports.getProductsByCategory = async (req, res) => {
 
     const products = await Product.find({
       category: req.params.category,
-      status: 'active'
+      status: "active",
     })
-      .populate('supplier_id', 'name')
+      .populate("supplier_id", "name")
       .skip(skip)
       .limit(parseInt(limit))
-      .sort('name');
+      .sort("name");
 
     const total = await Product.countDocuments({
       category: req.params.category,
-      status: 'active'
+      status: "active",
     });
 
     res.status(200).json({
@@ -161,13 +176,13 @@ exports.getProductsByCategory = async (req, res) => {
       total,
       page: parseInt(page),
       pages: Math.ceil(total / parseInt(limit)),
-      data: products
+      data: products,
     });
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: 'Error fetching products by category',
-      error: error.message
+      message: "Error fetching products by category",
+      error: error.message,
     });
   }
 };
@@ -176,32 +191,34 @@ exports.getProductsByCategory = async (req, res) => {
 // @route   GET /api/products/:id
 exports.getProductById = async (req, res) => {
   try {
-    const product = await Product.findById(req.params.id)
-      .populate('supplier_id');
+    const product = await Product.findById(req.params.id).populate(
+      "supplier_id"
+    );
 
     if (!product) {
       return res.status(404).json({
         success: false,
-        message: 'Product not found'
+        message: "Product not found",
       });
     }
 
     // Get shelf locations for this product
-    const shelfLocations = await ProductShelf.find({ product_id: product._id })
-      .populate('shelf_id');
+    const shelfLocations = await ProductShelf.find({
+      product_id: product._id,
+    }).populate("shelf_id");
 
     res.status(200).json({
       success: true,
       data: {
         ...product.toObject(),
-        shelfLocations
-      }
+        shelfLocations,
+      },
     });
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: 'Error fetching product',
-      error: error.message
+      message: "Error fetching product",
+      error: error.message,
     });
   }
 };
@@ -219,17 +236,17 @@ exports.createProduct = async (req, res) => {
       maximum_stock_level,
       storage_location,
       price = 0,
-      status = 'active',
+      status = "active",
       supplier_id,
       category,
-      image_link
+      image_link,
     } = req.body;
 
     // Validate required fields
     if (!name || !unit) {
       return res.status(400).json({
         success: false,
-        message: 'Please provide product name and unit'
+        message: "Please provide product name and unit",
       });
     }
 
@@ -239,7 +256,7 @@ exports.createProduct = async (req, res) => {
       if (!supplier) {
         return res.status(404).json({
           success: false,
-          message: 'Supplier not found'
+          message: "Supplier not found",
         });
       }
     }
@@ -249,8 +266,20 @@ exports.createProduct = async (req, res) => {
     if (existingProduct) {
       return res.status(400).json({
         success: false,
-        message: 'Product with this name already exists'
+        message: "Product with this name already exists",
       });
+    }
+
+    // Validate current_stock against maximum_stock_level if provided
+    if (maximum_stock_level !== undefined && current_stock !== undefined) {
+      const curr = parseInt(current_stock);
+      const max = parseInt(maximum_stock_level);
+      if (!isNaN(max) && max > 0 && curr > max) {
+        return res.status(400).json({
+          success: false,
+          message: "Current stock cannot be greater than maximum stock level",
+        });
+      }
     }
 
     const product = await Product.create({
@@ -265,21 +294,24 @@ exports.createProduct = async (req, res) => {
       status,
       supplier_id,
       category,
-      image_link
+      image_link,
     });
 
-    await product.populate('supplier_id', 'name contact_person_name email phone');
+    await product.populate(
+      "supplier_id",
+      "name contact_person_name email phone"
+    );
 
     res.status(201).json({
       success: true,
-      message: 'Product created successfully',
-      data: product
+      message: "Product created successfully",
+      data: product,
     });
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: 'Error creating product',
-      error: error.message
+      message: "Error creating product",
+      error: error.message,
     });
   }
 };
@@ -293,7 +325,7 @@ exports.updateProduct = async (req, res) => {
     if (!product) {
       return res.status(404).json({
         success: false,
-        message: 'Product not found'
+        message: "Product not found",
       });
     }
 
@@ -301,6 +333,7 @@ exports.updateProduct = async (req, res) => {
       name,
       description,
       unit,
+      current_stock,
       minimum_stock_level,
       maximum_stock_level,
       storage_location,
@@ -308,7 +341,7 @@ exports.updateProduct = async (req, res) => {
       status,
       supplier_id,
       category,
-      image_link
+      image_link,
     } = req.body;
 
     // Validate supplier if provided
@@ -317,18 +350,33 @@ exports.updateProduct = async (req, res) => {
       if (!supplier) {
         return res.status(404).json({
           success: false,
-          message: 'Supplier not found'
+          message: "Supplier not found",
         });
       }
     }
-
+    // Validate current_stock against maximum_stock_level if provided
+    if (maximum_stock_level !== undefined && current_stock !== undefined) {
+      const curr = parseInt(current_stock);
+      const max = parseInt(maximum_stock_level);
+      if (!isNaN(max) && max > 0 && curr > max) {
+        return res.status(400).json({
+          success: false,
+          message: "Current stock cannot be greater than maximum stock level",
+        });
+      }
+    }
     // Update fields
     if (name !== undefined) product.name = name;
     if (description !== undefined) product.description = description;
     if (unit !== undefined) product.unit = unit;
-    if (minimum_stock_level !== undefined) product.minimum_stock_level = minimum_stock_level;
-    if (maximum_stock_level !== undefined) product.maximum_stock_level = maximum_stock_level;
-    if (storage_location !== undefined) product.storage_location = storage_location;
+    if (current_stock !== undefined)
+      product.current_stock = parseInt(current_stock) || 0;
+    if (minimum_stock_level !== undefined)
+      product.minimum_stock_level = minimum_stock_level;
+    if (maximum_stock_level !== undefined)
+      product.maximum_stock_level = maximum_stock_level;
+    if (storage_location !== undefined)
+      product.storage_location = storage_location;
     if (price !== undefined) product.price = price;
     if (status !== undefined) product.status = status;
     if (supplier_id !== undefined) product.supplier_id = supplier_id;
@@ -336,18 +384,21 @@ exports.updateProduct = async (req, res) => {
     if (image_link !== undefined) product.image_link = image_link;
 
     await product.save();
-    await product.populate('supplier_id', 'name contact_person_name email phone');
+    await product.populate(
+      "supplier_id",
+      "name contact_person_name email phone"
+    );
 
     res.status(200).json({
       success: true,
-      message: 'Product updated successfully',
-      data: product
+      message: "Product updated successfully",
+      data: product,
     });
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: 'Error updating product',
-      error: error.message
+      message: "Error updating product",
+      error: error.message,
     });
   }
 };
@@ -361,25 +412,25 @@ exports.deleteProduct = async (req, res) => {
     if (!product) {
       return res.status(404).json({
         success: false,
-        message: 'Product not found'
+        message: "Product not found",
       });
     }
 
     // Soft delete - set isDelete to true
     product.isDelete = true;
-    product.status = 'discontinued';
+    product.status = "discontinued";
     await product.save();
 
     res.status(200).json({
       success: true,
-      message: 'Product marked as deleted successfully',
-      data: product
+      message: "Product marked as deleted successfully",
+      data: product,
     });
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: 'Error deleting product',
-      error: error.message
+      message: "Error deleting product",
+      error: error.message,
     });
   }
 };
@@ -393,7 +444,7 @@ exports.permanentDeleteProduct = async (req, res) => {
     if (!product) {
       return res.status(404).json({
         success: false,
-        message: 'Product not found'
+        message: "Product not found",
       });
     }
 
@@ -408,13 +459,13 @@ exports.permanentDeleteProduct = async (req, res) => {
 
     res.status(200).json({
       success: true,
-      message: 'Product and related data permanently deleted'
+      message: "Product and related data permanently deleted",
     });
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: 'Error permanently deleting product',
-      error: error.message
+      message: "Error permanently deleting product",
+      error: error.message,
     });
   }
 };
@@ -430,23 +481,24 @@ exports.updateProductStock = async (req, res) => {
     if (!product) {
       return res.status(404).json({
         success: false,
-        message: 'Product not found'
+        message: "Product not found",
       });
     }
 
     if (current_stock !== undefined) {
       product.current_stock = current_stock;
     } else if (adjustment_type && adjustment_value !== undefined) {
-      if (adjustment_type === 'add') {
+      if (adjustment_type === "add") {
         product.current_stock += parseInt(adjustment_value);
-      } else if (adjustment_type === 'subtract') {
+      } else if (adjustment_type === "subtract") {
         product.current_stock -= parseInt(adjustment_value);
         if (product.current_stock < 0) product.current_stock = 0;
       }
     } else {
       return res.status(400).json({
         success: false,
-        message: 'Please provide current_stock or adjustment_type with adjustment_value'
+        message:
+          "Please provide current_stock or adjustment_type with adjustment_value",
       });
     }
 
@@ -454,14 +506,14 @@ exports.updateProductStock = async (req, res) => {
 
     res.status(200).json({
       success: true,
-      message: 'Product stock updated successfully',
-      data: product
+      message: "Product stock updated successfully",
+      data: product,
     });
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: 'Error updating product stock',
-      error: error.message
+      message: "Error updating product stock",
+      error: error.message,
     });
   }
 };
@@ -475,7 +527,7 @@ exports.updateProductPrice = async (req, res) => {
     if (price === undefined || price < 0) {
       return res.status(400).json({
         success: false,
-        message: 'Please provide a valid price'
+        message: "Please provide a valid price",
       });
     }
 
@@ -484,7 +536,7 @@ exports.updateProductPrice = async (req, res) => {
     if (!product) {
       return res.status(404).json({
         success: false,
-        message: 'Product not found'
+        message: "Product not found",
       });
     }
 
@@ -494,18 +546,18 @@ exports.updateProductPrice = async (req, res) => {
 
     res.status(200).json({
       success: true,
-      message: 'Product price updated successfully',
+      message: "Product price updated successfully",
       data: {
         product,
         oldPrice,
-        newPrice: price
-      }
+        newPrice: price,
+      },
     });
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: 'Error updating product price',
-      error: error.message
+      message: "Error updating product price",
+      error: error.message,
     });
   }
 };
@@ -519,23 +571,23 @@ exports.activateProduct = async (req, res) => {
     if (!product) {
       return res.status(404).json({
         success: false,
-        message: 'Product not found'
+        message: "Product not found",
       });
     }
 
-    product.status = 'active';
+    product.status = "active";
     await product.save();
 
     res.status(200).json({
       success: true,
-      message: 'Product activated successfully',
-      data: product
+      message: "Product activated successfully",
+      data: product,
     });
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: 'Error activating product',
-      error: error.message
+      message: "Error activating product",
+      error: error.message,
     });
   }
 };
@@ -551,10 +603,10 @@ exports.getProductsBySupplier = async (req, res) => {
     if (status) query.status = status;
 
     const products = await Product.find(query)
-      .populate('supplier_id', 'name contact_person_name')
+      .populate("supplier_id", "name contact_person_name")
       .skip(skip)
       .limit(parseInt(limit))
-      .sort('name');
+      .sort("name");
 
     const total = await Product.countDocuments(query);
 
@@ -564,13 +616,13 @@ exports.getProductsBySupplier = async (req, res) => {
       total,
       page: parseInt(page),
       pages: Math.ceil(total / parseInt(limit)),
-      data: products
+      data: products,
     });
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: 'Error fetching products by supplier',
-      error: error.message
+      message: "Error fetching products by supplier",
+      error: error.message,
     });
   }
 };

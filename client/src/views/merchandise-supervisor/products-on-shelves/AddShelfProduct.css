@@ -97,6 +97,8 @@
     color: white;
 }
 
+
+
 .add-shelf-panel-title {
     font-size: 1.25rem;
     font-weight: 600;
@@ -383,6 +385,7 @@
     border-top: 1px solid #e5e7eb;
     background: #f9fafb;
 }
+
 
 .add-shelf-pagination-info {
     color: #6b7280;

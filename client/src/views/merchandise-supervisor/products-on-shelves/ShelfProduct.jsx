@@ -68,20 +68,23 @@ const ShelfProduct = () => {
           }
 
           return {
-            id: product?._id || mapping._id,
+            id: mapping._id, // use mapping id as unique id for row
             mappingId: mapping._id,
             name: product?.name || "Unknown Product",
-            category: product?.category || "N/A",
-            brand: "N/A", // TODO: Add brand field if available
+            category: product?.category || "",
+            brand: "N/A",
             price: `$${(product?.price || 0).toFixed(2)}`,
             stock: quantity,
             lowStockThreshold: lowStockThreshold,
-            supplier: "N/A", // TODO: Populate supplier from product
+            supplier: product?.supplier_id?.name || "",
             status: status,
-            shelfLocation: shelf?.shelf_number || "N/A",
-            section: shelf?.shelf_number?.charAt(0) || "N/A",
-            slot: shelf?.note || "N/A",
+            shelfLocation: shelf?.shelf_number || "",
+            // prefer populated section name when available
+            section: shelf?.section?.section_name || shelf?.shelf_name || "",
+            // show numeric slot if available, otherwise leave empty (no default)
+            slot: shelf?.section_number ? String(shelf.section_number) : "",
             _original: mapping,
+            productId: product?._id || null,
           };
         });
 
@@ -103,6 +106,13 @@ const ShelfProduct = () => {
       setIsLoading(false);
     }
   };
+
+  // Load data on mount and when page changes
+  useEffect(() => {
+    loadProductShelves();
+  }, [currentPage]);
+
+  // Sample fake shelf product data - REMOVE sau khi test API
 
   // Load data on mount and when page changes
   useEffect(() => {
@@ -190,9 +200,10 @@ const ShelfProduct = () => {
     statusFilter,
   ]);
 
-  const handleEdit = (productId, shelfLocation) => {
-    console.log("Edit product:", productId, "at location:", shelfLocation);
-    const editUrl = `/shelf-product/edit/${productId}-${shelfLocation}`;
+  const handleEdit = (mappingId, shelfLocation) => {
+    // mappingId is the product-shelf mapping id
+    console.log("Edit mapping:", mappingId, "at location:", shelfLocation);
+    const editUrl = `/shelf-product/edit/${mappingId}`; // pass mapping id to edit page
     console.log("Navigating to:", editUrl);
     navigate(editUrl);
   };
@@ -451,8 +462,9 @@ const ShelfProduct = () => {
                 <td className="shelf-product-name-cell">
                   <div className="shelf-product-name">{product.name}</div>
                   <div className="shelf-location-info">
-                    {product.shelfLocation} - Section {product.section} - Slot{" "}
-                    {product.slot}
+                    {product.shelfLocation}
+                    {product.section ? ` - Section ${product.section}` : ""}
+                    {product.slot ? ` - Slot ${product.slot}` : ""}
                   </div>
                 </td>
                 <td>
