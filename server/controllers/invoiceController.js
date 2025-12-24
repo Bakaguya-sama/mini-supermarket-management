@@ -58,6 +58,14 @@ exports.getAllInvoices = async (req, res) => {
         }
       })
       .populate('order_id', 'order_number status payment_method')
+      .populate({
+        path: 'staff_id',
+        select: 'account_id position',
+        populate: {
+          path: 'account_id',
+          select: 'full_name email'
+        }
+      })
       .sort(sort)
       .skip(skip)
       .limit(parseInt(limit));
@@ -116,6 +124,14 @@ exports.getInvoiceById = async (req, res) => {
       .populate({
         path: 'order_id',
         select: 'order_number status total_amount delivery_date payment_method'
+      })
+      .populate({
+        path: 'staff_id',
+        select: 'account_id position',
+        populate: {
+          path: 'account_id',
+          select: 'full_name email'
+        }
       });
 
     if (!invoice) {
@@ -246,7 +262,12 @@ exports.createInvoice = async (req, res) => {
     const {
       customer_id,
       order_id,
+      staff_id,
       items,
+      payment_method,
+      subtotal,
+      discount_amount,
+      tax_amount,
       notes
     } = req.body;
 
@@ -278,20 +299,43 @@ exports.createInvoice = async (req, res) => {
       }
     }
 
+    // Verify staff exists (if provided)
+    if (staff_id) {
+      const staff = await mongoose.model('Staff').findById(staff_id);
+      if (!staff) {
+        return res.status(404).json({
+          success: false,
+          message: 'Staff not found'
+        });
+      }
+    }
+
     // Generate invoice number
     const invoiceNumber = `INV-${Date.now()}`;
 
-    // Calculate total amount
-    let totalAmount = 0;
-    for (const item of items) {
-      totalAmount += item.line_total;
+    // Calculate amounts
+    let calculatedSubtotal = subtotal || 0;
+    if (!subtotal) {
+      // Calculate from items if not provided
+      for (const item of items) {
+        calculatedSubtotal += item.line_total;
+      }
     }
+
+    const calculatedDiscountAmount = discount_amount || 0;
+    const calculatedTaxAmount = tax_amount || (calculatedSubtotal * 0.09); // Default 9% tax
+    const totalAmount = calculatedSubtotal - calculatedDiscountAmount + calculatedTaxAmount;
 
     // Create invoice
     const invoice = await Invoice.create({
       invoice_number: invoiceNumber,
       customer_id,
-      order_id: order_id || null, // Order ID is optional
+      order_id: order_id || null,
+      staff_id: staff_id || null,
+      payment_method: payment_method || 'Cash',
+      subtotal: calculatedSubtotal,
+      discount_amount: calculatedDiscountAmount,
+      tax_amount: calculatedTaxAmount,
       total_amount: totalAmount,
       payment_status: 'unpaid',
       notes,
@@ -312,7 +356,8 @@ exports.createInvoice = async (req, res) => {
 
     await invoice.populate([
       { path: 'customer_id' },
-      { path: 'order_id' }
+      { path: 'order_id' },
+      { path: 'staff_id', populate: { path: 'account_id', select: 'full_name email' } }
     ]);
 
     res.status(201).json({
@@ -347,17 +392,30 @@ exports.updateInvoice = async (req, res) => {
 
     const {
       payment_status,
+      payment_method,
       notes
     } = req.body;
 
+    // Update payment status
     if (payment_status) {
-      if (!['unpaid', 'paid', 'partial'].includes(payment_status)) {
+      if (!['unpaid', 'paid', 'partial', 'refunded'].includes(payment_status)) {
         return res.status(400).json({
           success: false,
           message: 'Invalid payment status'
         });
       }
       invoice.payment_status = payment_status;
+    }
+
+    // Update payment method
+    if (payment_method) {
+      if (!['Cash', 'Card Payment', 'Digital Wallet', 'E-Wallet'].includes(payment_method)) {
+        return res.status(400).json({
+          success: false,
+          message: 'Invalid payment method'
+        });
+      }
+      invoice.payment_method = payment_method;
     }
 
     if (notes !== undefined) invoice.notes = notes;

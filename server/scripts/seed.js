@@ -176,6 +176,17 @@ async function seedDatabase() {
         isDelete: false,
         avatar_link: "https://i.pravatar.cc/150?img=14",
       },
+      {
+        username: "supervisor2",
+        password_hash: password,
+        email: "supervisor2@mini.vn",
+        full_name: "Trần Thị Lan",
+        phone: "0987654329",
+        role: "staff",
+        is_active: true,
+        isDelete: false,
+        avatar_link: "https://i.pravatar.cc/150?img=8",
+      },
 
       // Staff - Warehouse
       {
@@ -253,7 +264,7 @@ async function seedDatabase() {
     ]);
     console.log(`   ✅ ${accounts.length} accounts\n`);
 
-    // 2. STAFF (9 nhân viên - KHÔNG BAO GỒM MANAGER - 4 POSITIONS)
+    // 2. STAFF (10 nhân viên - KHÔNG BAO GỒM MANAGER - 4 POSITIONS)
     console.log(
       "2/23 👥 Tạo Staff (4 positions: Delivery, Cashier, Warehouse, Merchandise Supervisor)..."
     );
@@ -308,10 +319,19 @@ async function seedDatabase() {
         is_active: true,
         isDelete: false,
       },
+      {
+        account_id: accounts[7]._id,
+        position: "Merchandise Supervisor",
+        employment_type: "Full-time",
+        annual_salary: 245000000,
+        hire_date: new Date("2023-08-15"),
+        is_active: true,
+        isDelete: false,
+      },
 
       // Warehouse Staff
       {
-        account_id: accounts[7]._id,
+        account_id: accounts[8]._id,
         position: "Warehouse",
         employment_type: "Full-time",
         annual_salary: 200000000,
@@ -320,7 +340,7 @@ async function seedDatabase() {
         isDelete: false,
       },
       {
-        account_id: accounts[8]._id,
+        account_id: accounts[9]._id,
         position: "Warehouse",
         employment_type: "Full-time",
         annual_salary: 195000000,
@@ -330,7 +350,7 @@ async function seedDatabase() {
       },
     ]);
     console.log(
-      `   ✅ ${staffs.length} staff (4 positions: Delivery, Cashier, Merchandise Supervisor, Warehouse)\n`
+      `   ✅ ${staffs.length} staff (4 positions: Delivery x2, Cashier x2, Merchandise Supervisor x2, Warehouse x2)\n`
     );
 
     // 3. MANAGERS (2 quản lý - RIÊNG BIỆT VỚI STAFF)
@@ -370,28 +390,28 @@ async function seedDatabase() {
     console.log("4/23 🛒 Tạo Customers...");
     const customers = await Customer.insertMany([
       {
-        account_id: accounts[9]._id,
+        account_id: accounts[10]._id,
         membership_type: "Gold",
         points_balance: 1500,
         total_spent: 5000000,
         isDelete: false,
       },
       {
-        account_id: accounts[10]._id,
+        account_id: accounts[11]._id,
         membership_type: "Silver",
         points_balance: 800,
         total_spent: 3000000,
         isDelete: false,
       },
       {
-        account_id: accounts[11]._id,
+        account_id: accounts[12]._id,
         membership_type: "Gold",
         points_balance: 2000,
         total_spent: 7500000,
         isDelete: false,
       },
       {
-        account_id: accounts[12]._id,
+        account_id: accounts[13]._id,
         membership_type: "Standard",
         points_balance: 200,
         total_spent: 800000,
@@ -463,7 +483,7 @@ async function seedDatabase() {
         price: 145000,
         status: "active",
         supplier_id: suppliers[0]._id,
-        category: "Bakery",
+        category: "Grains",
         image_link: "https://via.placeholder.com/300x200?text=Gao+ST25",
         sku: "SKU-001",
         barcode: "8934567890123",
@@ -658,6 +678,7 @@ async function seedDatabase() {
         shelf_number: "A1",
         shelf_name: "A",
         section_number: 1,
+        slot_number: "01",
         description: "Lương thực - Section 1",
         capacity: 50,
         current_quantity: 0,
@@ -667,6 +688,7 @@ async function seedDatabase() {
         shelf_number: "A2",
         shelf_name: "A",
         section_number: 2,
+        slot_number: "02",
         description: "Lương thực - Section 2",
         capacity: 50,
         current_quantity: 0,
@@ -676,6 +698,7 @@ async function seedDatabase() {
         shelf_number: "A3",
         shelf_name: "A",
         section_number: 3,
+        slot_number: "03",
         description: "Lương thực - Section 3",
         capacity: 50,
         current_quantity: 0,
@@ -685,6 +708,7 @@ async function seedDatabase() {
         shelf_number: "A4",
         shelf_name: "A",
         section_number: 4,
+        slot_number: "04",
         description: "Lương thực - Section 4",
         capacity: 50,
         current_quantity: 0,
@@ -696,6 +720,7 @@ async function seedDatabase() {
         shelf_number: "B1",
         shelf_name: "B",
         section_number: 1,
+        slot_number: "05",
         description: "Sữa & Trứng - Section 1",
         capacity: 50,
         current_quantity: 0,
@@ -705,6 +730,7 @@ async function seedDatabase() {
         shelf_number: "B2",
         shelf_name: "B",
         section_number: 2,
+        slot_number: "06",
         description: "Sữa & Trứng - Section 2",
         capacity: 50,
         current_quantity: 0,
@@ -714,6 +740,7 @@ async function seedDatabase() {
         shelf_number: "B3",
         shelf_name: "B",
         section_number: 3,
+        slot_number: "07",
         description: "Sữa & Trứng - Section 3",
         capacity: 50,
         current_quantity: 0,
@@ -723,6 +750,7 @@ async function seedDatabase() {
         shelf_number: "B4",
         shelf_name: "B",
         section_number: 4,
+        slot_number: "08",
         description: "Sữa & Trứng - Section 4",
         capacity: 50,
         current_quantity: 0,
@@ -734,6 +762,7 @@ async function seedDatabase() {
         shelf_number: "C1",
         shelf_name: "C",
         section_number: 1,
+        slot_number: "09",
         description: "Đồ uống - Section 1",
         capacity: 50,
         current_quantity: 0,
@@ -743,6 +772,7 @@ async function seedDatabase() {
         shelf_number: "C2",
         shelf_name: "C",
         section_number: 2,
+        slot_number: "10",
         description: "Đồ uống - Section 2",
         capacity: 50,
         current_quantity: 0,
@@ -752,6 +782,7 @@ async function seedDatabase() {
         shelf_number: "C3",
         shelf_name: "C",
         section_number: 3,
+        slot_number: "11",
         description: "Đồ uống - Section 3",
         capacity: 50,
         current_quantity: 0,
@@ -761,6 +792,7 @@ async function seedDatabase() {
         shelf_number: "C4",
         shelf_name: "C",
         section_number: 4,
+        slot_number: "12",
         description: "Đồ uống - Section 4",
         capacity: 50,
         current_quantity: 0,
@@ -772,6 +804,7 @@ async function seedDatabase() {
         shelf_number: "D1",
         shelf_name: "D",
         section_number: 1,
+        slot_number: "13",
         description: "Gia dụng - Section 1",
         capacity: 50,
         current_quantity: 0,
@@ -781,6 +814,7 @@ async function seedDatabase() {
         shelf_number: "D2",
         shelf_name: "D",
         section_number: 2,
+        slot_number: "14",
         description: "Gia dụng - Section 2",
         capacity: 50,
         current_quantity: 0,
@@ -790,6 +824,7 @@ async function seedDatabase() {
         shelf_number: "D3",
         shelf_name: "D",
         section_number: 3,
+        slot_number: "15",
         description: "Gia dụng - Section 3",
         capacity: 50,
         current_quantity: 0,
@@ -799,6 +834,7 @@ async function seedDatabase() {
         shelf_number: "D4",
         shelf_name: "D",
         section_number: 4,
+        slot_number: "16",
         description: "Gia dụng - Section 4",
         capacity: 50,
         current_quantity: 0,
@@ -810,6 +846,7 @@ async function seedDatabase() {
         shelf_number: "E1",
         shelf_name: "E",
         section_number: 1,
+        slot_number: "17",
         description: "Bánh kẹo - Section 1",
         capacity: 50,
         current_quantity: 0,
@@ -819,6 +856,7 @@ async function seedDatabase() {
         shelf_number: "E2",
         shelf_name: "E",
         section_number: 2,
+        slot_number: "18",
         description: "Bánh kẹo - Section 2",
         capacity: 50,
         current_quantity: 0,
@@ -828,6 +866,7 @@ async function seedDatabase() {
         shelf_number: "E3",
         shelf_name: "E",
         section_number: 3,
+        slot_number: "19",
         description: "Bánh kẹo - Section 3",
         capacity: 50,
         current_quantity: 0,
@@ -837,6 +876,7 @@ async function seedDatabase() {
         shelf_number: "E4",
         shelf_name: "E",
         section_number: 4,
+        slot_number: "20",
         description: "Bánh kẹo - Section 4",
         capacity: 50,
         current_quantity: 0,
@@ -848,6 +888,7 @@ async function seedDatabase() {
         shelf_number: "F1",
         shelf_name: "F",
         section_number: 1,
+        slot_number: "21",
         description: "Đông lạnh - Section 1",
         capacity: 50,
         current_quantity: 0,
@@ -857,6 +898,7 @@ async function seedDatabase() {
         shelf_number: "F2",
         shelf_name: "F",
         section_number: 2,
+        slot_number: "22",
         description: "Đông lạnh - Section 2",
         capacity: 50,
         current_quantity: 0,
@@ -866,6 +908,7 @@ async function seedDatabase() {
         shelf_number: "F3",
         shelf_name: "F",
         section_number: 3,
+        slot_number: "23",
         description: "Đông lạnh - Section 3",
         capacity: 50,
         current_quantity: 0,
@@ -875,6 +918,7 @@ async function seedDatabase() {
         shelf_number: "F4",
         shelf_name: "F",
         section_number: 4,
+        slot_number: "24",
         description: "Đông lạnh - Section 4",
         capacity: 50,
         current_quantity: 0,
@@ -892,120 +936,347 @@ async function seedDatabase() {
       {
         product_id: products[0]._id,
         shelf_id: shelves[0]._id,
-        quantity: 50,
+        quantity: 45,
         isDelete: false,
-      }, // Gạo ST25 -> A1
+      }, // Gạo ST25 -> A1 (45/50)
       {
         product_id: products[1]._id,
         shelf_id: shelves[4]._id,
-        quantity: 100,
+        quantity: 40,
         isDelete: false,
-      }, // Sữa Vinamilk -> B1
+      }, // Sữa Vinamilk -> B1 (40/50)
       {
         product_id: products[2]._id,
         shelf_id: shelves[8]._id,
-        quantity: 200,
+        quantity: 50,
         isDelete: false,
-      }, // Coca -> C1
+      }, // Coca -> C1 (50/50 FULL)
       {
         product_id: products[5]._id,
         shelf_id: shelves[1]._id,
-        quantity: 80,
+        quantity: 30,
         isDelete: false,
-      }, // Bánh mì -> A2
+      }, // Bánh mì -> A2 (30/50)
       {
         product_id: products[6]._id,
         shelf_id: shelves[9]._id,
-        quantity: 150,
+        quantity: 48,
         isDelete: false,
-      }, // Nước suối -> C2
+      }, // Nước suối -> C2 (48/50)
+      {
+        product_id: products[3]._id,
+        shelf_id: shelves[5]._id,
+        quantity: 20,
+        isDelete: false,
+      }, // Trứng gà -> B2 (20/50)
+      {
+        product_id: products[4]._id,
+        shelf_id: shelves[12]._id,
+        quantity: 35,
+        isDelete: false,
+      }, // Mì Hảo Hảo -> D1 (35/50)
     ]);
     console.log(`   ✅ ${productShelves.length} product-shelf mappings\n`);
 
-    // 9. PROMOTIONS (4 khuyến mãi)
+    // Update shelf current_quantity based on ProductShelf mappings
+    console.log("   Updating shelf quantities...");
+    for (const mapping of productShelves) {
+      await Shelf.findByIdAndUpdate(
+        mapping.shelf_id,
+        { $inc: { current_quantity: mapping.quantity } }
+      );
+      // Also deduct from product current_stock
+      await Product.findByIdAndUpdate(
+        mapping.product_id,
+        { $inc: { current_stock: -mapping.quantity } }
+      );
+    }
+    console.log(`   ✅ Shelf quantities and product stocks updated\n`);
+
+    // 9. PROMOTIONS (Nhiều khuyến mãi đa dạng)
     console.log("9/23 🎁 Tạo Promotions...");
+    const now = new Date();
+    const oneMonthAgo = new Date(now.getFullYear(), now.getMonth() - 1, now.getDate());
+    const oneWeekAgo = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 7);
+    const tomorrow = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+    const oneWeekLater = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 7);
+    const oneMonthLater = new Date(now.getFullYear(), now.getMonth() + 1, now.getDate());
+    const threeMonthsLater = new Date(now.getFullYear(), now.getMonth() + 3, now.getDate());
+    const sixMonthsLater = new Date(now.getFullYear(), now.getMonth() + 6, now.getDate());
+    const oneYearLater = new Date(now.getFullYear() + 1, now.getMonth(), now.getDate());
+
     const promotions = await Promotion.insertMany([
+      // Active promotions - Percentage discounts
       {
-        name: "Khuyến mãi Tết 2024",
-        description: "Giảm 20% cho đơn hàng từ 500k",
+        name: "Weekend Special - Fresh Produce",
+        description: "20% off on all fresh produce this weekend",
         promotion_type: "percentage",
         discount_value: 20,
-        minimum_purchase_amount: 500000,
-        promo_code: "TET2024",
-        start_date: new Date("2024-01-20"),
-        end_date: new Date("2024-02-15"),
-        status: "inactive",
-        isDelete: false,
-      },
-      {
-        name: "Flash Sale Cuối Tuần",
-        description: "Giảm 50k cho đơn hàng từ 300k",
-        promotion_type: "fixed",
-        discount_value: 50000,
-        minimum_purchase_amount: 300000,
-        promo_code: "FLASH50",
-        start_date: new Date("2024-12-01"),
-        end_date: new Date("2025-12-31"),
+        minimum_purchase_amount: 0,
+        promo_code: "WEEKEND20",
+        start_date: oneWeekAgo,
+        end_date: oneWeekLater,
         status: "active",
+        terms: "Valid for fresh produce category only",
         isDelete: false,
       },
       {
-        name: "Ưu đãi Thành Viên Vàng",
-        description: "Giảm 15% cho khách VIP",
+        name: "Mega Sale - 30% Off",
+        description: "30% discount for purchases above $50",
+        promotion_type: "percentage",
+        discount_value: 30,
+        minimum_purchase_amount: 50,
+        promo_code: "MEGA30",
+        start_date: now,
+        end_date: oneMonthLater,
+        status: "active",
+        terms: "Minimum purchase $50 required",
+        isDelete: false,
+      },
+      {
+        name: "New Customer Welcome",
+        description: "15% off your first purchase",
         promotion_type: "percentage",
         discount_value: 15,
-        minimum_purchase_amount: 200000,
-        promo_code: "GOLD15",
-        start_date: new Date("2024-01-01"),
-        end_date: new Date("2025-12-31"),
+        minimum_purchase_amount: 20,
+        promo_code: "WELCOME15",
+        start_date: oneMonthAgo,
+        end_date: threeMonthsLater,
         status: "active",
+        terms: "For new customers only, minimum $20 purchase",
         isDelete: false,
       },
       {
-        name: "Giảm giá Sữa",
-        description: "Giảm 10k cho các sản phẩm sữa",
-        promotion_type: "fixed",
-        discount_value: 10000,
-        minimum_purchase_amount: 0,
-        promo_code: "MILK10",
-        start_date: new Date("2024-11-01"),
-        end_date: new Date("2024-12-31"),
+        name: "Gold Member Exclusive",
+        description: "25% off for Gold members",
+        promotion_type: "percentage",
+        discount_value: 25,
+        minimum_purchase_amount: 100,
+        promo_code: "GOLD25",
+        start_date: oneMonthAgo,
+        end_date: sixMonthsLater,
         status: "active",
+        terms: "Gold membership required, minimum $100 purchase",
+        isDelete: false,
+      },
+      {
+        name: "Daily Deals - 10% Off",
+        description: "10% off on all items, no minimum",
+        promotion_type: "percentage",
+        discount_value: 10,
+        minimum_purchase_amount: 0,
+        promo_code: "DAILY10",
+        start_date: now,
+        end_date: oneYearLater,
+        status: "active",
+        terms: "No minimum purchase required",
+        isDelete: false,
+      },
+
+      // Active promotions - Fixed amount discounts
+      {
+        name: "Flash Sale - $5 Off",
+        description: "Get $5 off your purchase",
+        promotion_type: "fixed",
+        discount_value: 5,
+        minimum_purchase_amount: 30,
+        promo_code: "FLASH5",
+        start_date: now,
+        end_date: oneWeekLater,
+        status: "active",
+        terms: "Minimum purchase $30 required",
+        isDelete: false,
+      },
+      {
+        name: "Super Saver - $15 Off",
+        description: "Save $15 on orders above $100",
+        promotion_type: "fixed",
+        discount_value: 15,
+        minimum_purchase_amount: 100,
+        promo_code: "SAVE15",
+        start_date: oneWeekAgo,
+        end_date: oneMonthLater,
+        status: "active",
+        terms: "Minimum purchase $100 required",
+        isDelete: false,
+      },
+      {
+        name: "Loyalty Reward - $10 Off",
+        description: "$10 off for loyal customers",
+        promotion_type: "fixed",
+        discount_value: 10,
+        minimum_purchase_amount: 50,
+        promo_code: "LOYAL10",
+        start_date: oneMonthAgo,
+        end_date: threeMonthsLater,
+        status: "active",
+        terms: "Minimum purchase $50 required",
+        isDelete: false,
+      },
+      {
+        name: "Holiday Special - $25 Off",
+        description: "Huge $25 discount for big purchases",
+        promotion_type: "fixed",
+        discount_value: 25,
+        minimum_purchase_amount: 150,
+        promo_code: "HOLIDAY25",
+        start_date: now,
+        end_date: oneMonthLater,
+        status: "active",
+        terms: "Minimum purchase $150 required",
+        isDelete: false,
+      },
+      {
+        name: "Beverage Bonanza - $3 Off",
+        description: "$3 off on beverage purchases above $20",
+        promotion_type: "fixed",
+        discount_value: 3,
+        minimum_purchase_amount: 20,
+        promo_code: "DRINK3",
+        start_date: oneWeekAgo,
+        end_date: oneWeekLater,
+        status: "active",
+        terms: "Beverage category only, minimum $20",
+        isDelete: false,
+      },
+
+      // Upcoming promotions
+      {
+        name: "Coming Soon - 40% Off",
+        description: "Biggest sale of the year - starting tomorrow!",
+        promotion_type: "percentage",
+        discount_value: 40,
+        minimum_purchase_amount: 80,
+        promo_code: "COMING40",
+        start_date: tomorrow,
+        end_date: oneMonthLater,
+        status: "active",
+        terms: "Starts tomorrow, minimum $80 purchase",
+        isDelete: false,
+      },
+
+      // Inactive/Expired promotions
+      {
+        name: "Black Friday 2024",
+        description: "50% off everything - event ended",
+        promotion_type: "percentage",
+        discount_value: 50,
+        minimum_purchase_amount: 0,
+        promo_code: "BLACK50",
+        start_date: new Date("2024-11-25"),
+        end_date: new Date("2024-11-30"),
+        status: "expired",
+        terms: "Promotion has ended",
+        isDelete: false,
+      },
+      {
+        name: "Christmas 2024",
+        description: "$20 off - expired",
+        promotion_type: "fixed",
+        discount_value: 20,
+        minimum_purchase_amount: 100,
+        promo_code: "XMAS20",
+        start_date: new Date("2024-12-20"),
+        end_date: new Date("2024-12-26"),
+        status: "expired",
+        terms: "Promotion has ended",
+        isDelete: false,
+      },
+      {
+        name: "Test Inactive Promo",
+        description: "This promotion is manually deactivated",
+        promotion_type: "percentage",
+        discount_value: 5,
+        minimum_purchase_amount: 10,
+        promo_code: "INACTIVE5",
+        start_date: now,
+        end_date: oneMonthLater,
+        status: "inactive",
+        terms: "Temporarily disabled by admin",
         isDelete: false,
       },
     ]);
     console.log(`   ✅ ${promotions.length} promotions\n`);
 
-    // 10. PROMOTION PRODUCTS (5 sản phẩm khuyến mãi)
+    // 10. PROMOTION PRODUCTS (Ánh xạ promotions với products)
     console.log("10/23 🏷️  Tạo PromotionProducts...");
     const promotionProducts = await PromotionProduct.insertMany([
+      // Weekend Special (20% off) - Applies to fresh produce
       {
-        promotion_id: promotions[0]._id,
-        product_id: products[0]._id,
-        discount_override: 25,
+        promotion_id: promotions[0]._id, // WEEKEND20
+        product_id: products[0]._id, // Coca Cola
+        discount_override: null,
         isDelete: false,
       },
       {
-        promotion_id: promotions[1]._id,
+        promotion_id: promotions[0]._id, // WEEKEND20
+        product_id: products[2]._id, // Nước suối
+        discount_override: null,
+        isDelete: false,
+      },
+      
+      // Mega Sale 30% - Applies to all products
+      {
+        promotion_id: promotions[1]._id, // MEGA30
+        product_id: products[1]._id, // Sữa tươi
+        discount_override: null,
+        isDelete: false,
+      },
+      {
+        promotion_id: promotions[1]._id, // MEGA30
+        product_id: products[3]._id, // Any product
+        discount_override: null,
+        isDelete: false,
+      },
+
+      // Welcome 15% - Applies to starter products
+      {
+        promotion_id: promotions[2]._id, // WELCOME15
+        product_id: products[0]._id,
+        discount_override: null,
+        isDelete: false,
+      },
+
+      // Gold Member 25% - Premium products
+      {
+        promotion_id: promotions[3]._id, // GOLD25
+        product_id: products[1]._id, // Sữa tươi
+        discount_override: 28, // Override with higher discount
+        isDelete: false,
+      },
+
+      // Daily Deals 10% - All products
+      {
+        promotion_id: promotions[4]._id, // DAILY10
+        product_id: products[0]._id,
+        discount_override: null,
+        isDelete: false,
+      },
+      {
+        promotion_id: promotions[4]._id, // DAILY10
         product_id: products[2]._id,
         discount_override: null,
         isDelete: false,
       },
+
+      // Flash Sale $5 - Selected products
       {
-        promotion_id: promotions[2]._id,
-        product_id: products[1]._id,
-        discount_override: 18,
+        promotion_id: promotions[5]._id, // FLASH5
+        product_id: products[0]._id,
+        discount_override: null,
         isDelete: false,
       },
+
+      // Beverage Bonanza - Drink products
       {
-        promotion_id: promotions[3]._id,
-        product_id: products[1]._id,
+        promotion_id: promotions[9]._id, // DRINK3
+        product_id: products[0]._id, // Coca Cola
         discount_override: null,
         isDelete: false,
       },
       {
-        promotion_id: promotions[3]._id,
-        product_id: products[8]._id,
+        promotion_id: promotions[9]._id, // DRINK3
+        product_id: products[2]._id, // Nước suối
         discount_override: null,
         isDelete: false,
       },
@@ -2116,6 +2387,7 @@ async function seedDatabase() {
     const damagedProducts = await DamagedProduct.insertMany([
       {
         product_id: products[3]._id,
+        shelf_id: shelves[5]._id, // B2 - Trứng gà shelf
         product_name: "Trứng gà",
         damaged_quantity: 5,
         unit: "vỉ",
@@ -2129,6 +2401,7 @@ async function seedDatabase() {
       },
       {
         product_id: products[1]._id,
+        shelf_id: shelves[4]._id, // B1 - Sữa Vinamilk shelf
         product_name: "Sữa Vinamilk 1L",
         damaged_quantity: 3,
         unit: "hộp",
@@ -2141,6 +2414,7 @@ async function seedDatabase() {
       },
       {
         product_id: products[5]._id,
+        shelf_id: shelves[1]._id, // A2 - Bánh mì shelf
         product_name: "Bánh mì Kinh Đô",
         damaged_quantity: 10,
         unit: "gói",
@@ -2149,6 +2423,19 @@ async function seedDatabase() {
         resolution_action: "destroy",
         inventory_adjusted: false,
         reported_at: new Date("2024-12-10"),
+        isDelete: false,
+      },
+      {
+        product_id: products[0]._id,
+        shelf_id: shelves[0]._id, // A1 - Gạo ST25 shelf
+        product_name: "Gạo ST25 5kg",
+        damaged_quantity: 6,
+        unit: "túi",
+        status: "reported",
+        description: "Bị rách bao bì",
+        resolution_action: "discard",
+        inventory_adjusted: false,
+        reported_at: new Date("2024-12-15"),
         isDelete: false,
       },
     ]);

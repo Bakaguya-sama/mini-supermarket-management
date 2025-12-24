@@ -465,10 +465,20 @@ const CreateInvoice = () => {
         line_total: product.total,
       }));
 
+      // Calculate amounts
+      const calculatedSubtotal = subtotal;
+      const calculatedDiscountAmount = discountAmount;
+      const calculatedTaxAmount = taxAmount;
+      const calculatedTotalAmount = totalAmount;
+
       // Prepare invoice data for API
       const invoiceData = {
         customer_id: customerInfo.id || demoCustomerId,
         items: items,
+        payment_method: selectedPaymentMethod, // ✅ Include payment method
+        subtotal: calculatedSubtotal, // ✅ Include subtotal
+        discount_amount: calculatedDiscountAmount, // ✅ Include discount
+        tax_amount: calculatedTaxAmount, // ✅ Include tax
         notes: discount
           ? `Discount applied: ${discount.name} (${discount.percentage}%)`
           : "",
@@ -478,6 +488,9 @@ const CreateInvoice = () => {
       if (currentCart && currentCart.order_id) {
         invoiceData.order_id = currentCart.order_id;
       }
+
+      // TODO: Add staff_id from logged-in cashier
+      // invoiceData.staff_id = loggedInStaff?.id;
 
       console.log("Creating invoice with data:", invoiceData);
 

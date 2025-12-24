@@ -472,12 +472,22 @@ exports.createOrder = async (req, res) => {
     try {
       const invoiceNumber = `INV-${Date.now()}`;
 
+      // Calculate subtotal, discount, and tax
+      const invoiceSubtotal = subtotalBeforeDiscount;
+      const invoiceDiscountAmount = totalDiscountAmount + pointsDiscount;
+      const invoiceTaxAmount = invoiceSubtotal * 0.09; // 9% tax
+      const invoiceTotalAmount = actualAmountPaid; // Final amount after all calculations
+
       // Use actual paid amount (after promo/points) as invoice total
       const invoice = await Invoice.create({
         invoice_number: invoiceNumber,
         customer_id,
         order_id: order._id,
-        total_amount: actualAmountPaid,
+        payment_method: order.payment_method || 'Cash', // ✅ Include payment method from order
+        subtotal: invoiceSubtotal,
+        discount_amount: invoiceDiscountAmount,
+        tax_amount: invoiceTaxAmount,
+        total_amount: invoiceTotalAmount,
         payment_status: "unpaid",
         notes: notes || "",
       });
