@@ -53,6 +53,7 @@ Sau đó mở trình duyệt: **http://localhost:5174** (hoặc 5173)
 | Username | Password | Họ tên |
 |----------|----------|--------|
 | `supervisor1` | `password123` | Hoàng Văn Em |
+| `supervisor2` | `password123` | Trần Thị Lan |
 
 → **Sau khi login:** Vào trang `/shelf-product`
 

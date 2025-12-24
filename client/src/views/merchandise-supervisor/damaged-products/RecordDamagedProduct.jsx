@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   FaSearch,
@@ -11,6 +11,8 @@ import {
 import "./RecordDamagedProduct.css";
 import SuccessMessage from "../../../components/Messages/SuccessMessage";
 import ErrorMessage from "../../../components/Messages/ErrorMessage";
+import { getProductsForDamagedRecord } from "../../../services/productShelfService";
+import { createDamagedProduct } from "../../../services/damagedProductService";
 
 const RecordDamagedProduct = () => {
   const navigate = useNavigate();
@@ -30,100 +32,50 @@ const RecordDamagedProduct = () => {
 
   const [errorMessage, setErrorMessage] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [productData, setProductData] = useState([]);
 
   const itemsPerPage = 15;
 
-  // Sample product data for damaged product recording
-  const productData = [
-    {
-      id: "P001",
-      name: "Coca Cola 330ml",
-      category: "Beverages",
-      supplier: "Beverage Co.",
-      shelfLocation: "A1",
-      section: "A",
-      slot: "12",
-      availableQty: 45,
-      damagedQty: 0,
-    },
-    {
-      id: "P001-D2",
-      name: "Coca Cola 330ml",
-      category: "Beverages",
-      supplier: "Beverage Co.",
-      shelfLocation: "D2",
-      section: "D",
-      slot: "08",
-      availableQty: 60,
-      damagedQty: 0,
-    },
-    {
-      id: "P002",
-      name: "White Bread",
-      category: "Bakery",
-      supplier: "Bakery Supply",
-      shelfLocation: "C1",
-      section: "C",
-      slot: "15",
-      availableQty: 25,
-      damagedQty: 2,
-    },
-    {
-      id: "P003",
-      name: "Milk 1L",
-      category: "Dairy",
-      supplier: "Dairy Products Inc",
-      shelfLocation: "A2",
-      section: "A",
-      slot: "20",
-      availableQty: 0,
-      damagedQty: 5,
-    },
-    {
-      id: "P003-F1",
-      name: "Milk 1L",
-      category: "Dairy",
-      supplier: "Dairy Products Inc",
-      shelfLocation: "F1",
-      section: "F",
-      slot: "03",
-      availableQty: 35,
-      damagedQty: 1,
-    },
-    {
-      id: "P004",
-      name: "Banana (per kg)",
-      category: "Fresh Produce",
-      supplier: "Fresh Market",
-      shelfLocation: "B1",
-      section: "B",
-      slot: "05",
-      availableQty: 50,
-      damagedQty: 3,
-    },
-    {
-      id: "P005",
-      name: "Apple Juice 1L",
-      category: "Beverages",
-      supplier: "Fruit Co.",
-      shelfLocation: "A3",
-      section: "A",
-      slot: "18",
-      availableQty: 30,
-      damagedQty: 0,
-    },
-    {
-      id: "P006",
-      name: "Yogurt 200g",
-      category: "Dairy",
-      supplier: "Dairy Products Inc",
-      shelfLocation: "E1",
-      section: "E",
-      slot: "10",
-      availableQty: 40,
-      damagedQty: 2,
-    },
-  ];
+  // Load products from API
+  useEffect(() => {
+    loadProducts();
+  }, []);
+
+  const loadProducts = async () => {
+    setLoading(true);
+    try {
+      const response = await getProductsForDamagedRecord({
+        limit: 100
+      });
+      
+      if (response.success) {
+        // Transform API response to component format
+        const transformedData = response.data.map((item) => ({
+          id: item.productShelf_id,
+          product_id: item.product_id,
+          shelf_id: item.shelf_id,
+          name: item.product_name,
+          category: item.category,
+          supplier: item.supplier_name,
+          supplier_id: item.supplier_id,
+          shelfLocation: item.shelf_location,
+          section: item.section || '-',
+          slot: item.slot || '-',
+          availableQty: item.available_quantity,
+          damagedQty: 0,
+          unit: item.unit
+        }));
+        setProductData(transformedData);
+      } else {
+        setErrorMessage(response.message || 'Failed to load products');
+      }
+    } catch (error) {
+      setErrorMessage('Error loading products: ' + error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // Get unique values for filters
   const suppliers = [
@@ -236,7 +188,7 @@ const RecordDamagedProduct = () => {
     });
   };
 
-  const handleSaveRecords = () => {
+  const handleSaveRecords = async () => {
     // Validate records before saving
     const invalidRecords = Array.from(selectedProducts).filter((productId) => {
       const product = productData.find((p) => p.id === productId);
@@ -259,32 +211,57 @@ const RecordDamagedProduct = () => {
       return;
     }
 
-    const recordsToSave = Array.from(selectedProducts).map((productId) => {
-      const product = productData.find((p) => p.id === productId);
-      const reason = damagedReasons[productId];
-      const finalReason =
-        reason === "other" ? customReasons[productId] : reason;
+    setLoading(true);
+    setErrorMessage("");
+    setSuccessMessage("");
 
-      return {
-        productId,
-        productName: product.name,
-        damagedQuantity: damagedQuantities[productId] || 0,
-        reason: finalReason,
-        reasonType: reason,
-        date: new Date().toISOString(),
-      };
-    });
+    try {
+      const recordsToSave = Array.from(selectedProducts).map((productId) => {
+        const product = productData.find((p) => p.id === productId);
+        const reason = damagedReasons[productId];
+        const finalReason =
+          reason === "other" ? customReasons[productId] : reason;
 
-    console.log("Saving damaged product records:", recordsToSave);
-    setSuccessMessage(
-      `Saved ${recordsToSave.length} damaged product records successfully!`
-    );
+        return {
+          product_id: product.product_id,
+          shelf_id: product.shelf_id,
+          damaged_quantity: damagedQuantities[productId] || 0,
+          status: 'reported',
+          description: finalReason,
+          notes: `Damaged product reported from shelf ${product.shelfLocation}`
+        };
+      });
 
-    // Reset form
-    setSelectedProducts(new Set());
-    setDamagedQuantities({});
-    setDamagedReasons({});
-    setCustomReasons({});
+      // Call API for each record
+      const results = await Promise.allSettled(
+        recordsToSave.map((record) => createDamagedProduct(record))
+      );
+
+      const successCount = results.filter((r) => r.status === 'fulfilled' && r.value.success).length;
+      const failedCount = results.length - successCount;
+
+      if (successCount > 0) {
+        setSuccessMessage(
+          `Successfully saved ${successCount} damaged product record(s)` +
+          (failedCount > 0 ? ` (${failedCount} failed)` : '')
+        );
+
+        // Reset form
+        setSelectedProducts(new Set());
+        setDamagedQuantities({});
+        setDamagedReasons({});
+        setCustomReasons({});
+
+        // Reload products to get updated quantities
+        await loadProducts();
+      } else {
+        setErrorMessage('Failed to save damaged product records');
+      }
+    } catch (error) {
+      setErrorMessage('Error saving records: ' + error.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -301,6 +278,13 @@ const RecordDamagedProduct = () => {
           setErrorMessage("");
         }}
       />
+      
+      {loading && (
+        <div className="loading-overlay">
+          <div className="loading-spinner">Loading...</div>
+        </div>
+      )}
+
       {/* Header */}
       <div className="record-damaged-header">
         <div className="record-damaged-title-section">

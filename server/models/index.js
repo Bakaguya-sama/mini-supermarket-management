@@ -142,6 +142,7 @@ const shelfSchema = new mongoose.Schema(
     // Optional reference to Section document
     section: { type: mongoose.Schema.Types.ObjectId, ref: "Section" },
     section_number: { type: Number, required: true, min: 1, max: 4 }, // 1, 2, 3, 4
+    slot_number: { type: String }, // Slot number within section (e.g., "01", "12", "20")
     description: { type: String },
     capacity: { type: Number, default: 50 }, // Each section can hold 50 products
     current_quantity: { type: Number, default: 0 },
@@ -175,7 +176,8 @@ const sectionSchema = new mongoose.Schema(
 sectionSchema.index({ section_name: 1 });
 
 // ==================== 8. PRODUCT SHELVES ====================
-// Business Rule: One product can only be on ONE shelf at a time
+// Business Rule: One product CAN be on MULTIPLE shelves at the same time
+// Each shelf can hold many products, and each product can be in many shelves
 const productShelfSchema = new mongoose.Schema(
   {
     product_id: {
@@ -194,8 +196,11 @@ const productShelfSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-productShelfSchema.index({ product_id: 1 }); // Index for product lookups (allow multiple shelves per product)
-productShelfSchema.index({ shelf_id: 1 });
+// Indexes for efficient lookups
+productShelfSchema.index({ product_id: 1 }); // Find all shelves for a product
+productShelfSchema.index({ shelf_id: 1 }); // Find all products on a shelf
+// Unique constraint: Same product cannot be on same shelf twice
+productShelfSchema.index({ product_id: 1, shelf_id: 1 }, { unique: true, partialFilterExpression: { isDelete: false } });
 
 // ==================== 9. PROMOTIONS ====================
 const promotionSchema = new mongoose.Schema(
@@ -340,12 +345,21 @@ const invoiceSchema = new mongoose.Schema(
     invoice_number: { type: String, required: true, unique: true },
     customer_id: { type: mongoose.Schema.Types.ObjectId, ref: "Customer" },
     order_id: { type: mongoose.Schema.Types.ObjectId, ref: "Order" },
+    staff_id: { type: mongoose.Schema.Types.ObjectId, ref: "Staff" }, // Cashier who created the invoice
     invoice_date: { type: Date, default: Date.now },
-    total_amount: { type: Number, default: 0 },
+    subtotal: { type: Number, default: 0 }, // Amount before tax and discount
+    discount_amount: { type: Number, default: 0 }, // Discount applied
+    tax_amount: { type: Number, default: 0 }, // Tax amount (e.g., 9%)
+    total_amount: { type: Number, default: 0 }, // Final amount after tax and discount
+    payment_method: {
+      type: String,
+      enum: ["Cash", "Card Payment", "Digital Wallet", "E-Wallet"],
+      default: "Cash"
+    },
     payment_status: {
       type: String,
       default: "unpaid",
-      enum: ["unpaid", "paid", "partial"],
+      enum: ["unpaid", "paid", "partial", "refunded"],
     },
     notes: { type: String },
     isDelete: { type: Boolean, default: false },
@@ -575,6 +589,11 @@ const damagedProductSchema = new mongoose.Schema(
       ref: "Product",
       required: true,
     },
+    shelf_id: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Shelf",
+      required: false, // Optional - nếu không biết từ kệ nào
+    },
     product_name: { type: String },
     damaged_quantity: { type: Number, default: 0 },
     unit: { type: String },
@@ -604,6 +623,7 @@ const damagedProductSchema = new mongoose.Schema(
 );
 
 damagedProductSchema.index({ product_id: 1, status: 1 });
+damagedProductSchema.index({ shelf_id: 1 });
 
 // ==================== EXPORT TẤT CẢ 23 MODELS ====================
 module.exports = {

@@ -44,6 +44,10 @@ exports.getAllDamagedProducts = async (req, res) => {
           select: 'name contact_person_name phone email'
         }
       })
+      .populate({
+        path: 'shelf_id',
+        select: 'shelf_number shelf_name section_number slot_number capacity current_quantity'
+      })
       .sort(sort)
       .skip(skip)
       .limit(parseInt(limit));
@@ -130,6 +134,10 @@ exports.getDamagedProductById = async (req, res) => {
           path: 'supplier_id',
           select: 'name contact_person_name phone email address'
         }
+      })
+      .populate({
+        path: 'shelf_id',
+        select: 'shelf_number shelf_name section_number slot_number capacity current_quantity'
       });
 
     if (!damagedProduct || damagedProduct.isDelete) {
@@ -173,6 +181,10 @@ exports.getDamagedProductsByProductId = async (req, res) => {
       isDelete: false
     })
       .populate('product_id', 'name category unit price current_stock')
+      .populate({
+        path: 'shelf_id',
+        select: 'shelf_number shelf_name section_number slot_number'
+      })
       .sort('-createdAt');
 
     res.status(200).json({
@@ -195,6 +207,7 @@ exports.createDamagedProduct = async (req, res) => {
   try {
     const {
       product_id,
+      shelf_id,
       damaged_quantity,
       status = 'reported',
       description,
@@ -202,6 +215,14 @@ exports.createDamagedProduct = async (req, res) => {
       resolution_action,
       notes
     } = req.body;
+
+    // Validate required fields
+    if (!damaged_quantity || damaged_quantity <= 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Damaged quantity must be greater than 0'
+      });
+    }
 
     // Validate product exists
     const product = await Product.findById(product_id);
@@ -212,9 +233,58 @@ exports.createDamagedProduct = async (req, res) => {
       });
     }
 
+    // Nếu có shelf_id, deduct từ shelf
+    if (shelf_id) {
+      // Get ProductShelf mapping
+      const productShelf = await ProductShelf.findOne({
+        product_id,
+        shelf_id,
+        isDelete: false
+      });
+
+      if (!productShelf) {
+        return res.status(404).json({
+          success: false,
+          message: 'Product not found on this shelf'
+        });
+      }
+
+      // Check if shelf has enough quantity
+      if (productShelf.quantity < damaged_quantity) {
+        return res.status(400).json({
+          success: false,
+          message: `Not enough quantity on shelf. Available: ${productShelf.quantity}, Requested: ${damaged_quantity}`
+        });
+      }
+
+      // Get shelf
+      const shelf = await Shelf.findById(shelf_id);
+      if (!shelf || shelf.isDelete) {
+        return res.status(404).json({
+          success: false,
+          message: 'Shelf not found'
+        });
+      }
+
+      // Deduct from ProductShelf
+      productShelf.quantity -= damaged_quantity;
+      await productShelf.save();
+
+      // Deduct from Shelf current_quantity
+      shelf.current_quantity = Math.max(0, (shelf.current_quantity || 0) - damaged_quantity);
+      await shelf.save();
+
+      // Nếu ProductShelf quantity = 0, có thể soft delete
+      if (productShelf.quantity === 0) {
+        productShelf.isDelete = true;
+        await productShelf.save();
+      }
+    }
+
     // Create damaged product report
     const damagedProduct = await DamagedProduct.create({
       product_id,
+      shelf_id: shelf_id || null,
       product_name: product.name,
       damaged_quantity,
       unit: product.unit,
@@ -235,11 +305,17 @@ exports.createDamagedProduct = async (req, res) => {
           path: 'supplier_id',
           select: 'name contact_person_name'
         }
+      })
+      .populate({
+        path: 'shelf_id',
+        select: 'shelf_number capacity current_quantity'
       });
 
     res.status(201).json({
       success: true,
-      message: 'Damaged product report created successfully',
+      message: shelf_id 
+        ? `Damaged product reported and deducted ${damaged_quantity} units from shelf`
+        : 'Damaged product report created successfully',
       data: populatedDamagedProduct
     });
   } catch (error) {
@@ -310,6 +386,10 @@ exports.updateDamagedProduct = async (req, res) => {
 
 // @desc    Adjust inventory for damaged product
 // @route   PUT /api/damaged-products/:id/adjust-inventory
+// @desc    Adjust warehouse inventory for damaged product
+// @route   PUT /api/damaged-products/:id/adjust-inventory
+// @note    This deducts from warehouse (product.current_stock)
+//          Shelf quantity was already deducted during create if shelf_id was provided
 exports.adjustInventoryForDamaged = async (req, res) => {
   try {
     const damagedProduct = await DamagedProduct.findById(req.params.id);
@@ -328,7 +408,7 @@ exports.adjustInventoryForDamaged = async (req, res) => {
       });
     }
 
-    // Update product stock
+    // Update product warehouse stock
     const product = await Product.findById(damagedProduct.product_id);
     if (!product) {
       return res.status(404).json({
@@ -337,24 +417,25 @@ exports.adjustInventoryForDamaged = async (req, res) => {
       });
     }
 
-    // Deduct damaged quantity from current stock
+    // Deduct damaged quantity from warehouse current_stock
+    const previousStock = product.current_stock;
     product.current_stock = Math.max(0, product.current_stock - damagedProduct.damaged_quantity);
     await product.save();
 
-    // Mark as adjusted
+    // Mark as adjusted and resolved
     damagedProduct.inventory_adjusted = true;
     damagedProduct.status = 'resolved';
     await damagedProduct.save();
 
     res.status(200).json({
       success: true,
-      message: 'Inventory adjusted successfully',
+      message: 'Warehouse inventory adjusted successfully (shelf was already deducted)',
       data: {
         damagedProduct,
         product: {
           _id: product._id,
           name: product.name,
-          previous_stock: product.current_stock + damagedProduct.damaged_quantity,
+          previous_stock: previousStock,
           current_stock: product.current_stock,
           deducted: damagedProduct.damaged_quantity
         }
@@ -382,12 +463,52 @@ exports.deleteDamagedProduct = async (req, res) => {
       });
     }
 
+    // Nếu chưa inventory_adjusted và có shelf_id, restore về shelf
+    if (!damagedProduct.inventory_adjusted && damagedProduct.shelf_id) {
+      const product_id = damagedProduct.product_id;
+      const shelf_id = damagedProduct.shelf_id;
+      const damaged_quantity = damagedProduct.damaged_quantity;
+
+      // Tìm hoặc tạo lại ProductShelf mapping
+      let productShelf = await ProductShelf.findOne({
+        product_id,
+        shelf_id,
+        isDelete: false
+      });
+
+      if (!productShelf) {
+        // Nếu đã bị xóa (quantity = 0), restore lại
+        productShelf = await ProductShelf.findOneAndUpdate(
+          { product_id, shelf_id },
+          { 
+            quantity: damaged_quantity,
+            isDelete: false 
+          },
+          { upsert: true, new: true }
+        );
+      } else {
+        // Nếu vẫn còn, cộng thêm quantity
+        productShelf.quantity += damaged_quantity;
+        await productShelf.save();
+      }
+
+      // Cập nhật Shelf current_quantity
+      const shelf = await Shelf.findById(shelf_id);
+      if (shelf) {
+        shelf.current_quantity = (shelf.current_quantity || 0) + damaged_quantity;
+        await shelf.save();
+      }
+    }
+
+    // Soft delete damaged product record
     damagedProduct.isDelete = true;
     await damagedProduct.save();
 
     res.status(200).json({
       success: true,
-      message: 'Damaged product deleted successfully'
+      message: damagedProduct.inventory_adjusted
+        ? 'Damaged product deleted (inventory was already adjusted)'
+        : 'Damaged product deleted and quantity restored to shelf'
     });
   } catch (error) {
     res.status(500).json({
