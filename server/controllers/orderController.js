@@ -1,6 +1,17 @@
 // controllers/orderController.js - ORDER API HOÀN CHỈNH
-const { Order, OrderItem, Product, Customer, Invoice, DeliveryOrder, Payment, Cart, CartItem } = require('../models');
-const mongoose = require('mongoose');
+const {
+  Order,
+  OrderItem,
+  Product,
+  Customer,
+  Invoice,
+  InvoiceItem,
+  DeliveryOrder,
+  Payment,
+  Cart,
+  CartItem,
+} = require("../models");
+const mongoose = require("mongoose");
 
 /**
  * @desc    Get all orders with filters and pagination
@@ -19,7 +30,7 @@ exports.getAllOrders = async (req, res) => {
       endDate,
       minAmount,
       maxAmount,
-      sort = '-createdAt'
+      sort = "-createdAt",
     } = req.query;
 
     // Build query
@@ -28,8 +39,8 @@ exports.getAllOrders = async (req, res) => {
     if (status) query.status = status;
     if (search) {
       query.$or = [
-        { order_number: { $regex: search, $options: 'i' } },
-        { tracking_number: { $regex: search, $options: 'i' } }
+        { order_number: { $regex: search, $options: "i" } },
+        { tracking_number: { $regex: search, $options: "i" } },
       ];
     }
     if (startDate || endDate) {
@@ -48,12 +59,18 @@ exports.getAllOrders = async (req, res) => {
 
     // Execute query with population - ✅ NOW INCLUDING ORDERITEMS
     const orders = await Order.find(query)
-      .populate('customer_id', 'account_id membership_type points_balance total_spent')
+      .populate(
+        "customer_id",
+        "account_id membership_type points_balance total_spent"
+      )
       .populate({
-        path: 'orderItems',
-        populate: { path: 'product_id', select: 'name price category sku unit' }
+        path: "orderItems",
+        populate: {
+          path: "product_id",
+          select: "name price category sku unit",
+        },
       })
-      .populate('payment_id', 'payment_method status payment_date')
+      .populate("payment_id", "payment_method status payment_date")
       .sort(sort)
       .skip(skip)
       .limit(parseInt(limit));
@@ -68,14 +85,14 @@ exports.getAllOrders = async (req, res) => {
       total,
       page: parseInt(page),
       pages: Math.ceil(total / parseInt(limit)),
-      data: orders
+      data: orders,
     });
   } catch (error) {
-    console.error('❌ Error fetching orders:', error);
+    console.error("❌ Error fetching orders:", error);
     res.status(500).json({
       success: false,
-      message: 'Error fetching orders',
-      error: error.message
+      message: "Error fetching orders",
+      error: error.message,
     });
   }
 };
@@ -88,43 +105,48 @@ exports.getAllOrders = async (req, res) => {
 exports.getOrderById = async (req, res) => {
   try {
     const order = await Order.findById(req.params.id)
-      .populate('customer_id', 'account_id membership_type points_balance total_spent')
+      .populate(
+        "customer_id",
+        "account_id membership_type points_balance total_spent"
+      )
       .populate({
-        path: 'orderItems',
-        populate: { 
-          path: 'product_id', 
-          select: 'name price category sku unit description image_link' 
-        }
+        path: "orderItems",
+        populate: {
+          path: "product_id",
+          select: "name price category sku unit description image_link",
+        },
       })
-      .populate('payment_id', 'payment_method status payment_date reference');
+      .populate("payment_id", "payment_method status payment_date reference");
 
     if (!order) {
       return res.status(404).json({
         success: false,
-        message: 'Order not found'
+        message: "Order not found",
       });
     }
 
-    console.log(`📋 Fetched order ${order.order_number} with ${order.orderItems.length} items`);
+    console.log(
+      `📋 Fetched order ${order.order_number} with ${order.orderItems.length} items`
+    );
 
     // Get delivery order if exists
     const deliveryOrder = await DeliveryOrder.findOne({ order_id: order._id })
-      .populate('staff_id', 'account_id position')
+      .populate("staff_id", "account_id position")
       .lean();
 
     res.status(200).json({
       success: true,
       data: {
         ...order.toObject(),
-        deliveryOrder
-      }
+        deliveryOrder,
+      },
     });
   } catch (error) {
-    console.error('❌ Error fetching order:', error);
+    console.error("❌ Error fetching order:", error);
     res.status(500).json({
       success: false,
-      message: 'Error fetching order',
-      error: error.message
+      message: "Error fetching order",
+      error: error.message,
     });
   }
 };
@@ -144,7 +166,7 @@ exports.getOrdersByCustomer = async (req, res) => {
     if (!customer) {
       return res.status(404).json({
         success: false,
-        message: 'Customer not found'
+        message: "Customer not found",
       });
     }
 
@@ -153,37 +175,39 @@ exports.getOrdersByCustomer = async (req, res) => {
 
     const orders = await Order.find(query)
       .populate({
-        path: 'orderItems',
-        populate: { path: 'product_id', select: 'name price category sku' }
+        path: "orderItems",
+        populate: { path: "product_id", select: "name price category sku" },
       })
-      .populate('customer_id', 'account_id membership_type')
+      .populate("customer_id", "account_id membership_type")
       .skip(skip)
       .limit(parseInt(limit))
-      .sort('-order_date');
+      .sort("-order_date");
 
     const total = await Order.countDocuments(query);
 
-    console.log(`📋 Fetched ${orders.length} orders for customer ${req.params.customerId}`);
+    console.log(
+      `📋 Fetched ${orders.length} orders for customer ${req.params.customerId}`
+    );
 
     res.status(200).json({
       success: true,
       customer: {
         id: customer._id,
         membership_type: customer.membership_type,
-        total_spent: customer.total_spent
+        total_spent: customer.total_spent,
       },
       count: orders.length,
       total,
       page: parseInt(page),
       pages: Math.ceil(total / parseInt(limit)),
-      data: orders
+      data: orders,
     });
   } catch (error) {
-    console.error('❌ Error fetching customer orders:', error);
+    console.error("❌ Error fetching customer orders:", error);
     res.status(500).json({
       success: false,
-      message: 'Error fetching customer orders',
-      error: error.message
+      message: "Error fetching customer orders",
+      error: error.message,
     });
   }
 };
@@ -197,14 +221,15 @@ exports.getOrderStats = async (req, res) => {
   try {
     const totalOrders = await Order.countDocuments();
     const totalRevenue = await Order.aggregate([
-      { $group: { _id: null, total: { $sum: '$total_amount' } } }
+      { $group: { _id: null, total: { $sum: "$total_amount" } } },
     ]);
 
     const ordersByStatus = await Order.aggregate([
-      { $group: { _id: '$status', count: { $sum: 1 } } }
+      { $group: { _id: "$status", count: { $sum: 1 } } },
     ]);
 
-    const avgOrderValue = totalOrders > 0 ? (totalRevenue[0]?.total || 0) / totalOrders : 0;
+    const avgOrderValue =
+      totalOrders > 0 ? (totalRevenue[0]?.total || 0) / totalOrders : 0;
 
     res.status(200).json({
       success: true,
@@ -212,14 +237,14 @@ exports.getOrderStats = async (req, res) => {
         totalOrders,
         totalRevenue: totalRevenue[0]?.total || 0,
         avgOrderValue,
-        byStatus: ordersByStatus
-      }
+        byStatus: ordersByStatus,
+      },
     });
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: 'Error fetching order statistics',
-      error: error.message
+      message: "Error fetching order statistics",
+      error: error.message,
     });
   }
 };
@@ -231,90 +256,97 @@ exports.getOrderStats = async (req, res) => {
  */
 exports.createOrder = async (req, res) => {
   try {
-    const {
-      customer_id,
-      cart_id,
-      notes
-    } = req.body;
+    const { customer_id, cart_id, notes } = req.body;
 
     // Validate customer
     if (!customer_id) {
       return res.status(400).json({
         success: false,
-        message: 'Please provide customer ID'
+        message: "Please provide customer ID",
       });
     }
 
-    const customer = await Customer.findById(customer_id).populate('account_id');
+    const customer = await Customer.findById(customer_id).populate(
+      "account_id"
+    );
     if (!customer) {
       return res.status(404).json({
         success: false,
-        message: 'Customer not found'
+        message: "Customer not found",
       });
     }
-    
-    console.log(`👤 Customer: ${customer.account_id?.full_name || 'Unknown'} (Points: ${customer.points_balance})`);
+
+    console.log(
+      `👤 Customer: ${customer.account_id?.full_name || "Unknown"} (Points: ${
+        customer.points_balance
+      })`
+    );
 
     // Get cart items
     let cartItems = [];
     let cart = null;
-    
+
     if (cart_id) {
       cart = await Cart.findById(cart_id);
-      cartItems = await CartItem.find({ cart_id, status: 'active' })
-        .populate('product_id');
+      cartItems = await CartItem.find({ cart_id, status: "active" }).populate(
+        "product_id"
+      );
     } else {
       // Get active cart for customer if cart_id not provided
-      cart = await Cart.findOne({ customer_id, status: 'active' });
+      cart = await Cart.findOne({ customer_id, status: "active" });
       if (cart) {
-        cartItems = await CartItem.find({ cart_id: cart._id, status: 'active' })
-          .populate('product_id');
+        cartItems = await CartItem.find({
+          cart_id: cart._id,
+          status: "active",
+        }).populate("product_id");
       }
     }
 
     if (cartItems.length === 0) {
       return res.status(400).json({
         success: false,
-        message: 'Cart is empty'
+        message: "Cart is empty",
       });
     }
 
     // Calculate total amount
     let totalAmount = 0;
-    cartItems.forEach(item => {
+    cartItems.forEach((item) => {
       totalAmount += item.line_total;
     });
 
     // Count total orders để tạo tracking number sequential
     const totalOrders = await Order.countDocuments();
     const orderSequence = totalOrders + 1;
-    
+
     // Generate order number và tracking number
     const orderNumber = `ORD-${Date.now()}`;
-    const trackingNumber = `TRK-${String(orderSequence).padStart(6, '0')}`; // TRK-000001, TRK-000002, ...
+    const trackingNumber = `TRK-${String(orderSequence).padStart(6, "0")}`; // TRK-000001, TRK-000002, ...
 
-    console.log(`📦 Creating order #${orderSequence} with tracking: ${trackingNumber}`);
+    console.log(
+      `📦 Creating order #${orderSequence} with tracking: ${trackingNumber}`
+    );
 
     // ✅ Create order WITH empty orderItems array
     const order = await Order.create({
       order_number: orderNumber,
       customer_id,
-      orderItems: [],  // ← IMPORTANT: Initialize empty array
+      orderItems: [], // ← IMPORTANT: Initialize empty array
       total_amount: totalAmount,
       tracking_number: trackingNumber, // ← AUTO GENERATED
       notes,
-      status: 'pending'
+      status: "pending",
     });
 
     console.log(`📦 Created order ${orderNumber}`);
 
     // Create order items
-    const orderItemsData = cartItems.map(item => ({
+    const orderItemsData = cartItems.map((item) => ({
       order_id: order._id,
       product_id: item.product_id._id,
       quantity: item.quantity,
       unit_price: item.unit_price,
-      status: 'pending'
+      status: "pending",
     }));
 
     const createdOrderItems = await OrderItem.insertMany(orderItemsData);
@@ -322,18 +354,18 @@ exports.createOrder = async (req, res) => {
 
     // ✅ IMPORTANT: Link orderItems back to order
     await Order.findByIdAndUpdate(order._id, {
-      orderItems: createdOrderItems.map(oi => oi._id)
+      orderItems: createdOrderItems.map((oi) => oi._id),
     });
 
     console.log(`✅ Linked ${createdOrderItems.length} items to order`);
 
     // Update cart status
     if (cart) {
-      await Cart.findByIdAndUpdate(cart._id, { 
-        status: 'checked_out',
-        cartItems: []  // Clear cart items
+      await Cart.findByIdAndUpdate(cart._id, {
+        status: "checked_out",
+        cartItems: [], // Clear cart items
       });
-      await CartItem.updateMany({ cart_id: cart._id }, { status: 'purchased' });
+      await CartItem.updateMany({ cart_id: cart._id }, { status: "purchased" });
       console.log(`🛒 Cart checked out`);
     }
 
@@ -341,15 +373,17 @@ exports.createOrder = async (req, res) => {
     let pointsRedeemed = 0;
     let promoDiscount = 0;
     let pointsDiscount = 0;
-    
+
     if (notes) {
       // Extract points redeemed: "Points Redeemed: 500 points = -$5.00"
-      const pointsMatch = notes.match(/Points Redeemed: (\d+) points = -\$([0-9.]+)/);
+      const pointsMatch = notes.match(
+        /Points Redeemed: (\d+) points = -\$([0-9.]+)/
+      );
       if (pointsMatch) {
         pointsRedeemed = parseInt(pointsMatch[1]);
         pointsDiscount = parseFloat(pointsMatch[2]);
       }
-      
+
       // Extract promo discount: "Discount: 20% = -$6400.00"
       const promoMatch = notes.match(/Discount: .*? = -\$([0-9.]+)/);
       if (promoMatch) {
@@ -359,53 +393,124 @@ exports.createOrder = async (req, res) => {
 
     // Calculate actual amount paid (after all discounts)
     const actualAmountPaid = totalAmount - promoDiscount - pointsDiscount;
-    
+
     console.log(`💰 Order breakdown:`);
     console.log(`   Subtotal: $${totalAmount.toFixed(2)}`);
-    if (promoDiscount > 0) console.log(`   Promo discount: -$${promoDiscount.toFixed(2)}`);
-    if (pointsDiscount > 0) console.log(`   Points discount: -$${pointsDiscount.toFixed(2)}`);
+    if (promoDiscount > 0)
+      console.log(`   Promo discount: -$${promoDiscount.toFixed(2)}`);
+    if (pointsDiscount > 0)
+      console.log(`   Points discount: -$${pointsDiscount.toFixed(2)}`);
     console.log(`   Final paid: $${actualAmountPaid.toFixed(2)}`);
 
     // Update customer
     const oldPointsBalance = customer.points_balance;
-    
+
     // Step 1: Deduct redeemed points
     if (pointsRedeemed > 0) {
-      customer.points_balance = Math.max(0, customer.points_balance - pointsRedeemed);
-      console.log(`🎁 Deducted ${pointsRedeemed} points (${oldPointsBalance} → ${customer.points_balance})`);
+      customer.points_balance = Math.max(
+        0,
+        customer.points_balance - pointsRedeemed
+      );
+      console.log(
+        `🎁 Deducted ${pointsRedeemed} points (${oldPointsBalance} → ${customer.points_balance})`
+      );
     }
-    
+
     // Step 2: Award points for purchase (1 point per $1 actually paid)
     const pointsEarned = Math.floor(actualAmountPaid);
     customer.points_balance += pointsEarned;
-    console.log(`⭐ Earned ${pointsEarned} points from $${actualAmountPaid.toFixed(2)} purchase`);
-    console.log(`💎 Final points balance: ${oldPointsBalance} - ${pointsRedeemed} + ${pointsEarned} = ${customer.points_balance}`);
-    
+    console.log(
+      `⭐ Earned ${pointsEarned} points from $${actualAmountPaid.toFixed(
+        2
+      )} purchase`
+    );
+    console.log(
+      `💎 Final points balance: ${oldPointsBalance} - ${pointsRedeemed} + ${pointsEarned} = ${customer.points_balance}`
+    );
+
     // Step 3: Update total spent (based on actual amount paid)
     customer.total_spent += actualAmountPaid;
-    
-    await customer.save();
-    console.log(`💰 Updated customer total spent to $${customer.total_spent.toFixed(2)}`);
 
-    // Fetch complete order with items
+    await customer.save();
+    console.log(
+      `💰 Updated customer total spent to $${customer.total_spent.toFixed(2)}`
+    );
+
+    // --- Create invoice for this order (auto-generated on checkout) ---
+    try {
+      const invoiceNumber = `INV-${Date.now()}`;
+
+      // Use actual paid amount (after promo/points) as invoice total
+      const invoice = await Invoice.create({
+        invoice_number: invoiceNumber,
+        customer_id,
+        order_id: order._id,
+        total_amount: actualAmountPaid,
+        payment_status: "unpaid",
+        notes: notes || "",
+      });
+
+      // Create invoice items from cartItems (which are populated)
+      for (const item of cartItems) {
+        await InvoiceItem.create({
+          invoice_id: invoice._id,
+          product_id: item.product_id?._id || null,
+          description: item.product_id?.name || item.product_name || "",
+          quantity: item.quantity,
+          unit_price: item.unit_price,
+          line_total: item.line_total,
+        });
+      }
+
+      // Populate invoice for response
+      await invoice.populate([
+        { path: "customer_id", select: "account_id" },
+        { path: "order_id", select: "order_number" },
+      ]);
+
+      console.log(
+        `🧾 Invoice ${invoice.invoice_number} created for order ${orderNumber}`
+      );
+
+      // Fetch complete order with items
+      const completeOrder = await Order.findById(order._id)
+        .populate("customer_id", "account_id membership_type")
+        .populate({
+          path: "orderItems",
+          populate: { path: "product_id", select: "name price sku unit" },
+        });
+
+      res.status(201).json({
+        success: true,
+        message: "Order created successfully",
+        data: { order: completeOrder, invoice },
+      });
+
+      return;
+    } catch (invErr) {
+      console.error("❌ Error creating invoice for order:", invErr);
+      // Fall back to returning the order even if invoice creation failed
+    }
+
+    // Fetch complete order with items (fallback path if invoice create fails)
     const completeOrder = await Order.findById(order._id)
-      .populate('customer_id', 'account_id membership_type')
+      .populate("customer_id", "account_id membership_type")
       .populate({
-        path: 'orderItems',
-        populate: { path: 'product_id', select: 'name price sku unit' }
+        path: "orderItems",
+        populate: { path: "product_id", select: "name price sku unit" },
       });
 
     res.status(201).json({
       success: true,
-      message: 'Order created successfully',
-      data: completeOrder
+      message: "Order created successfully",
+      data: completeOrder,
     });
   } catch (error) {
-    console.error('❌ Error creating order:', error);
+    console.error("❌ Error creating order:", error);
     res.status(500).json({
       success: false,
-      message: 'Error creating order',
-      error: error.message
+      message: "Error creating order",
+      error: error.message,
     });
   }
 };
@@ -422,16 +527,11 @@ exports.updateOrder = async (req, res) => {
     if (!order) {
       return res.status(404).json({
         success: false,
-        message: 'Order not found'
+        message: "Order not found",
       });
     }
 
-    const {
-      status,
-      tracking_number,
-      notes,
-      delivery_date
-    } = req.body;
+    const { status, tracking_number, notes, delivery_date } = req.body;
 
     if (status) order.status = status;
     if (tracking_number) order.tracking_number = tracking_number;
@@ -439,18 +539,18 @@ exports.updateOrder = async (req, res) => {
     if (delivery_date) order.delivery_date = new Date(delivery_date);
 
     await order.save();
-    await order.populate('customer_id');
+    await order.populate("customer_id");
 
     res.status(200).json({
       success: true,
-      message: 'Order updated successfully',
-      data: order
+      message: "Order updated successfully",
+      data: order,
     });
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: 'Error updating order',
-      error: error.message
+      message: "Error updating order",
+      error: error.message,
     });
   }
 };
@@ -464,10 +564,10 @@ exports.updateOrderItemStatus = async (req, res) => {
   try {
     const { status } = req.body;
 
-    if (!['pending', 'picked', 'packed', 'shipped'].includes(status)) {
+    if (!["pending", "picked", "packed", "shipped"].includes(status)) {
       return res.status(400).json({
         success: false,
-        message: 'Invalid status'
+        message: "Invalid status",
       });
     }
 
@@ -475,25 +575,25 @@ exports.updateOrderItemStatus = async (req, res) => {
       req.params.itemId,
       { status },
       { new: true }
-    ).populate('product_id');
+    ).populate("product_id");
 
     if (!orderItem) {
       return res.status(404).json({
         success: false,
-        message: 'Order item not found'
+        message: "Order item not found",
       });
     }
 
     res.status(200).json({
       success: true,
-      message: 'Order item status updated',
-      data: orderItem
+      message: "Order item status updated",
+      data: orderItem,
     });
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: 'Error updating order item',
-      error: error.message
+      message: "Error updating order item",
+      error: error.message,
     });
   }
 };
@@ -510,30 +610,30 @@ exports.cancelOrder = async (req, res) => {
     if (!order) {
       return res.status(404).json({
         success: false,
-        message: 'Order not found'
+        message: "Order not found",
       });
     }
 
-    if (['delivered', 'shipped', 'cancelled'].includes(order.status)) {
+    if (["delivered", "shipped", "cancelled"].includes(order.status)) {
       return res.status(400).json({
         success: false,
-        message: `Cannot cancel order with status: ${order.status}`
+        message: `Cannot cancel order with status: ${order.status}`,
       });
     }
 
-    order.status = 'cancelled';
+    order.status = "cancelled";
     await order.save();
 
     res.status(200).json({
       success: true,
-      message: 'Order cancelled successfully',
-      data: order
+      message: "Order cancelled successfully",
+      data: order,
     });
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: 'Error cancelling order',
-      error: error.message
+      message: "Error cancelling order",
+      error: error.message,
     });
   }
 };
@@ -550,7 +650,7 @@ exports.deleteOrder = async (req, res) => {
     if (!order) {
       return res.status(404).json({
         success: false,
-        message: 'Order not found'
+        message: "Order not found",
       });
     }
 
@@ -559,14 +659,14 @@ exports.deleteOrder = async (req, res) => {
 
     res.status(200).json({
       success: true,
-      message: 'Order deleted successfully',
-      data: order
+      message: "Order deleted successfully",
+      data: order,
     });
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: 'Error deleting order',
-      error: error.message
+      message: "Error deleting order",
+      error: error.message,
     });
   }
 };
