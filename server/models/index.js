@@ -180,8 +180,7 @@ const productShelfSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "Product",
       required: true,
-      unique: true,
-    }, // UNIQUE: 1 product = 1 shelf
+    },
     shelf_id: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Shelf",
@@ -193,7 +192,7 @@ const productShelfSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-productShelfSchema.index({ product_id: 1 }, { unique: true }); // Enforce one product per shelf
+productShelfSchema.index({ product_id: 1 }); // Index for product lookups (allow multiple shelves per product)
 productShelfSchema.index({ shelf_id: 1 });
 
 // ==================== 9. PROMOTIONS ====================

@@ -37,22 +37,22 @@ const AddShelfProduct = () => {
   const loadInitialData = async () => {
     try {
       setIsLoading(true);
-      
+
       // Load products, shelves, and existing product-shelf mappings in parallel
       const [productsRes, shelvesRes, mappingsRes] = await Promise.all([
-        apiClient.get('/products', { params: { limit: 1000 } }),
-        apiClient.get('/shelves', { params: { limit: 1000 } }),
-        productShelfService.getAllProductShelves({ limit: 1000 })
+        apiClient.get("/products", { params: { limit: 1000 } }),
+        apiClient.get("/shelves", { params: { limit: 1000 } }),
+        productShelfService.getAllProductShelves({ limit: 1000 }),
       ]);
-      
+
       if (productsRes.data) {
         setProductsData(productsRes.data || []);
       }
-      
+
       if (shelvesRes.data) {
         setShelvesData(shelvesRes.data || []);
       }
-      
+
       if (mappingsRes.success) {
         setProductShelvesData(mappingsRes.data || []);
       }
@@ -85,17 +85,23 @@ const AddShelfProduct = () => {
   const itemsPerPage = 10;
 
   // Transform products data with shelf information
-  const inventoryData = productsData.map(product => {
+  const inventoryData = productsData.map((product) => {
     // Find all shelf mappings for this product
     const productMappings = productShelvesData.filter(
-      mapping => mapping.product_id?._id === product._id || mapping.product_id === product._id
+      (mapping) =>
+        mapping.product_id?._id === product._id ||
+        mapping.product_id === product._id
     );
-    
+
     // Calculate total quantity on shelves
-    const shelfedQty = productMappings.reduce((sum, mapping) => sum + (mapping.quantity || 0), 0);
-    const totalQty = product.stock_quantity || 0;
+    const shelfedQty = productMappings.reduce(
+      (sum, mapping) => sum + (mapping.quantity || 0),
+      0
+    );
+    // Prefer `current_stock`, fallback to legacy `stock_quantity` if present
+    const totalQty = product.current_stock ?? product.stock_quantity ?? 0;
     const availableToShelve = totalQty - shelfedQty;
-    
+
     // Determine shelf status
     let onShelfStatus = "Out of Stock";
     if (availableToShelve > 20) {
@@ -103,7 +109,7 @@ const AddShelfProduct = () => {
     } else if (availableToShelve > 0) {
       onShelfStatus = "Low Stock";
     }
-    
+
     return {
       id: product._id,
       name: product.name,
@@ -118,22 +124,28 @@ const AddShelfProduct = () => {
   });
 
   // Transform shelves data
-  const shelfData = shelvesData.map(shelf => {
+  const shelfData = shelvesData.map((shelf) => {
     // Find all products on this shelf
     const shelfMappings = productShelvesData.filter(
-      mapping => mapping.shelf_id?._id === shelf._id || mapping.shelf_id === shelf._id
+      (mapping) =>
+        mapping.shelf_id?._id === shelf._id || mapping.shelf_id === shelf._id
     );
-    
-    // Calculate current quantity on shelf
-    const currentQty = shelfMappings.reduce((sum, mapping) => sum + (mapping.quantity || 0), 0);
-    const capacity = shelf.capacity || 100;
-    const available = capacity - currentQty;
-    
+
+    // Calculate current quantity on shelf from mappings
+    const computedQty = shelfMappings.reduce(
+      (sum, mapping) => sum + (mapping.quantity || 0),
+      0
+    );
+    // Also read stored shelf.current_quantity from DB if present
+    // Use capacity from data; fallback to 0 if not provided
+    const capacity = shelf.capacity ?? 0;
+    const available = capacity - computedQty;
+
     return {
       id: shelf._id,
-      name: `Shelf ${shelf.shelf_number} - ${shelf.description || 'General'}`,
+      name: `Shelf ${shelf.shelf_number} - ${shelf.description || "General"}`,
       capacity: capacity,
-      currentQty: currentQty,
+      currentQty: computedQty, // computed from mappings
       available: available,
       shelfLocation: shelf.shelf_number,
       section: shelf.shelf_number?.charAt(0) || "A",
@@ -264,7 +276,9 @@ const AddShelfProduct = () => {
     });
 
     if (invalidProducts.length > 0) {
-      setErrorMessage("Please enter valid quantities for all selected products!");
+      setErrorMessage(
+        "Please enter valid quantities for all selected products!"
+      );
       return;
     }
 
@@ -287,30 +301,57 @@ const AddShelfProduct = () => {
 
     try {
       setIsSubmitting(true);
-      
+
       // Prepare products array for bulk assign
-      const products = Array.from(selectedProducts).map(productId => ({
+      const products = Array.from(selectedProducts).map((productId) => ({
         product_id: productId,
-        quantity: productQuantities[productId]
+        quantity: productQuantities[productId],
       }));
-      
+
       // Call bulk assign API
       const response = await productShelfService.bulkAssignToShelf({
         shelf_id: selectedShelf,
-        products: products
+        products: products,
       });
-      
+
+      // Handle partial success cases
       if (response.success) {
         setSuccessMessage(
           `Successfully added ${totalQuantity} item(s) from ${selectedProducts.size} product(s) to ${shelf.name}!`
         );
-        
+
         // Reset selections
         setSelectedProducts(new Set());
         setProductQuantities({});
         setSelectedShelf(null);
-        
+
         // Reload data to refresh shelf quantities
+        setTimeout(() => loadInitialData(), 1000);
+      } else if (response.data && response.data.data) {
+        // Partial or mixed results returned from server
+        const results = response.data.data;
+        const successCount = results.success.length;
+        const errorCount = results.errors.length;
+
+        if (successCount > 0) {
+          setSuccessMessage(
+            `Assigned ${successCount} product(s) to ${shelf.name}. ${errorCount} errors occurred.`
+          );
+        }
+
+        if (errorCount > 0) {
+          const joined = results.errors
+            .map((e) => `${e.product_id}: ${e.error}`)
+            .join("; ");
+          setErrorMessage(`Errors: ${joined}`);
+        }
+
+        // Reset selections for successful items
+        setSelectedProducts(new Set());
+        setProductQuantities({});
+        setSelectedShelf(null);
+
+        // Reload data to reflect successful assignments
         setTimeout(() => loadInitialData(), 1000);
       } else {
         setErrorMessage(response.message || "Failed to add products to shelf");
@@ -481,7 +522,7 @@ const AddShelfProduct = () => {
               <thead>
                 <tr>
                   <th>Select</th>
-                  <th>Product ID</th>
+                  {/* <th>Product ID</th> */}
                   <th>Product Name</th>
                   <th>Category</th>
                   <th>Stock Status</th>
@@ -492,86 +533,118 @@ const AddShelfProduct = () => {
               <tbody>
                 {isLoading ? (
                   <tr>
-                    <td colSpan="7" style={{ textAlign: 'center', padding: '2rem' }}>
-                      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '0.5rem' }}>
-                        <div className="spinner" style={{ width: '20px', height: '20px', border: '3px solid #f3f3f3', borderTop: '3px solid #2563eb', borderRadius: '50%', animation: 'spin 1s linear infinite' }}></div>
+                    <td
+                      colSpan="7"
+                      style={{ textAlign: "center", padding: "2rem" }}
+                    >
+                      <div
+                        style={{
+                          display: "flex",
+                          justifyContent: "center",
+                          alignItems: "center",
+                          gap: "0.5rem",
+                        }}
+                      >
+                        <div
+                          className="spinner"
+                          style={{
+                            width: "20px",
+                            height: "20px",
+                            border: "3px solid #f3f3f3",
+                            borderTop: "3px solid #2563eb",
+                            borderRadius: "50%",
+                            animation: "spin 1s linear infinite",
+                          }}
+                        ></div>
                         <span>Loading products...</span>
                       </div>
                     </td>
                   </tr>
                 ) : paginatedProductData.length === 0 ? (
                   <tr>
-                    <td colSpan="7" style={{ textAlign: 'center', padding: '2rem', color: '#64748b' }}>
+                    <td
+                      colSpan="7"
+                      style={{
+                        textAlign: "center",
+                        padding: "2rem",
+                        color: "#64748b",
+                      }}
+                    >
                       No products found
                     </td>
                   </tr>
                 ) : (
-                paginatedProductData.map((product) => {
-                  const isSelected = selectedProducts.has(product.id);
-                  const isFullyShelved = product.shelfedQty >= product.totalQty;
-                  const availableToShelve =
-                    product.totalQty - product.shelfedQty;
+                  paginatedProductData.map((product) => {
+                    const isSelected = selectedProducts.has(product.id);
+                    const isFullyShelved =
+                      product.shelfedQty >= product.totalQty;
+                    const availableToShelve =
+                      product.totalQty - product.shelfedQty;
 
-                  return (
-                    <tr
-                      key={product.id}
-                      className={`${isSelected ? "selected-row" : ""} ${
-                        isFullyShelved ? "fully-shelved-row" : ""
-                      }`}
-                    >
-                      <td>
-                        <input
-                          type="checkbox"
-                          checked={isSelected}
-                          onChange={() => handleSelectProduct(product.id)}
-                          disabled={isFullyShelved}
-                          className={`add-shelf-checkbox ${
-                            isFullyShelved ? "disabled" : ""
-                          }`}
-                          title={
-                            isFullyShelved ? "Product is fully shelved" : ""
-                          }
-                        />
-                      </td>
-                      <td className="add-shelf-product-id">{product.id}</td>
-                      <td className="add-shelf-product-name">{product.name}</td>
-                      <td>{product.category}</td>
-                      <td>
-                        <span
-                          className={getStatusBadgeClass(product.onShelfStatus)}
-                        >
-                          {product.onShelfStatus}
-                        </span>
-                      </td>
-                      <td className="add-shelf-quantity-info">
-                        {product.shelfedQty}/{product.totalQty}
-                      </td>
-                      <td className="add-shelf-quantity-input-cell">
-                        {isFullyShelved ? (
-                          <span className="add-shelf-fully-shelved-text">
-                            Fully Shelved
-                          </span>
-                        ) : (
+                    return (
+                      <tr
+                        key={product.id}
+                        className={`${isSelected ? "selected-row" : ""} ${
+                          isFullyShelved ? "fully-shelved-row" : ""
+                        }`}
+                      >
+                        <td>
                           <input
-                            type="number"
-                            min="1"
-                            max={availableToShelve}
-                            value={productQuantities[product.id] || ""}
-                            onChange={(e) =>
-                              handleQuantityChange(
-                                product.id,
-                                parseInt(e.target.value) || 1
-                              )
+                            type="checkbox"
+                            checked={isSelected}
+                            onChange={() => handleSelectProduct(product.id)}
+                            disabled={isFullyShelved}
+                            className={`add-shelf-checkbox ${
+                              isFullyShelved ? "disabled" : ""
+                            }`}
+                            title={
+                              isFullyShelved ? "Product is fully shelved" : ""
                             }
-                            disabled={!isSelected}
-                            className="add-shelf-quantity-input"
-                            placeholder="0"
                           />
-                        )}
-                      </td>
-                    </tr>
-                  );
-                })
+                        </td>
+                        {/* <td className="add-shelf-product-id">{product.id}</td> */}
+                        <td className="add-shelf-product-name">
+                          {product.name}
+                        </td>
+                        <td>{product.category}</td>
+                        <td>
+                          <span
+                            className={getStatusBadgeClass(
+                              product.onShelfStatus
+                            )}
+                          >
+                            {product.onShelfStatus}
+                          </span>
+                        </td>
+                        <td className="add-shelf-quantity-info">
+                          {product.shelfedQty}/{product.totalQty}
+                        </td>
+                        <td className="add-shelf-quantity-input-cell">
+                          {isFullyShelved ? (
+                            <span className="add-shelf-fully-shelved-text">
+                              Fully Shelved
+                            </span>
+                          ) : (
+                            <input
+                              type="number"
+                              min="1"
+                              max={availableToShelve}
+                              value={productQuantities[product.id] || ""}
+                              onChange={(e) =>
+                                handleQuantityChange(
+                                  product.id,
+                                  parseInt(e.target.value) || 1
+                                )
+                              }
+                              disabled={!isSelected}
+                              className="add-shelf-quantity-input"
+                              placeholder="0"
+                            />
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })
                 )}
               </tbody>
             </table>
@@ -655,7 +728,7 @@ const AddShelfProduct = () => {
               <thead>
                 <tr>
                   <th>Select</th>
-                  <th>Shelf ID</th>
+                  {/* <th>Shelf ID</th> */}
                   <th>Shelf Name</th>
                   <th>Location</th>
                   <th>Section</th>
@@ -667,66 +740,96 @@ const AddShelfProduct = () => {
               <tbody>
                 {isLoading ? (
                   <tr>
-                    <td colSpan="8" style={{ textAlign: 'center', padding: '2rem' }}>
-                      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '0.5rem' }}>
-                        <div className="spinner" style={{ width: '20px', height: '20px', border: '3px solid #f3f3f3', borderTop: '3px solid #2563eb', borderRadius: '50%', animation: 'spin 1s linear infinite' }}></div>
+                    <td
+                      colSpan="8"
+                      style={{ textAlign: "center", padding: "2rem" }}
+                    >
+                      <div
+                        style={{
+                          display: "flex",
+                          justifyContent: "center",
+                          alignItems: "center",
+                          gap: "0.5rem",
+                        }}
+                      >
+                        <div
+                          className="spinner"
+                          style={{
+                            width: "20px",
+                            height: "20px",
+                            border: "3px solid #f3f3f3",
+                            borderTop: "3px solid #2563eb",
+                            borderRadius: "50%",
+                            animation: "spin 1s linear infinite",
+                          }}
+                        ></div>
                         <span>Loading shelves...</span>
                       </div>
                     </td>
                   </tr>
                 ) : paginatedShelfData.length === 0 ? (
                   <tr>
-                    <td colSpan="8" style={{ textAlign: 'center', padding: '2rem', color: '#64748b' }}>
+                    <td
+                      colSpan="8"
+                      style={{
+                        textAlign: "center",
+                        padding: "2rem",
+                        color: "#64748b",
+                      }}
+                    >
                       No shelves found
                     </td>
                   </tr>
                 ) : (
-                paginatedShelfData.map((shelf) => {
-                  const isSelected = selectedShelf === shelf.id;
-                  const utilization = (shelf.currentQty / shelf.capacity) * 100;
-                  return (
-                    <tr
-                      key={shelf.id}
-                      className={isSelected ? "selected-row" : ""}
-                    >
-                      <td>
-                        <input
-                          type="radio"
-                          name="selectedShelf"
-                          checked={isSelected}
-                          onClick={() => handleSelectShelf(shelf.id)}
-                          onChange={() => {}} // Prevent default radio behavior
-                          className="add-shelf-radio"
-                        />
-                      </td>
-                      <td className="add-shelf-shelf-id">{shelf.id}</td>
-                      <td className="add-shelf-shelf-name">{shelf.name}</td>
-                      <td>{shelf.shelfLocation}</td>
-                      <td>{shelf.section}</td>
-                      <td>{shelf.slot}</td>
-                      <td>
-                        <div className="add-shelf-capacity-info">
-                          <span>
-                            {shelf.currentQty}/{shelf.capacity}
-                          </span>
-                          <div className="add-shelf-capacity-bar">
-                            <div
-                              className="add-shelf-capacity-fill"
-                              style={{ width: `${utilization}%` }}
-                            ></div>
+                  paginatedShelfData.map((shelf) => {
+                    const isSelected = selectedShelf === shelf.id;
+                    const utilization =
+                      (shelf.currentQty / shelf.capacity) * 100;
+                    return (
+                      <tr
+                        key={shelf.id}
+                        className={isSelected ? "selected-row" : ""}
+                      >
+                        <td>
+                          <input
+                            type="radio"
+                            name="selectedShelf"
+                            checked={isSelected}
+                            onClick={() => handleSelectShelf(shelf.id)}
+                            onChange={() => {}} // Prevent default radio behavior
+                            className="add-shelf-radio"
+                          />
+                        </td>
+                        {/* <td className="add-shelf-shelf-id">{shelf.id}</td> */}
+                        <td className="add-shelf-shelf-name">{shelf.name}</td>
+                        <td>{shelf.shelfLocation}</td>
+                        <td>{shelf.section}</td>
+                        <td>{shelf.slot}</td>
+                        <td>
+                          <div className="add-shelf-capacity-info">
+                            <span>
+                              {shelf.currentQty}/{shelf.capacity}
+                            </span>{" "}
+                            <div className="add-shelf-capacity-bar">
+                              <div
+                                className="add-shelf-capacity-fill"
+                                style={{ width: `${utilization}%` }}
+                              ></div>
+                            </div>
                           </div>
-                        </div>
-                      </td>
-                      <td className="add-shelf-available">
-                        <span
-                          className={shelf.available > 0 ? "positive" : "zero"}
-                        >
-                          {shelf.available}
-                        </span>
-                      </td>
-                    </tr>
-                  );
-                })
+                        </td>
+                        <td className="add-shelf-available">
+                          <span
+                            className={
+                              shelf.available > 0 ? "positive" : "zero"
+                            }
+                          >
+                            {shelf.available}
+                          </span>
+                        </td>
+                      </tr>
+                    );
+                  })
                 )}
               </tbody>
             </table>
@@ -784,7 +887,9 @@ const AddShelfProduct = () => {
                   disabled={isOverCapacity || isSubmitting}
                 >
                   <FaPlus className="add-shelf-add-icon" />
-                  {isSubmitting ? "Adding..." : `Add ${totalQuantity} Item(s) to Shelf`}
+                  {isSubmitting
+                    ? "Adding..."
+                    : `Add ${totalQuantity} Item(s) to Shelf`}
                 </button>
               </>
             );
