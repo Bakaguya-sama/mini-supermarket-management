@@ -27,7 +27,8 @@ const CreateInvoice = () => {
   // Product search and filter states
   const [productSearchTerm, setProductSearchTerm] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("All Categories");
-  const [showProductList, setShowProductList] = useState(false);
+  // Show product list by default so cashier can see products on load
+  const [showProductList, setShowProductList] = useState(true);
 
   // Customer search states
   const [customerSearchTerm, setCustomerSearchTerm] = useState("");
@@ -96,13 +97,13 @@ const CreateInvoice = () => {
 
   // ========== API FUNCTIONS ==========
 
-  // Load products from API
-  const loadProducts = async () => {
+  // Load products from API (supports params)
+  const loadProducts = async (params = {}) => {
     try {
       setIsLoadingProducts(true);
-      console.log("🛒 Loading products from API...");
+      console.log("🛒 Loading products from API with params...", params);
 
-      const response = await productService.getAll({ limit: 100 });
+      const response = await productService.getAll({ limit: 100, ...params });
 
       if (response.success && response.data) {
         // Transform API products to match frontend format
@@ -126,6 +127,24 @@ const CreateInvoice = () => {
       setIsLoadingProducts(false);
     }
   };
+
+  // Debounced search/filter: fetch from server when searchTerm or categoryFilter changes
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      const params = {};
+      if (productSearchTerm && productSearchTerm.trim().length > 0)
+        params.search = productSearchTerm.trim();
+      if (categoryFilter && categoryFilter !== "All Categories")
+        params.category = categoryFilter;
+
+      // Show product list when search has text, otherwise keep existing show state
+      if (productSearchTerm.trim().length > 0) setShowProductList(true);
+
+      loadProducts(params);
+    }, 300); // 300ms debounce
+
+    return () => clearTimeout(handler);
+  }, [productSearchTerm, categoryFilter]);
 
   // Load customers from API
   const loadCustomers = async () => {
@@ -784,7 +803,7 @@ const CreateInvoice = () => {
                     ))}
                   </tbody>
                 </table>
-              ) : (
+              ) : availableProducts.length === 0 ? (
                 <div className="create-invoice-empty-products">
                   <div className="create-invoice-empty-icon">📦</div>
                   <p className="create-invoice-empty-text">
@@ -794,7 +813,7 @@ const CreateInvoice = () => {
                     Search and add products to create an invoice
                   </p>
                 </div>
-              )}
+              ) : null}
 
               {products.length > 0 && (
                 <div className="create-invoice-subtotal-row">
