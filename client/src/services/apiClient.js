@@ -62,8 +62,15 @@ apiClient.interceptors.response.use(
 
       // Handle 401 Unauthorized
       if (error.response.status === 401) {
-        localStorage.removeItem("token");
-        window.location.href = "/signin";
+        // Avoid redirecting for auth endpoints (e.g., login/register) to prevent reloads
+        const reqUrl = error.config?.url || "";
+        const isAuthRoute = /\/auth\/(login|register)/.test(reqUrl);
+
+        // Only clear token and redirect when the 401 came from a protected resource
+        if (!isAuthRoute) {
+          localStorage.removeItem("token");
+          window.location.href = "/signin";
+        }
       }
 
       // Return error response data

@@ -5,6 +5,8 @@ import Input from "../../components/ui/Input";
 import Button from "../../components/ui/Button";
 import Checkbox from "../../components/ui/Checkbox";
 import ErrorMessage from "../../components/Messages/ErrorMessage";
+import SuccessMessage from "../../components/Messages/SuccessMessage";
+import apiClient from "../../services/apiClient";
 import "./SignUp.css";
 
 const SignUp = () => {
@@ -15,6 +17,8 @@ const SignUp = () => {
     confirmPassword: "",
   });
   const [errorMessage, setErrorMessage] = useState("");
+  const [successMessage, setSuccessMessage] = useState("");
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
   const handleInputChange = (e) => {
@@ -25,7 +29,7 @@ const SignUp = () => {
     }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     console.log("Sign up attempt:", formData);
 
@@ -40,10 +44,42 @@ const SignUp = () => {
       return;
     }
 
-    //TODO: Check if the entered username had been existed. This username had been existed in the system. Please choose another username.
+    setErrorMessage("");
+    setLoading(true);
 
-    // Navigate to sign in after successful registration
-    navigate("/auth/signin");
+    try {
+      const payload = {
+        username: formData.username,
+        email: formData.email,
+        password: formData.password,
+      };
+
+      const response = await apiClient.post("/auth/register/customer", payload);
+
+      if (response && response.success) {
+        // Registration successful - redirect user to Sign In (do not auto-login)
+        // Optionally show a message on Sign In page in future enhancements
+        setFormData({
+          username: "",
+          email: "",
+          password: "",
+          confirmPassword: "",
+        });
+        setSuccessMessage("Sign up successfully!");
+        navigate("/signin");
+      } else {
+        setErrorMessage(response?.message || "Registration failed");
+      }
+    } catch (err) {
+      console.error("Registration error:", err);
+      let msg = "An error occurred. Please try again.";
+      if (typeof err === "string") msg = err;
+      else if (err?.message) msg = err.message;
+      else if (err?.data?.message) msg = err.data.message;
+      setErrorMessage(msg);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -51,6 +87,10 @@ const SignUp = () => {
       <ErrorMessage
         message={errorMessage}
         onClose={() => setErrorMessage("")}
+      />
+      <SuccessMessage
+        message={successMessage}
+        onClose={() => setSuccessMessage("")}
       />
       <div className="signup-card">
         <Logo />
@@ -108,8 +148,13 @@ const SignUp = () => {
             />
           </div>
 
-          <Button type="submit" size="large" className="signup-button">
-            Sign Up
+          <Button
+            type="submit"
+            size="large"
+            className="signup-button"
+            disabled={loading}
+          >
+            {loading ? "Signing up..." : "Sign Up"}
           </Button>
         </form>
 
