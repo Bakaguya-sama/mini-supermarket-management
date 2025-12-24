@@ -13,23 +13,30 @@ const Layout = ({ children }) => {
     const role = localStorage.getItem("userRole") || "manager";
     const position = localStorage.getItem("position") || "";
     const isManager = localStorage.getItem("isManager") === "true";
-    
+
     // Map position to sidebar role for staff
     if (role === "staff" || role === "admin") {
       if (isManager) return "manager";
-      
+
       const positionLower = position.toLowerCase();
       if (positionLower === "delivery" || positionLower === "delivery staff") {
         return "delivery_staff";
       } else if (positionLower === "cashier") {
         return "cashier";
-      } else if (positionLower === "merchandise supervisor" || positionLower === "supervisor") {
+      } else if (
+        positionLower === "merchandise supervisor" ||
+        positionLower === "supervisor" ||
+        positionLower === "merchandise"
+      ) {
         return "merchandise_supervisor";
-      } else if (positionLower === "warehouse staff" || positionLower === "warehouse") {
+      } else if (
+        positionLower === "warehouse staff" ||
+        positionLower === "warehouse"
+      ) {
         return "warehouse_staff";
       }
     }
-    
+
     return role === "customer" ? "customer" : "manager";
   });
   const [userName, setUserName] = useState(() => {

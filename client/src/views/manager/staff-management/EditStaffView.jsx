@@ -46,8 +46,13 @@ const EditStaffView = () => {
 
       // Handle different response formats
       let staff = null;
-      
-      if (result && result.data && typeof result.data === 'object' && result.data._id) {
+
+      if (
+        result &&
+        result.data &&
+        typeof result.data === "object" &&
+        result.data._id
+      ) {
         // Result is wrapped with data property
         staff = result.data;
       } else if (result && result._id) {
@@ -68,8 +73,8 @@ const EditStaffView = () => {
           if (!dateString) return "";
           const date = new Date(dateString);
           const year = date.getFullYear();
-          const month = String(date.getMonth() + 1).padStart(2, '0');
-          const day = String(date.getDate()).padStart(2, '0');
+          const month = String(date.getMonth() + 1).padStart(2, "0");
+          const day = String(date.getDate()).padStart(2, "0");
           return `${year}-${month}-${day}`;
         };
 
@@ -201,44 +206,61 @@ const EditStaffView = () => {
         phone: formData.phone,
         address: formData.address,
         date_of_birth: formData.date_of_birth,
-        avatar_link: imagePreview && imagePreview !== currentAvatarLink ? imagePreview : undefined,
+        avatar_link:
+          imagePreview && imagePreview !== currentAvatarLink
+            ? imagePreview
+            : undefined,
         position: formData.position,
         employment_type: formData.employment_type,
-        annual_salary: formData.annual_salary ? parseFloat(formData.annual_salary) : 0,
+        annual_salary: formData.annual_salary
+          ? parseFloat(formData.annual_salary)
+          : 0,
         hire_date: formData.hire_date,
         notes: formData.notes,
         is_active: formData.is_active,
       };
 
       // Remove undefined properties
-      Object.keys(payload).forEach(key => payload[key] === undefined && delete payload[key]);
+      Object.keys(payload).forEach(
+        (key) => payload[key] === undefined && delete payload[key]
+      );
 
       const result = await staffService.update(id, payload);
 
       console.log("Update result:", result);
-      console.log("Result.success:", result?.success, "Type:", typeof result?.success);
+      console.log(
+        "Result.success:",
+        result?.success,
+        "Type:",
+        typeof result?.success
+      );
       console.log("Result.message:", result?.message);
 
       // Check if update was successful - handle different response formats
       let updateSuccess = false;
-      
+
       // Check if success is true (as boolean)
       if (result && result.success === true) {
         updateSuccess = true;
       }
       // Check if success is string 'true'
-      else if (result && result.success === 'true') {
+      else if (result && result.success === "true") {
         updateSuccess = true;
       }
       // Check if we have message indicating success
-      else if (result && result.message && (result.message.includes('successfully') || result.message.includes('updated'))) {
+      else if (
+        result &&
+        result.message &&
+        (result.message.includes("successfully") ||
+          result.message.includes("updated"))
+      ) {
         updateSuccess = true;
       }
       // Check if we have data (assuming if data exists, update was successful)
       else if (result && result.data) {
         updateSuccess = true;
       }
-      
+
       if (updateSuccess) {
         setSuccessMessage("Staff updated successfully!");
         setTimeout(() => {
@@ -264,7 +286,9 @@ const EditStaffView = () => {
   if (isLoadingStaff) {
     return (
       <div className="edit-staff-container">
-        <p style={{ textAlign: "center", padding: "30px" }}>Loading staff information...</p>
+        <p style={{ textAlign: "center", padding: "30px" }}>
+          Loading staff information...
+        </p>
       </div>
     );
   }
@@ -301,9 +325,12 @@ const EditStaffView = () => {
 
               <div className="edit-staff-form-group add-staff-form-group-full">
                 <label htmlFor="full_name" className="edit-staff-form-label">
-                  <span className="edit-staff-form-label-required">Full Name</span>
+                  <span className="edit-staff-form-label-required">
+                    Full Name
+                  </span>
                 </label>
                 <input
+                  disabled="true"
                   type="text"
                   id="full_name"
                   name="full_name"
@@ -319,6 +346,7 @@ const EditStaffView = () => {
                   <span className="edit-staff-form-label-required">Phone</span>
                 </label>
                 <input
+                  disabled="true"
                   type="tel"
                   id="phone"
                   name="phone"
@@ -334,6 +362,7 @@ const EditStaffView = () => {
                   <span className="edit-staff-form-label-required">Email</span>
                 </label>
                 <input
+                  disabled="true"
                   type="email"
                   id="email"
                   name="email"
@@ -345,10 +374,14 @@ const EditStaffView = () => {
               </div>
 
               <div className="edit-staff-form-group">
-                <label htmlFor="date_of_birth" className="edit-staff-form-label">
+                <label
+                  htmlFor="date_of_birth"
+                  className="edit-staff-form-label"
+                >
                   Date of Birth
                 </label>
                 <input
+                  disabled="true"
                   type="date"
                   id="date_of_birth"
                   name="date_of_birth"
@@ -363,6 +396,7 @@ const EditStaffView = () => {
                   Address
                 </label>
                 <textarea
+                  disabled="true"
                   id="address"
                   name="address"
                   value={formData.address}
@@ -380,7 +414,9 @@ const EditStaffView = () => {
 
               <div className="edit-staff-form-group">
                 <label htmlFor="position" className="edit-staff-form-label">
-                  <span className="edit-staff-form-label-required">Position</span>
+                  <span className="edit-staff-form-label-required">
+                    Position
+                  </span>
                 </label>
                 <select
                   id="position"
@@ -391,14 +427,19 @@ const EditStaffView = () => {
                 >
                   <option value="">Select position</option>
                   <option value="Delivery">Delivery</option>
-                  <option value="Merchandise">Merchandise</option>
+                  <option value="Merchandise Supervisor">
+                    Merchandise Supervisor
+                  </option>
                   <option value="Warehouse">Warehouse</option>
                   <option value="Cashier">Cashier</option>
                 </select>
               </div>
 
               <div className="edit-staff-form-group">
-                <label htmlFor="employment_type" className="edit-staff-form-label">
+                <label
+                  htmlFor="employment_type"
+                  className="edit-staff-form-label"
+                >
                   Employment Type
                 </label>
                 <select
@@ -430,7 +471,10 @@ const EditStaffView = () => {
               </div>
 
               <div className="edit-staff-form-group">
-                <label htmlFor="annual_salary" className="edit-staff-form-label">
+                <label
+                  htmlFor="annual_salary"
+                  className="edit-staff-form-label"
+                >
                   Annual Salary
                 </label>
                 <input
@@ -449,7 +493,9 @@ const EditStaffView = () => {
 
             {/* Additional Information Section */}
             <div className="edit-staff-form-section">
-              <h2 className="edit-staff-section-title">Additional Information</h2>
+              <h2 className="edit-staff-section-title">
+                Additional Information
+              </h2>
 
               <div className="edit-staff-form-group add-staff-form-group-full">
                 <label htmlFor="notes" className="edit-staff-form-label">
@@ -467,15 +513,26 @@ const EditStaffView = () => {
               </div>
 
               <div className="edit-staff-form-group add-staff-form-group-full">
-                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+                <label
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "8px",
+                    cursor: "pointer",
+                  }}
+                >
                   <input
                     type="checkbox"
                     name="is_active"
                     checked={formData.is_active}
-                    onChange={(e) => setFormData({ ...formData, is_active: e.target.checked })}
-                    style={{ width: '18px', height: '18px', cursor: 'pointer' }}
+                    onChange={(e) =>
+                      setFormData({ ...formData, is_active: e.target.checked })
+                    }
+                    style={{ width: "18px", height: "18px", cursor: "pointer" }}
                   />
-                  <span className="edit-staff-form-label" style={{ margin: 0 }}>Staff is Active</span>
+                  <span className="edit-staff-form-label" style={{ margin: 0 }}>
+                    Staff is Active
+                  </span>
                 </label>
               </div>
             </div>
@@ -508,7 +565,11 @@ const EditStaffView = () => {
             onClick={() => document.getElementById("avatar-input").click()}
           >
             {imagePreview ? (
-              <img src={imagePreview} alt="Avatar preview" className="edit-staff-image-preview-img" />
+              <img
+                src={imagePreview}
+                alt="Avatar preview"
+                className="edit-staff-image-preview-img"
+              />
             ) : (
               <div className="edit-staff-image-upload-placeholder">
                 <div className="edit-staff-image-upload-icon">👤</div>
