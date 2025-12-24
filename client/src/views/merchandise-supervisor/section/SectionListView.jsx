@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   FaSearch,
@@ -27,11 +27,7 @@ const SectionListView = () => {
   });
 
   // Load sections on component mount
-  useEffect(() => {
-    loadSections();
-  }, []);
-
-  const loadSections = async () => {
+  const loadSections = useCallback(async () => {
     try {
       setIsLoading(true);
       setError(null);
@@ -59,7 +55,11 @@ const SectionListView = () => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    loadSections();
+  }, [loadSections]);
 
   const calculateStats = (sectionList) => {
     try {

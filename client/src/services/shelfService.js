@@ -6,7 +6,7 @@ const shelfService = {
   getAll: async (params = {}) => {
     try {
       const response = await apiClient.get("/shelves", { params });
-      return response.data;
+      return response; // apiClient returns response.data already
     } catch (error) {
       console.error("Error fetching shelves:", error);
       throw error;
@@ -17,7 +17,7 @@ const shelfService = {
   getById: async (id) => {
     try {
       const response = await apiClient.get(`/shelves/${id}`);
-      return response.data;
+      return response;
     } catch (error) {
       console.error("Error fetching shelf:", error);
       throw error;
@@ -28,7 +28,7 @@ const shelfService = {
   create: async (shelfData) => {
     try {
       const response = await apiClient.post("/shelves", shelfData);
-      return response.data;
+      return response;
     } catch (error) {
       console.error("Error creating shelf:", error);
       throw error;
@@ -39,7 +39,7 @@ const shelfService = {
   update: async (id, shelfData) => {
     try {
       const response = await apiClient.put(`/shelves/${id}`, shelfData);
-      return response.data;
+      return response;
     } catch (error) {
       console.error("Error updating shelf:", error);
       throw error;
@@ -50,7 +50,7 @@ const shelfService = {
   delete: async (id) => {
     try {
       const response = await apiClient.delete(`/shelves/${id}`);
-      return response.data;
+      return response;
     } catch (error) {
       console.error("Error deleting shelf:", error);
       throw error;
@@ -61,7 +61,7 @@ const shelfService = {
   getStats: async () => {
     try {
       const response = await apiClient.get("/shelves/stats");
-      return response.data;
+      return response;
     } catch (error) {
       console.error("Error fetching shelf stats:", error);
       throw error;

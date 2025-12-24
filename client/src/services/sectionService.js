@@ -6,7 +6,7 @@ const sectionService = {
   getAll: async (params = {}) => {
     try {
       const response = await apiClient.get("/sections", { params });
-      return response.data;
+      return response; // apiClient already returns response.data
     } catch (error) {
       console.error("Error fetching sections:", error);
       throw error;
@@ -17,7 +17,7 @@ const sectionService = {
   getById: async (id) => {
     try {
       const response = await apiClient.get(`/sections/${id}`);
-      return response.data;
+      return response;
     } catch (error) {
       console.error("Error fetching section:", error);
       throw error;
@@ -28,7 +28,7 @@ const sectionService = {
   create: async (sectionData) => {
     try {
       const response = await apiClient.post("/sections", sectionData);
-      return response.data;
+      return response;
     } catch (error) {
       console.error("Error creating section:", error);
       throw error;
@@ -39,7 +39,7 @@ const sectionService = {
   update: async (id, sectionData) => {
     try {
       const response = await apiClient.put(`/sections/${id}`, sectionData);
-      return response.data;
+      return response;
     } catch (error) {
       console.error("Error updating section:", error);
       throw error;
@@ -50,7 +50,7 @@ const sectionService = {
   delete: async (id) => {
     try {
       const response = await apiClient.delete(`/sections/${id}`);
-      return response.data;
+      return response;
     } catch (error) {
       console.error("Error deleting section:", error);
       throw error;
@@ -61,7 +61,7 @@ const sectionService = {
   getShelves: async (id) => {
     try {
       const response = await apiClient.get(`/sections/${id}/shelves`);
-      return response.data;
+      return response;
     } catch (error) {
       console.error("Error fetching section shelves:", error);
       throw error;

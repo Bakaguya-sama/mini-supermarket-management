@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   FaSearch,
@@ -36,12 +36,92 @@ const ShelfListView = () => {
 
   // Load shelves on component mount
 
-  useEffect(() => {
-    loadShelves();
-    loadSections();
+  // Get shelf status based on isfull flag
+  const getShelfStatus = useCallback((shelf) => {
+    if (!shelf) return "Empty";
+
+    // If isfull is true, the shelf is full
+    if (shelf.isfull === true) {
+      return "Full";
+    }
+
+    // If the shelf has a capacity and current_capacity
+    if (shelf.current_capacity !== undefined && shelf.capacity !== undefined) {
+      if (shelf.current_capacity === 0) {
+        return "Empty";
+      } else if (shelf.current_capacity >= shelf.capacity) {
+        return "Full";
+      } else {
+        return "Occupied";
+      }
+    }
+
+    // Default to Empty if we can't determine
+    return "Empty";
   }, []);
 
-  const loadSections = async () => {
+  const calculateStats = useCallback(
+    (shelfList) => {
+      try {
+        if (!Array.isArray(shelfList)) {
+          console.error("shelfList is not an array:", shelfList);
+          throw new Error("Invalid shelf list format");
+        }
+
+        if (shelfList.length === 0) {
+          setStats({
+            totalShelves: 0,
+            emptyShelves: 0,
+            occupiedShelves: 0,
+            fullShelves: 0,
+          });
+          return;
+        }
+
+        const totalShelves = shelfList.length;
+
+        const emptyShelves = shelfList.filter((shelf) => {
+          if (!shelf) return false;
+          return getShelfStatus(shelf) === "Empty";
+        }).length;
+
+        const occupiedShelves = shelfList.filter((shelf) => {
+          if (!shelf) return false;
+          return getShelfStatus(shelf) === "Occupied";
+        }).length;
+
+        const fullShelves = shelfList.filter((shelf) => {
+          if (!shelf) return false;
+          return getShelfStatus(shelf) === "Full";
+        }).length;
+
+        console.log("✅ Stats calculated:", {
+          totalShelves,
+          emptyShelves,
+          occupiedShelves,
+          fullShelves,
+        });
+
+        setStats({
+          totalShelves,
+          emptyShelves,
+          occupiedShelves,
+          fullShelves,
+        });
+      } catch (error) {
+        console.error("❌ Error calculating stats:", error);
+        setStats({
+          totalShelves: 0,
+          emptyShelves: 0,
+          occupiedShelves: 0,
+          fullShelves: 0,
+        });
+      }
+    },
+    [getShelfStatus]
+  );
+
+  const loadSections = useCallback(async () => {
     try {
       const sectionService = (await import("../../../services/sectionService"))
         .default;
@@ -52,9 +132,9 @@ const ShelfListView = () => {
     } catch (error) {
       console.error("Error loading sections:", error);
     }
-  };
+  }, []);
 
-  const loadShelves = async () => {
+  const loadShelves = useCallback(async () => {
     try {
       setIsLoading(true);
       setError(null);
@@ -90,89 +170,12 @@ const ShelfListView = () => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [calculateStats]);
 
-  const calculateStats = (shelfList) => {
-    try {
-      if (!Array.isArray(shelfList)) {
-        console.error("shelfList is not an array:", shelfList);
-        throw new Error("Invalid shelf list format");
-      }
-
-      if (shelfList.length === 0) {
-        setStats({
-          totalShelves: 0,
-          emptyShelves: 0,
-          occupiedShelves: 0,
-          fullShelves: 0,
-        });
-        return;
-      }
-
-      const totalShelves = shelfList.length;
-
-      const emptyShelves = shelfList.filter((shelf) => {
-        if (!shelf) return false;
-        return getShelfStatus(shelf) === "Empty";
-      }).length;
-
-      const occupiedShelves = shelfList.filter((shelf) => {
-        if (!shelf) return false;
-        return getShelfStatus(shelf) === "Occupied";
-      }).length;
-
-      const fullShelves = shelfList.filter((shelf) => {
-        if (!shelf) return false;
-        return getShelfStatus(shelf) === "Full";
-      }).length;
-
-      console.log("✅ Stats calculated:", {
-        totalShelves,
-        emptyShelves,
-        occupiedShelves,
-        fullShelves,
-      });
-
-      setStats({
-        totalShelves,
-        emptyShelves,
-        occupiedShelves,
-        fullShelves,
-      });
-    } catch (error) {
-      console.error("❌ Error calculating stats:", error);
-      setStats({
-        totalShelves: 0,
-        emptyShelves: 0,
-        occupiedShelves: 0,
-        fullShelves: 0,
-      });
-    }
-  };
-
-  // Get shelf status based on isfull flag
-  const getShelfStatus = (shelf) => {
-    if (!shelf) return "Empty";
-
-    // If isfull is true, the shelf is full
-    if (shelf.isfull === true) {
-      return "Full";
-    }
-
-    // If the shelf has a capacity and current_capacity
-    if (shelf.current_capacity !== undefined && shelf.capacity !== undefined) {
-      if (shelf.current_capacity === 0) {
-        return "Empty";
-      } else if (shelf.current_capacity >= shelf.capacity) {
-        return "Full";
-      } else {
-        return "Occupied";
-      }
-    }
-
-    // Default to Empty if we can't determine
-    return "Empty";
-  };
+  useEffect(() => {
+    loadShelves();
+    loadSections();
+  }, [loadShelves, loadSections]);
 
   // Pagination logic
   const itemsPerPage = 10;
