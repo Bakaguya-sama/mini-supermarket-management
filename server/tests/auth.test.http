@@ -1,0 +1,416 @@
+###############################################
+# AUTHENTICATION API TESTS
+# Mini Supermarket Management System
+###############################################
+
+@baseUrl = http://localhost:5000/api
+@contentType = application/json
+
+###############################################
+# 1. REGISTER CUSTOMER (Public)
+###############################################
+
+### 1.1. Đăng ký khách hàng thành công
+POST {{baseUrl}}/auth/register/customer
+Content-Type: {{contentType}}
+
+{
+  "username": "customer1",
+  "password": "123456",
+  "email": "customer1@example.com",
+  "full_name": "Nguyễn Văn A",
+  "phone": "0901234567",
+  "address": "123 Đường ABC, TP.HCM",
+  "date_of_birth": "1990-01-15",
+  "membership_type": "silver"
+}
+
+### 1.2. Đăng ký khách hàng với thông tin tối thiểu
+POST {{baseUrl}}/auth/register/customer
+Content-Type: {{contentType}}
+
+{
+  "username": "customer2",
+  "password": "123456",
+  "email": "customer2@example.com"
+}
+
+### 1.3. Đăng ký thiếu username (Lỗi)
+POST {{baseUrl}}/auth/register/customer
+Content-Type: {{contentType}}
+
+{
+  "password": "123456",
+  "email": "test@example.com"
+}
+
+### 1.4. Đăng ký với password quá ngắn (Lỗi)
+POST {{baseUrl}}/auth/register/customer
+Content-Type: {{contentType}}
+
+{
+  "username": "customer3",
+  "password": "123",
+  "email": "customer3@example.com"
+}
+
+### 1.5. Đăng ký với email không hợp lệ (Lỗi)
+POST {{baseUrl}}/auth/register/customer
+Content-Type: {{contentType}}
+
+{
+  "username": "customer4",
+  "password": "123456",
+  "email": "invalid-email"
+}
+
+### 1.6. Đăng ký với username đã tồn tại (Lỗi)
+POST {{baseUrl}}/auth/register/customer
+Content-Type: {{contentType}}
+
+{
+  "username": "customer1",
+  "password": "123456",
+  "email": "newcustomer@example.com"
+}
+
+### 1.7. Đăng ký với email đã tồn tại (Lỗi)
+POST {{baseUrl}}/auth/register/customer
+Content-Type: {{contentType}}
+
+{
+  "username": "newcustomer",
+  "password": "123456",
+  "email": "customer1@example.com"
+}
+
+###############################################
+# 2. LOGIN
+###############################################
+
+### 2.1. Login Manager Demo Account
+POST {{baseUrl}}/auth/login
+Content-Type: {{contentType}}
+
+{
+  "username": "admin",
+  "password": "admin123"
+}
+
+### 2.2. Login Customer Account
+POST {{baseUrl}}/auth/login
+Content-Type: {{contentType}}
+
+{
+  "username": "customer1",
+  "password": "123456"
+}
+
+### 2.3. Login với username sai (Lỗi)
+POST {{baseUrl}}/auth/login
+Content-Type: {{contentType}}
+
+{
+  "username": "wrongusername",
+  "password": "123456"
+}
+
+### 2.4. Login với password sai (Lỗi)
+POST {{baseUrl}}/auth/login
+Content-Type: {{contentType}}
+
+{
+  "username": "customer1",
+  "password": "wrongpassword"
+}
+
+### 2.5. Login thiếu username (Lỗi)
+POST {{baseUrl}}/auth/login
+Content-Type: {{contentType}}
+
+{
+  "password": "123456"
+}
+
+### 2.6. Login thiếu password (Lỗi)
+POST {{baseUrl}}/auth/login
+Content-Type: {{contentType}}
+
+{
+  "username": "customer1"
+}
+
+###############################################
+# 3. VERIFY TOKEN
+###############################################
+
+### 3.1. Verify token hợp lệ
+# Lưu ý: Thay YOUR_TOKEN_HERE bằng token thật từ response login
+POST {{baseUrl}}/auth/verify-token
+Content-Type: {{contentType}}
+
+{
+  "token": "YOUR_TOKEN_HERE"
+}
+
+### 3.2. Verify token không hợp lệ (Lỗi)
+POST {{baseUrl}}/auth/verify-token
+Content-Type: {{contentType}}
+
+{
+  "token": "invalid.token.here"
+}
+
+### 3.3. Verify không có token (Lỗi)
+POST {{baseUrl}}/auth/verify-token
+Content-Type: {{contentType}}
+
+{
+}
+
+###############################################
+# 4. GET CURRENT USER (Protected)
+###############################################
+
+### 4.1. Get current user với token hợp lệ
+# Lưu ý: Thay YOUR_TOKEN_HERE bằng token thật
+GET {{baseUrl}}/auth/me
+Authorization: Bearer YOUR_TOKEN_HERE
+
+### 4.2. Get current user không có token (Lỗi)
+GET {{baseUrl}}/auth/me
+
+### 4.3. Get current user với token không hợp lệ (Lỗi)
+GET {{baseUrl}}/auth/me
+Authorization: Bearer invalid.token.here
+
+###############################################
+# 5. UPDATE PROFILE (Protected)
+###############################################
+
+### 5.1. Cập nhật thông tin profile
+# Lưu ý: Thay YOUR_TOKEN_HERE bằng token thật
+PUT {{baseUrl}}/auth/update-profile
+Authorization: Bearer YOUR_TOKEN_HERE
+Content-Type: {{contentType}}
+
+{
+  "full_name": "Nguyễn Văn A Updated",
+  "phone": "0909999999",
+  "address": "456 Đường XYZ, TP.HCM",
+  "date_of_birth": "1990-01-15"
+}
+
+### 5.2. Cập nhật một phần thông tin
+PUT {{baseUrl}}/auth/update-profile
+Authorization: Bearer YOUR_TOKEN_HERE
+Content-Type: {{contentType}}
+
+{
+  "phone": "0987654321"
+}
+
+### 5.3. Cập nhật không có token (Lỗi)
+PUT {{baseUrl}}/auth/update-profile
+Content-Type: {{contentType}}
+
+{
+  "full_name": "Test Update"
+}
+
+###############################################
+# 6. CHANGE PASSWORD (Protected)
+###############################################
+
+### 6.1. Đổi mật khẩu thành công
+# Lưu ý: Thay YOUR_TOKEN_HERE bằng token thật
+PUT {{baseUrl}}/auth/change-password
+Authorization: Bearer YOUR_TOKEN_HERE
+Content-Type: {{contentType}}
+
+{
+  "current_password": "123456",
+  "new_password": "newpassword123"
+}
+
+### 6.2. Đổi mật khẩu với current_password sai (Lỗi)
+PUT {{baseUrl}}/auth/change-password
+Authorization: Bearer YOUR_TOKEN_HERE
+Content-Type: {{contentType}}
+
+{
+  "current_password": "wrongpassword",
+  "new_password": "newpassword123"
+}
+
+### 6.3. Đổi mật khẩu với new_password quá ngắn (Lỗi)
+PUT {{baseUrl}}/auth/change-password
+Authorization: Bearer YOUR_TOKEN_HERE
+Content-Type: {{contentType}}
+
+{
+  "current_password": "123456",
+  "new_password": "123"
+}
+
+### 6.4. Đổi mật khẩu thiếu current_password (Lỗi)
+PUT {{baseUrl}}/auth/change-password
+Authorization: Bearer YOUR_TOKEN_HERE
+Content-Type: {{contentType}}
+
+{
+  "new_password": "newpassword123"
+}
+
+###############################################
+# 7. REGISTER STAFF (Protected - Admin Only)
+###############################################
+
+### 7.1. Đăng ký nhân viên (cần admin token)
+# Lưu ý: Thay ADMIN_TOKEN_HERE bằng token admin thật
+POST {{baseUrl}}/auth/register/staff
+Authorization: Bearer ADMIN_TOKEN_HERE
+Content-Type: {{contentType}}
+
+{
+  "username": "staff1",
+  "password": "staff123456",
+  "email": "staff1@supermarket.com",
+  "full_name": "Trần Thị B",
+  "phone": "0912345678",
+  "address": "789 Đường DEF, TP.HCM",
+  "date_of_birth": "1995-05-20",
+  "position": "Cashier",
+  "employment_type": "full-time",
+  "annual_salary": 120000000,
+  "hire_date": "2024-01-01",
+  "notes": "Nhân viên thu ngân ca sáng"
+}
+
+### 7.2. Đăng ký nhân viên với thông tin tối thiểu
+POST {{baseUrl}}/auth/register/staff
+Authorization: Bearer ADMIN_TOKEN_HERE
+Content-Type: {{contentType}}
+
+{
+  "username": "staff2",
+  "password": "staff123456",
+  "email": "staff2@supermarket.com",
+  "position": "Stock Clerk"
+}
+
+### 7.3. Đăng ký nhân viên thiếu position (Lỗi)
+POST {{baseUrl}}/auth/register/staff
+Authorization: Bearer ADMIN_TOKEN_HERE
+Content-Type: {{contentType}}
+
+{
+  "username": "staff3",
+  "password": "staff123456",
+  "email": "staff3@supermarket.com"
+}
+
+### 7.4. Đăng ký nhân viên với customer token (Lỗi - không đủ quyền)
+POST {{baseUrl}}/auth/register/staff
+Authorization: Bearer CUSTOMER_TOKEN_HERE
+Content-Type: {{contentType}}
+
+{
+  "username": "staff4",
+  "password": "staff123456",
+  "email": "staff4@supermarket.com",
+  "position": "Cashier"
+}
+
+### 7.5. Đăng ký nhân viên không có token (Lỗi)
+POST {{baseUrl}}/auth/register/staff
+Content-Type: {{contentType}}
+
+{
+  "username": "staff5",
+  "password": "staff123456",
+  "email": "staff5@supermarket.com",
+  "position": "Cashier"
+}
+
+###############################################
+# 8. FULL WORKFLOW TEST
+###############################################
+
+### 8.1. WORKFLOW: Register Customer -> Login -> Get Profile -> Update -> Change Password
+
+# Step 1: Đăng ký
+POST {{baseUrl}}/auth/register/customer
+Content-Type: {{contentType}}
+
+{
+  "username": "workflow_test",
+  "password": "test123456",
+  "email": "workflow@test.com",
+  "full_name": "Workflow Test User"
+}
+
+# Step 2: Login (lưu token từ response)
+POST {{baseUrl}}/auth/login
+Content-Type: {{contentType}}
+
+{
+  "username": "workflow_test",
+  "password": "test123456"
+}
+
+# Step 3: Get profile (dùng token từ step 2)
+GET {{baseUrl}}/auth/me
+Authorization: Bearer YOUR_TOKEN_FROM_STEP_2
+
+# Step 4: Update profile
+PUT {{baseUrl}}/auth/update-profile
+Authorization: Bearer YOUR_TOKEN_FROM_STEP_2
+Content-Type: {{contentType}}
+
+{
+  "phone": "0911111111",
+  "address": "Updated Address"
+}
+
+# Step 5: Change password
+PUT {{baseUrl}}/auth/change-password
+Authorization: Bearer YOUR_TOKEN_FROM_STEP_2
+Content-Type: {{contentType}}
+
+{
+  "current_password": "test123456",
+  "new_password": "newtest123456"
+}
+
+# Step 6: Login with new password
+POST {{baseUrl}}/auth/login
+Content-Type: {{contentType}}
+
+{
+  "username": "workflow_test",
+  "password": "newtest123456"
+}
+
+###############################################
+# 9. STAFF LOGIN TEST
+###############################################
+
+### 9.1. Login Staff Account (sau khi đã tạo staff)
+POST {{baseUrl}}/auth/login
+Content-Type: {{contentType}}
+
+{
+  "username": "staff1",
+  "password": "staff123456"
+}
+
+###############################################
+# NOTES:
+# - Thay YOUR_TOKEN_HERE, ADMIN_TOKEN_HERE, CUSTOMER_TOKEN_HERE bằng token thật
+# - Token có thời gian sống 7 ngày (có thể config trong .env)
+# - Demo admin: username=admin, password=admin123
+# - Tất cả passwords phải >= 6 ký tự
+# - Email phải đúng format
+# - Username và email phải unique
+###############################################

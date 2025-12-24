@@ -1,29 +1,33 @@
 const express = require('express');
 const router = express.Router();
 const deliveryOrderController = require('../controllers/deliveryOrderController');
+const { authenticate, requireStaff } = require('../middleware/auth');
 
-// Thống kê giao hàng
-router.get('/stats', deliveryOrderController.getDeliveryStats);
+// Tất cả routes yêu cầu authentication
+router.use(authenticate);
 
-// Lấy tất cả đơn giao hàng
-router.get('/', deliveryOrderController.getAllDeliveryOrders);
+// Thống kê giao hàng (Staff/Admin)
+router.get('/stats', requireStaff, deliveryOrderController.getDeliveryStats);
 
-// Lấy đơn giao hàng theo nhân viên
-router.get('/staff/:staffId', deliveryOrderController.getDeliveriesByStaff);
+// Lấy tất cả đơn giao hàng (Staff/Admin - auto filter theo staffId)
+router.get('/', requireStaff, deliveryOrderController.getAllDeliveryOrders);
 
-// Lấy chi tiết đơn giao hàng
-router.get('/:id', deliveryOrderController.getDeliveryOrderById);
+// Lấy đơn giao hàng theo nhân viên (Admin only)
+router.get('/staff/:staffId', requireStaff, deliveryOrderController.getDeliveriesByStaff);
 
-// Tạo đơn giao hàng
+// Lấy chi tiết đơn giao hàng (Staff/Admin)
+router.get('/:id', requireStaff, deliveryOrderController.getDeliveryOrderById);
+
+// Tạo đơn giao hàng (Admin only - usually)
 router.post('/', deliveryOrderController.createDeliveryOrder);
 
-// Cập nhật đơn giao hàng
-router.put('/:id', deliveryOrderController.updateDeliveryOrder);
+// Cập nhật đơn giao hàng (Staff can update their own orders)
+router.put('/:id', requireStaff, deliveryOrderController.updateDeliveryOrder);
 
-// Gán lại nhân viên giao hàng
+// Gán lại nhân viên giao hàng (Admin only)
 router.patch('/:id/reassign', deliveryOrderController.reassignDelivery);
 
-// Xóa đơn giao hàng
+// Xóa đơn giao hàng (Admin only)
 router.delete('/:id', deliveryOrderController.deleteDeliveryOrder);
 
 module.exports = router;

@@ -37,19 +37,44 @@ async function seedDatabase() {
       CustomerFeedback.deleteMany({}), ProductStock.deleteMany({}), Cart.deleteMany({}),
       CartItem.deleteMany({}), DamagedProduct.deleteMany({})
     ]);
+    
+    // Drop unique index on staff_id trong Manager collection
+    try {
+      await Manager.collection.dropIndex('staff_id_1');
+      console.log('✅ Đã drop index staff_id_1 từ Manager collection');
+    } catch (error) {
+      if (error.code !== 27) { // 27 = IndexNotFound
+        console.log('⚠️  Index staff_id_1 không tồn tại hoặc đã bị xóa');
+      }
+    }
+    
     console.log('✅ Đã xóa dữ liệu cũ\n');
 
     const password = await bcrypt.hash('password123', 10);
     
-    // 1. ACCOUNTS (1 admin + 5 staff + 4 customer = 10 accounts)
+    // 1. ACCOUNTS (2 manager + 7 staff + 4 customer = 13 accounts)
     console.log('1/23 👤 Tạo Accounts...');
     const accounts = await Account.insertMany([
-      { username: 'admin', password_hash: password, email: 'admin@mini.vn', full_name: 'Quản Trị Viên', role: 'admin', is_active: true, isDelete: false, avatar_link: 'https://i.pravatar.cc/150?img=1' },
-      { username: 'staff1', password_hash: password, email: 'staff1@mini.vn', full_name: 'Nguyễn Văn An', phone: '0987654321', role: 'staff', is_active: true, isDelete: false, avatar_link: 'https://i.pravatar.cc/150?img=12' },
-      { username: 'staff2', password_hash: password, email: 'staff2@mini.vn', full_name: 'Trần Thị Bình', phone: '0987654322', role: 'staff', is_active: true, isDelete: false, avatar_link: 'https://i.pravatar.cc/150?img=5' },
-      { username: 'staff3', password_hash: password, email: 'staff3@mini.vn', full_name: 'Lê Văn Cường', phone: '0987654323', role: 'staff', is_active: true, isDelete: false, avatar_link: 'https://i.pravatar.cc/150?img=13' },
-      { username: 'staff4', password_hash: password, email: 'staff4@mini.vn', full_name: 'Phạm Thị Dung', phone: '0987654324', role: 'staff', is_active: true, isDelete: false, avatar_link: 'https://i.pravatar.cc/150?img=9' },
-      { username: 'staff5', password_hash: password, email: 'staff5@mini.vn', full_name: 'Hoàng Văn Em', phone: '0987654325', role: 'staff', is_active: true, isDelete: false, avatar_link: 'https://i.pravatar.cc/150?img=14' },
+      // Managers
+      { username: 'manager1', password_hash: password, email: 'manager1@mini.vn', full_name: 'Trần Thị Bình', phone: '0901234567', role: 'admin', is_active: true, isDelete: false, avatar_link: 'https://i.pravatar.cc/150?img=5' },
+      { username: 'manager2', password_hash: password, email: 'manager2@mini.vn', full_name: 'Nguyễn Văn Quản', phone: '0901234568', role: 'admin', is_active: true, isDelete: false, avatar_link: 'https://i.pravatar.cc/150?img=11' },
+      
+      // Staff - Delivery
+      { username: 'delivery1', password_hash: password, email: 'delivery1@mini.vn', full_name: 'Lê Văn Cường', phone: '0987654323', role: 'staff', is_active: true, isDelete: false, avatar_link: 'https://i.pravatar.cc/150?img=13' },
+      { username: 'delivery2', password_hash: password, email: 'delivery2@mini.vn', full_name: 'Hoàng Minh Tuấn', phone: '0987654326', role: 'staff', is_active: true, isDelete: false, avatar_link: 'https://i.pravatar.cc/150?img=16' },
+      
+      // Staff - Cashier
+      { username: 'cashier1', password_hash: password, email: 'cashier1@mini.vn', full_name: 'Nguyễn Văn An', phone: '0987654321', role: 'staff', is_active: true, isDelete: false, avatar_link: 'https://i.pravatar.cc/150?img=12' },
+      { username: 'cashier2', password_hash: password, email: 'cashier2@mini.vn', full_name: 'Phạm Thị Dung', phone: '0987654324', role: 'staff', is_active: true, isDelete: false, avatar_link: 'https://i.pravatar.cc/150?img=9' },
+      
+      // Staff - Merchandise Supervisor
+      { username: 'supervisor1', password_hash: password, email: 'supervisor1@mini.vn', full_name: 'Hoàng Văn Em', phone: '0987654325', role: 'staff', is_active: true, isDelete: false, avatar_link: 'https://i.pravatar.cc/150?img=14' },
+      
+      // Staff - Warehouse
+      { username: 'warehouse1', password_hash: password, email: 'warehouse1@mini.vn', full_name: 'Đinh Văn Phúc', phone: '0987654327', role: 'staff', is_active: true, isDelete: false, avatar_link: 'https://i.pravatar.cc/150?img=17' },
+      { username: 'warehouse2', password_hash: password, email: 'warehouse2@mini.vn', full_name: 'Bùi Thị Giang', phone: '0987654328', role: 'staff', is_active: true, isDelete: false, avatar_link: 'https://i.pravatar.cc/150?img=10' },
+      
+      // Customers
       { username: 'customer1', password_hash: password, email: 'customer1@gmail.com', full_name: 'Võ Thị Hoa', phone: '0912345678', address: '123 Lê Lợi, Q1, TP.HCM', role: 'customer', is_active: true, isDelete: false, avatar_link: 'https://i.pravatar.cc/150?img=7' },
       { username: 'customer2', password_hash: password, email: 'customer2@gmail.com', full_name: 'Đặng Văn Khoa', phone: '0912345679', address: '456 Trần Hưng Đạo, Hoàn Kiếm, Hà Nội', role: 'customer', is_active: true, isDelete: false, avatar_link: 'https://i.pravatar.cc/150?img=8' },
       { username: 'customer3', password_hash: password, email: 'customer3@gmail.com', full_name: 'Mai Thị Lan', phone: '0912345680', address: '789 Nguyễn Huệ, Q1, TP.HCM', role: 'customer', is_active: true, isDelete: false, avatar_link: 'https://i.pravatar.cc/150?img=20' },
@@ -57,33 +82,41 @@ async function seedDatabase() {
     ]);
     console.log(`   ✅ ${accounts.length} accounts\n`);
 
-    // 2. STAFF (5 nhân viên)
-    console.log('2/23 👥 Tạo Staff...');
+    // 2. STAFF (9 nhân viên - KHÔNG BAO GỒM MANAGER - 4 POSITIONS)
+    console.log('2/23 👥 Tạo Staff (4 positions: Delivery, Cashier, Warehouse, Merchandise Supervisor)...');
     const staffs = await Staff.insertMany([
-      { account_id: accounts[1]._id, position: 'Cashier', employment_type: 'Full-time', annual_salary: 180000000, hire_date: new Date('2023-01-15'), is_active: true, isDelete: false },
-      { account_id: accounts[2]._id, position: 'Warehouse', employment_type: 'Full-time', annual_salary: 200000000, hire_date: new Date('2023-03-01'), is_active: true, isDelete: false },
-      { account_id: accounts[3]._id, position: 'Delivery', employment_type: 'Full-time', annual_salary: 190000000, hire_date: new Date('2023-05-10'), is_active: true, isDelete: false },
-      { account_id: accounts[4]._id, position: 'Cashier', employment_type: 'Part-time', annual_salary: 120000000, hire_date: new Date('2023-07-20'), is_active: true, isDelete: false },
-      { account_id: accounts[5]._id, position: 'Merchandise Supervisor', employment_type: 'Full-time', annual_salary: 250000000, hire_date: new Date('2023-02-01'), is_active: true, isDelete: false }
+      // Delivery Staff
+      { account_id: accounts[2]._id, position: 'Delivery', employment_type: 'Full-time', annual_salary: 190000000, hire_date: new Date('2023-05-10'), is_active: true, isDelete: false },
+      { account_id: accounts[3]._id, position: 'Delivery', employment_type: 'Full-time', annual_salary: 185000000, hire_date: new Date('2023-06-15'), is_active: true, isDelete: false },
+      
+      // Cashier
+      { account_id: accounts[4]._id, position: 'Cashier', employment_type: 'Full-time', annual_salary: 180000000, hire_date: new Date('2023-01-15'), is_active: true, isDelete: false },
+      { account_id: accounts[5]._id, position: 'Cashier', employment_type: 'Part-time', annual_salary: 120000000, hire_date: new Date('2023-07-20'), is_active: true, isDelete: false },
+      
+      // Merchandise Supervisor
+      { account_id: accounts[6]._id, position: 'Merchandise Supervisor', employment_type: 'Full-time', annual_salary: 250000000, hire_date: new Date('2023-02-01'), is_active: true, isDelete: false },
+      
+      // Warehouse Staff
+      { account_id: accounts[7]._id, position: 'Warehouse', employment_type: 'Full-time', annual_salary: 200000000, hire_date: new Date('2023-03-15'), is_active: true, isDelete: false },
+      { account_id: accounts[8]._id, position: 'Warehouse', employment_type: 'Full-time', annual_salary: 195000000, hire_date: new Date('2023-04-20'), is_active: true, isDelete: false }
     ]);
-    console.log(`   ✅ ${staffs.length} staff\n`);
+    console.log(`   ✅ ${staffs.length} staff (4 positions: Delivery, Cashier, Merchandise Supervisor, Warehouse)\n`);
 
-    // 3. MANAGERS (3 quản lý)
-    console.log('3/23 👔 Tạo Managers...');
+    // 3. MANAGERS (2 quản lý - RIÊNG BIỆT VỚI STAFF)
+    console.log('3/23 👔 Tạo Managers (riêng biệt, không phải staff positions)...');
     const managers = await Manager.insertMany([
-      { staff_id: staffs[1]._id, account_id: accounts[2]._id, access_level: 'admin', is_superuser: false, permissions: { inventory: true, reports: true, staff: true }, scope: 'all', assigned_since: new Date('2023-03-01'), isDelete: false },
-      { staff_id: staffs[4]._id, account_id: accounts[5]._id, access_level: 'manager', is_superuser: false, permissions: { inventory: true, reports: true }, scope: 'warehouse', assigned_since: new Date('2023-02-01'), isDelete: false },
-      { staff_id: staffs[0]._id, account_id: accounts[1]._id, access_level: 'manager', is_superuser: false, permissions: { reports: true }, scope: 'cashier', assigned_since: new Date('2023-01-15'), isDelete: false }
+      { account_id: accounts[0]._id, access_level: 'admin', is_superuser: true, permissions: { inventory: true, reports: true, staff: true, financial: true }, scope: 'all', assigned_since: new Date('2023-01-01'), isDelete: false },
+      { account_id: accounts[1]._id, access_level: 'manager', is_superuser: false, permissions: { inventory: true, reports: true, staff: false }, scope: 'operations', assigned_since: new Date('2023-02-01'), isDelete: false }
     ]);
-    console.log(`   ✅ ${managers.length} managers\n`);
+    console.log(`   ✅ ${managers.length} managers (pure manager role, không có staff position)\n`);
 
     // 4. CUSTOMERS (4 khách hàng)
     console.log('4/23 🛒 Tạo Customers...');
     const customers = await Customer.insertMany([
-      { account_id: accounts[6]._id, membership_type: 'Gold', points_balance: 1500, total_spent: 5000000, isDelete: false },
-      { account_id: accounts[7]._id, membership_type: 'Silver', points_balance: 800, total_spent: 3000000, isDelete: false },
-      { account_id: accounts[8]._id, membership_type: 'Gold', points_balance: 2000, total_spent: 7500000, isDelete: false },
-      { account_id: accounts[9]._id, membership_type: 'Standard', points_balance: 200, total_spent: 800000, isDelete: false }
+      { account_id: accounts[9]._id, membership_type: 'Gold', points_balance: 1500, total_spent: 5000000, isDelete: false },
+      { account_id: accounts[10]._id, membership_type: 'Silver', points_balance: 800, total_spent: 3000000, isDelete: false },
+      { account_id: accounts[11]._id, membership_type: 'Gold', points_balance: 2000, total_spent: 7500000, isDelete: false },
+      { account_id: accounts[12]._id, membership_type: 'Standard', points_balance: 200, total_spent: 800000, isDelete: false }
     ]);
     console.log(`   ✅ ${customers.length} customers\n`);
 
@@ -282,13 +315,13 @@ async function seedDatabase() {
     }
     console.log('   ✅ Orders updated with items\n');
 
-    // 13. DELIVERY ORDERS (11 đơn giao hàng cho delivery staff - nhiều để test)
+    // 13. DELIVERY ORDERS (12 đơn giao hàng - phân cho 2 delivery staff)
     console.log('13/23 🚚 Tạo DeliveryOrders...');
     const deliveryOrders = await DeliveryOrder.insertMany([
-      // DELIVERED orders (5 orders) - Cho Order History
+      // DELIVERED orders - delivery1 (Lê Văn Cường - staffs[0])
       { 
         order_id: orders[0]._id, 
-        staff_id: staffs[2]._id, 
+        staff_id: staffs[0]._id, // delivery1
         order_date: new Date('2024-12-01T08:00:00'), 
         delivery_date: new Date('2024-12-01T10:30:00'),
         status: 'delivered', 
@@ -299,7 +332,7 @@ async function seedDatabase() {
       },
       { 
         order_id: orders[4]._id, 
-        staff_id: staffs[2]._id, 
+        staff_id: staffs[0]._id, // delivery1
         order_date: new Date('2024-12-05T09:00:00'),
         delivery_date: new Date('2024-12-05T11:45:00'), 
         status: 'delivered', 
@@ -310,7 +343,7 @@ async function seedDatabase() {
       },
       { 
         order_id: orders[8]._id, 
-        staff_id: staffs[2]._id, 
+        staff_id: staffs[0]._id, // delivery1
         order_date: new Date('2024-12-08T10:00:00'),
         delivery_date: new Date('2024-12-08T14:20:00'), 
         status: 'delivered', 
@@ -321,7 +354,7 @@ async function seedDatabase() {
       },
       { 
         order_id: orders[12]._id, 
-        staff_id: staffs[2]._id, 
+        staff_id: staffs[1]._id, // delivery2
         order_date: new Date('2024-12-10T07:30:00'),
         delivery_date: new Date('2024-12-10T09:15:00'), 
         status: 'delivered', 
@@ -332,7 +365,7 @@ async function seedDatabase() {
       },
       { 
         order_id: orders[1]._id, 
-        staff_id: staffs[2]._id, 
+        staff_id: staffs[1]._id, // delivery2
         order_date: new Date('2024-12-12T08:30:00'),
         delivery_date: new Date('2024-12-12T10:00:00'), 
         status: 'delivered', 
@@ -343,7 +376,7 @@ async function seedDatabase() {
       },
       { 
         order_id: orders[9]._id, 
-        staff_id: staffs[2]._id, 
+        staff_id: staffs[1]._id, // delivery2
         order_date: new Date('2024-12-10T09:00:00'),
         delivery_date: new Date('2024-12-10T12:30:00'), 
         status: 'delivered', 
@@ -353,10 +386,10 @@ async function seedDatabase() {
         isDelete: false 
       },
       
-      // IN_TRANSIT orders (3 orders) - Đang giao
+      // IN_TRANSIT orders - delivery1
       { 
         order_id: orders[5]._id, 
-        staff_id: staffs[2]._id, 
+        staff_id: staffs[0]._id, // delivery1
         order_date: new Date('2024-12-14T08:00:00'), 
         status: 'in_transit', 
         tracking_number: 'TRACK-006', 
@@ -366,7 +399,7 @@ async function seedDatabase() {
       },
       { 
         order_id: orders[13]._id, 
-        staff_id: staffs[2]._id, 
+        staff_id: staffs[0]._id, // delivery1
         order_date: new Date('2024-12-14T09:15:00'), 
         status: 'in_transit', 
         tracking_number: 'TRACK-008', 
@@ -376,7 +409,7 @@ async function seedDatabase() {
       },
       { 
         order_id: orders[10]._id, 
-        staff_id: staffs[2]._id, 
+        staff_id: staffs[1]._id, // delivery2
         order_date: new Date('2024-12-14T10:00:00'), 
         status: 'in_transit', 
         tracking_number: 'TRACK-011', 
@@ -385,10 +418,10 @@ async function seedDatabase() {
         isDelete: false 
       },
       
-      // ASSIGNED orders (3 orders) - Chờ lấy hàng
+      // ASSIGNED orders - delivery1 và delivery2
       { 
         order_id: orders[2]._id, 
-        staff_id: staffs[2]._id, 
+        staff_id: staffs[0]._id, // delivery1
         order_date: new Date('2024-12-14T11:00:00'), 
         status: 'assigned', 
         tracking_number: 'TRACK-009', 
@@ -398,7 +431,7 @@ async function seedDatabase() {
       },
       { 
         order_id: orders[6]._id, 
-        staff_id: staffs[2]._id, 
+        staff_id: staffs[0]._id, // delivery1
         order_date: new Date('2024-12-14T11:30:00'), 
         status: 'assigned', 
         tracking_number: 'TRACK-010', 
@@ -408,7 +441,7 @@ async function seedDatabase() {
       },
       { 
         order_id: orders[14]._id, 
-        staff_id: staffs[2]._id, 
+        staff_id: staffs[1]._id, // delivery2
         order_date: new Date('2024-12-14T12:00:00'), 
         status: 'assigned', 
         tracking_number: 'TRACK-012', 
@@ -417,7 +450,7 @@ async function seedDatabase() {
         isDelete: false 
       }
     ]);
-    console.log(`   ✅ ${deliveryOrders.length} delivery orders (6 delivered, 3 in_transit, 3 assigned)\n`);
+    console.log(`   ✅ ${deliveryOrders.length} delivery orders (delivery1: 7 orders, delivery2: 5 orders)\n`);
     
     // ✅ UPDATE DELIVERY ORDERS WITH ORDERITEMS FROM ORDERS
     console.log('   Updating delivery orders with orderItems...');
