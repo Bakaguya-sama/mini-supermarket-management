@@ -26,7 +26,7 @@ const ProductListView = () => {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [productToDelete, setProductToDelete] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
-  
+
   const [products, setProducts] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -46,22 +46,22 @@ const ProductListView = () => {
     try {
       setIsLoading(true);
       setError(null);
-      
-      const response = await productService.getAll({ 
+
+      const response = await productService.getAll({
         limit: 100,
-        page: 1 
+        page: 1,
       });
-      
-      console.log('🔍 Full response:', response);
-      console.log('📦 Response data type:', typeof response.data);
-      console.log('📦 Response data:', response.data);
-      
+
+      console.log("🔍 Full response:", response);
+      console.log("📦 Response data type:", typeof response.data);
+      console.log("📦 Response data:", response.data);
+
       if (response.success && response.data) {
-        console.log('✅ Setting products:', response.data);
+        console.log("✅ Setting products:", response.data);
         setProducts(response.data);
         calculateStats(response.data);
       } else {
-        console.warn('❌ Response not successful:', response);
+        console.warn("❌ Response not successful:", response);
         setError("Failed to load products");
       }
     } catch (error) {
@@ -76,8 +76,8 @@ const ProductListView = () => {
     try {
       // Validate input
       if (!Array.isArray(productList)) {
-        console.error('productList is not an array:', productList);
-        throw new Error('Invalid product list format');
+        console.error("productList is not an array:", productList);
+        throw new Error("Invalid product list format");
       }
 
       if (productList.length === 0) {
@@ -91,15 +91,15 @@ const ProductListView = () => {
       }
 
       const totalProducts = productList.length;
-      
+
       const totalValue = productList.reduce((sum, product) => {
-        if (!product || typeof product !== 'object') {
-          console.warn('Invalid product object:', product);
+        if (!product || typeof product !== "object") {
+          console.warn("Invalid product object:", product);
           return sum;
         }
         const price = parseFloat(product.price) || 0;
         const stock = parseInt(product.current_stock) || 0;
-        return sum + (price * stock);
+        return sum + price * stock;
       }, 0);
 
       const lowStockCount = productList.filter((product) => {
@@ -114,8 +114,13 @@ const ProductListView = () => {
         return parseInt(product.current_stock) === 0;
       }).length;
 
-      console.log('✅ Stats calculated:', { totalProducts, totalValue, lowStockCount, outOfStockCount });
-      
+      console.log("✅ Stats calculated:", {
+        totalProducts,
+        totalValue,
+        lowStockCount,
+        outOfStockCount,
+      });
+
       setStats({
         totalProducts,
         totalValue,
@@ -123,7 +128,7 @@ const ProductListView = () => {
         outOfStockCount,
       });
     } catch (error) {
-      console.error('❌ Error calculating stats:', error);
+      console.error("❌ Error calculating stats:", error);
       setStats({
         totalProducts: 0,
         totalValue: 0,
@@ -135,7 +140,7 @@ const ProductListView = () => {
 
   // Pagination logic
   const itemsPerPage = 10;
-  
+
   // Filter and search logic
   const filteredProducts = products.filter((product) => {
     const matchesSearch =
@@ -274,7 +279,9 @@ const ProductListView = () => {
               <FaDollarSign />
             </div>
             <div className="stat-content">
-              <div className="stat-number">${stats.totalValue.toLocaleString()}</div>
+              <div className="stat-number">
+                ${stats.totalValue.toLocaleString()}
+              </div>
               <div className="stat-label">Total Value</div>
             </div>
           </div>
@@ -350,8 +357,7 @@ const ProductListView = () => {
 
         <div className="right-actions">
           <button onClick={handleAddProduct} className="add-product-btn">
-            <FaPlus />
-            Add Product
+            Import/Export Product
           </button>
         </div>
       </div>
@@ -373,17 +379,24 @@ const ProductListView = () => {
           </thead>
           <tbody>
             {currentProducts.map((product) => (
-              <tr key={product._id} style={{
-                textDecoration: product.isDelete ? 'line-through' : 'none',
-                opacity: product.isDelete ? 0.6 : 1
-              }}>
+              <tr
+                key={product._id}
+                style={{
+                  textDecoration: product.isDelete ? "line-through" : "none",
+                  opacity: product.isDelete ? 0.6 : 1,
+                }}
+              >
                 <td>
                   <img
-                    src={product.image_link || "https://placehold.co/80x80/e2e8f0/64748b?text=No+Image"}
+                    src={
+                      product.image_link ||
+                      "https://placehold.co/80x80/e2e8f0/64748b?text=No+Image"
+                    }
                     alt={product.name}
                     className="product-image-cell"
                     onError={(e) => {
-                      e.target.src = "https://placehold.co/80x80/e2e8f0/64748b?text=No+Image";
+                      e.target.src =
+                        "https://placehold.co/80x80/e2e8f0/64748b?text=No+Image";
                     }}
                   />
                 </td>
@@ -418,7 +431,7 @@ const ProductListView = () => {
                       getStockStatus(product)
                     )}`}
                   >
-                    {product.isDelete ? 'DELETED' : getStockStatus(product)}
+                    {product.isDelete ? "DELETED" : getStockStatus(product)}
                   </span>
                 </td>
                 <td>
@@ -433,11 +446,15 @@ const ProductListView = () => {
                     <button
                       className="action-btn edit-btn"
                       onClick={() => handleEdit(product._id)}
-                      title={product.isDelete ? "Cannot edit deleted item" : "Edit Product"}
+                      title={
+                        product.isDelete
+                          ? "Cannot edit deleted item"
+                          : "Edit Product"
+                      }
                       disabled={product.isDelete}
                       style={{
                         opacity: product.isDelete ? 0.5 : 1,
-                        cursor: product.isDelete ? 'not-allowed' : 'pointer'
+                        cursor: product.isDelete ? "not-allowed" : "pointer",
                       }}
                     >
                       <FaEdit />
@@ -445,11 +462,13 @@ const ProductListView = () => {
                     <button
                       className="action-btn delete-btn"
                       onClick={() => handleDelete(product)}
-                      title={product.isDelete ? "Already deleted" : "Delete Product"}
+                      title={
+                        product.isDelete ? "Already deleted" : "Delete Product"
+                      }
                       disabled={product.isDelete}
                       style={{
                         opacity: product.isDelete ? 0.5 : 1,
-                        cursor: product.isDelete ? 'not-allowed' : 'pointer'
+                        cursor: product.isDelete ? "not-allowed" : "pointer",
                       }}
                     >
                       <FaTrash />
@@ -469,7 +488,9 @@ const ProductListView = () => {
           {Math.min(endIndex, filteredProducts.length)} of{" "}
           {filteredProducts.length}
         </div>
-        <div className="product-pagination-controls">          <button
+        <div className="product-pagination-controls">
+          {" "}
+          <button
             className="product-pagination-btn"
             onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
             disabled={currentPage === 1}
@@ -477,7 +498,6 @@ const ProductListView = () => {
           >
             ‹
           </button>
-
           {/* Page numbers */}
           <div className="product-page-numbers">
             {Array.from({ length: Math.min(3, totalPages) }, (_, i) => {
@@ -510,7 +530,6 @@ const ProductListView = () => {
               );
             })}
           </div>
-
           <button
             className="product-pagination-btn"
             onClick={() =>

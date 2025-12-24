@@ -18,6 +18,87 @@
     font-weight: 700;
     color: #1f2937;
     margin: 0;
+    transform: translateX(-52px);
+    /* shift left slightly */
+    transition: transform 0.12s ease-out;
+}
+
+@media (max-width: 768px) {
+
+    /* Remove shift on small screens to avoid layout issues */
+    .add-product-page-title {
+        transform: none;
+    }
+}
+
+/* Tabs */
+.add-product-page-header.tabs {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+}
+
+.tabs-buttons {
+    display: flex;
+    gap: 0.5rem;
+}
+
+/* Readonly/disabled inputs styling */
+.add-product-form-input[readonly],
+.add-product-form-input[disabled],
+.add-product-form-select[disabled] {
+    background: #f8fafc;
+    color: #6b7280;
+    border-color: #e5e7eb;
+    cursor: default;
+    box-shadow: none;
+    opacity: 1;
+}
+
+/* Make readonly values more compact for stock fields */
+.stock-row .add-product-form-group {
+    flex: 1 1 33%;
+}
+
+.stock-row .add-product-form-label {
+    font-size: 0.825rem;
+    color: #4b5563;
+}
+
+/* If you want to highlight when restock would exceed max, add a helper class (JS could toggle it) */
+.field-exceeded {
+    border-color: #ef4444 !important;
+    box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.08) !important;
+}
+
+
+.tab {
+    background: transparent;
+    border: 1px solid #e5e7eb;
+    color: #374151;
+    padding: 0.5rem 0.9rem;
+    border-radius: 10px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.15s ease;
+}
+
+.tab:hover {
+    background: #f9fafb;
+    border-color: #d1d5db;
+}
+
+.tab.active {
+    background: #22c55e;
+    color: #ffffff;
+    border-color: #22c55e;
+    box-shadow: 0 4px 10px rgba(34, 197, 94, 0.15);
+}
+
+.tab:focus {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.12);
 }
 
 /* Add Product Content Layout */

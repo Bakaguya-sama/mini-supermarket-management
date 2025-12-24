@@ -292,6 +292,16 @@
     box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
 
+.edit-product-form-input:disabled {
+    background-color: #f3f4f6;
+    /* xám nhạt */
+    color: #9ca3af;
+    /* chữ xám */
+    border-color: #d1d5db;
+    cursor: not-allowed;
+}
+
+
 .edit-product-form-input::placeholder {
     color: #9ca3af;
 }
