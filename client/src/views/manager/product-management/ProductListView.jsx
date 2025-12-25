@@ -514,7 +514,7 @@ const ProductListView = () => {
             </div>
             <div className="stat-content">
               <div className="stat-number">
-                ${stats.totalValue.toLocaleString()}
+                {stats.totalValue.toLocaleString("vi-VN")}₫
               </div>
               <div className="stat-label">Total Value</div>
             </div>
@@ -717,7 +717,7 @@ const ProductListView = () => {
                   </div>
                 </td>
                 <td className="product-price">
-                  {Number(product.price).toLocaleString("vi-VN")} VNĐ
+                  {Number(product.price).toLocaleString("vi-VN")}₫
                 </td>
                 <td>
                   <div className="stock-info">

@@ -514,3 +514,100 @@
         gap: 5px;
     }
 }
+
+/* Batches Content */
+.batches-content {
+    padding: 20px 0;
+}
+
+.batches-info {
+    background: #e8f5e9;
+    padding: 12px 16px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    color: #2e7d32;
+    font-size: 14px;
+}
+
+.batches-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 16px;
+}
+
+.batch-card {
+    background: #f9fafb;
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+    padding: 16px;
+    transition: all 0.2s;
+}
+
+.batch-card:hover {
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.batch-card.batch-expiring-soon {
+    border-color: #fbbf24;
+    background: #fef3c7;
+}
+
+.batch-card.batch-expired {
+    border-color: #f87171;
+    background: #fee2e2;
+    opacity: 0.7;
+}
+
+.batch-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.batch-number {
+    font-weight: 600;
+    font-size: 15px;
+    color: #1f2937;
+}
+
+.batch-quantity {
+    font-size: 14px;
+    font-weight: 600;
+    color: #10b981;
+    background: #d1fae5;
+    padding: 4px 10px;
+    border-radius: 6px;
+}
+
+.batch-details {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.batch-detail-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 13px;
+}
+
+.batch-detail-row span:first-child {
+    color: #6b7280;
+    font-weight: 500;
+}
+
+.batch-detail-row span:last-child {
+    color: #1f2937;
+    font-weight: 600;
+}
+
+.text-danger {
+    color: #dc2626 !important;
+}
+
+.text-warning {
+    color: #f59e0b !important;
+}

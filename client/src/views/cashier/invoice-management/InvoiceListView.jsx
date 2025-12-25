@@ -119,7 +119,7 @@ const InvoiceListView = () => {
             staff: "Staff A", // TODO: Get from order/staff data
             items: `${itemCount} item${itemCount !== 1 ? "s" : ""}`,
             itemsList: invoice.notes || "Invoice items",
-            amount: `${invoice.total_amount.toLocaleString("vi-VN")} VNĐ`,
+            amount: `${invoice.total_amount.toLocaleString("vi-VN")}₫`,
             paymentMethod:
               invoice.payment_method ||
               invoice.order_id?.payment_method ||
@@ -292,8 +292,7 @@ const InvoiceListView = () => {
               <div className="invoice-stat-number">
                 {isLoadingStats
                   ? "..."
-                  : stats.totalRevenue.toLocaleString("vi-VN")}
-                VNĐ
+                  : stats.totalRevenue.toLocaleString("vi-VN")}₫
               </div>
               <div className="invoice-stat-sublabel">
                 {isLoadingStats
@@ -334,8 +333,7 @@ const InvoiceListView = () => {
               <div className="invoice-stat-number">
                 {isLoadingStats
                   ? "..."
-                  : stats.unpaidAmount.toLocaleString("vi-VN")}
-                VNĐ
+                  : stats.unpaidAmount.toLocaleString("vi-VN")}₫
               </div>
               <div className="invoice-stat-sublabel">pending payment</div>
             </div>

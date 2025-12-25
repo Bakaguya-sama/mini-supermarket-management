@@ -47,3 +47,34 @@
     border-bottom: 1px solid #f1f1f1;
     text-align: left
 }
+
+.batch-table .expired-batch {
+    background-color: #fee;
+}
+
+.batch-table .expiring-soon-batch {
+    background-color: #fff9e6;
+}
+
+.status-badge {
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 500;
+    display: inline-block;
+}
+
+.status-badge.status-expired {
+    background-color: #fee;
+    color: #c00;
+}
+
+.status-badge.status-expiring-soon {
+    background-color: #fff3cd;
+    color: #856404;
+}
+
+.status-badge.status-good {
+    background-color: #d4edda;
+    color: #155724;
+}

@@ -566,10 +566,10 @@ const InvoiceDetail = () => {
                         </div>
                       </td>
                       <td className="invoice-price">
-                        {product.price.toLocaleString("vi-VN")}VNĐ
+                        {product.price.toLocaleString("vi-VN")}₫
                       </td>
                       <td className="invoice-total">
-                        {product.total.toLocaleString("vi-VN")}VNĐ
+                        {product.total.toLocaleString("vi-VN")}₫
                       </td>
                     </tr>
                   ))}
@@ -579,7 +579,7 @@ const InvoiceDetail = () => {
               <div className="invoice-subtotal-row">
                 <span>Subtotal ({products.length} items)</span>
                 <span className="invoice-subtotal-amount">
-                  {subtotal.toLocaleString("vi-VN")}VNĐ
+                  {subtotal.toLocaleString("vi-VN")}₫
                 </span>
               </div>
             </div>
@@ -761,23 +761,23 @@ const InvoiceDetail = () => {
 
             <div className="invoice-summary-row">
               <span>Subtotal</span>
-              <span>{subtotal.toLocaleString("vi-VN")}VNĐ</span>
+              <span>{subtotal.toLocaleString("vi-VN")}₫</span>
             </div>
 
             <div className="invoice-summary-row discount">
               <span>Discount</span>
-              <span className="invoice-discount-amount">-0VNĐ</span>
+              <span className="invoice-discount-amount">-0₫</span>
             </div>
 
             <div className="invoice-summary-row">
               <span>Tax (9%)</span>
-              <span>{taxAmount.toLocaleString("vi-VN")}VNĐ</span>
+              <span>{taxAmount.toLocaleString("vi-VN")}₫</span>
             </div>
 
             <div className="invoice-summary-row total">
               <span>Total Amount</span>
               <span className="invoice-total-amount">
-                {totalAmount.toLocaleString("vi-VN")}VNĐ
+                {totalAmount.toLocaleString("vi-VN")}₫
               </span>
             </div>
 

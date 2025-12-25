@@ -68,4 +68,26 @@ router.patch('/:id/activate', productController.activateProduct);
 // @access  Public
 router.get('/supplier/:supplierId', productController.getProductsBySupplier);
 
+// ==================== BATCH MANAGEMENT ROUTES ====================
+
+// @route   POST /api/products/:id/export
+// @desc    Export/Reduce product quantity with FIFO logic
+// @access  Public
+router.post('/:id/export', productController.exportProduct);
+
+// @route   GET /api/products/:id/batches
+// @desc    Get product batches sorted by expiry date
+// @access  Public
+router.get('/:id/batches', productController.getProductBatches);
+
+// @route   PATCH /api/products/:id/batches/:batchIndex
+// @desc    Update specific batch
+// @access  Public
+router.patch('/:id/batches/:batchIndex', productController.updateBatch);
+
+// @route   DELETE /api/products/:id/batches/:batchIndex
+// @desc    Delete specific batch
+// @access  Public
+router.delete('/:id/batches/:batchIndex', productController.deleteBatch);
+
 module.exports = router;

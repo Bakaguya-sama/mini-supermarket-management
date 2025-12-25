@@ -2,6 +2,7 @@
 const express = require("express");
 const cors = require("cors");
 const morgan = require("morgan");
+const path = require("path");
 require("dotenv").config();
 
 const connectDB = require("./config/database");
@@ -26,6 +27,9 @@ app.use(
 app.use(express.json({ limit: "50mb" }));
 app.use(express.urlencoded({ limit: "50mb", extended: true }));
 app.use(morgan("dev"));
+
+// Serve static files from images directory
+app.use("/images", express.static(path.join(__dirname, "images")));
 
 // Connect to MongoDB only when run directly
 if (require.main === module) {

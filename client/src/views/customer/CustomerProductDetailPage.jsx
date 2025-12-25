@@ -30,6 +30,7 @@ const CustomerProductDetailPage = ({
   const [successMessage, setSuccessMessage] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [batches, setBatches] = useState([]);
 
   useEffect(() => {
     if (!productId) return;
@@ -48,10 +49,19 @@ const CustomerProductDetailPage = ({
         setErrorMessage(res.message || "Product not found");
         setProduct(null);
         setRelatedProducts([]);
+        setBatches([]);
         return;
       }
 
       const p = res.data;
+      
+      // Extract batches from product data
+      if (p.batches && Array.isArray(p.batches)) {
+        setBatches(p.batches);
+      } else {
+        setBatches([]);
+      }
+
       const uiProduct = {
         id: p._id,
         name: p.name,
@@ -72,6 +82,7 @@ const CustomerProductDetailPage = ({
         productId: p.sku || p._id,
         origin: p.origin || "Unknown",
         supplier: p.supplier_id?.name || p.supplier || "Unknown",
+        expiryDate: p.expiry_date,
       };
 
       setProduct(uiProduct);
@@ -248,7 +259,7 @@ const CustomerProductDetailPage = ({
             <p className="product-description">{product.description}</p>
 
             <div className="product-price">
-              <span className="price-amount">{product.price}VNĐ</span>
+              <span className="price-amount">{product.price.toLocaleString("vi-VN")}₫</span>
               <span className="price-unit">per {product.unit}</span>
             </div>
 
@@ -329,6 +340,14 @@ const CustomerProductDetailPage = ({
             >
               Product Details
             </button>
+            {batches.length > 0 && (
+              <button
+                className={`tab-btn ${activeTab === "batches" ? "active" : ""}`}
+                onClick={() => setActiveTab("batches")}
+              >
+                Batches & Expiry
+              </button>
+            )}
           </div>
           <div className="tabs-content">
             {activeTab === "details" && (
@@ -344,6 +363,80 @@ const CustomerProductDetailPage = ({
                 <div className="detail-row">
                   <span className="detail-label">Supplier</span>
                   <span className="detail-value">{product.supplier}</span>
+                </div>
+                {product.expiryDate && (
+                  <div className="detail-row">
+                    <span className="detail-label">Earliest Expiry</span>
+                    <span className="detail-value">
+                      {new Date(product.expiryDate).toLocaleDateString()}
+                    </span>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {activeTab === "batches" && (
+              <div className="batches-content">
+                <p className="batches-info">
+                  This product has {batches.length} batch{batches.length > 1 ? 'es' : ''} with different expiry dates.
+                  Products are sold on a first-expire-first-out basis.
+                </p>
+                <div className="batches-list">
+                  {[...batches]
+                    .sort((a, b) => new Date(a.expiry_date) - new Date(b.expiry_date))
+                    .map((batch, index) => {
+                      const expiryDate = new Date(batch.expiry_date);
+                      const today = new Date();
+                      const daysUntilExpiry = Math.ceil(
+                        (expiryDate - today) / (1000 * 60 * 60 * 24)
+                      );
+                      const isExpiringSoon = daysUntilExpiry <= 30 && daysUntilExpiry > 0;
+                      const isExpired = daysUntilExpiry <= 0;
+
+                      return (
+                        <div
+                          key={index}
+                          className={`batch-card ${
+                            isExpired
+                              ? "batch-expired"
+                              : isExpiringSoon
+                              ? "batch-expiring-soon"
+                              : ""
+                          }`}
+                        >
+                          <div className="batch-header">
+                            <span className="batch-number">
+                              {batch.batch_number || `Batch ${index + 1}`}
+                            </span>
+                            <span className="batch-quantity">
+                              {batch.quantity} units
+                            </span>
+                          </div>
+                          <div className="batch-details">
+                            <div className="batch-detail-row">
+                              <span>Expiry Date:</span>
+                              <span>{expiryDate.toLocaleDateString()}</span>
+                            </div>
+                            {daysUntilExpiry <= 60 && (
+                              <div className="batch-detail-row">
+                                <span>Status:</span>
+                                <span className={isExpired ? "text-danger" : "text-warning"}>
+                                  {isExpired
+                                    ? "EXPIRED"
+                                    : `${daysUntilExpiry} days left`}
+                                </span>
+                              </div>
+                            )}
+                            <div className="batch-detail-row">
+                              <span>Received:</span>
+                              <span>
+                                {new Date(batch.received_date).toLocaleDateString()}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
                 </div>
               </div>
             )}

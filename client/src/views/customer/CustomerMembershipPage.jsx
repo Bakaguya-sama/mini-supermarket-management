@@ -48,7 +48,7 @@ const CustomerMembershipPage = ({ customerId, customerData: initialCustomerData,
     {
       id: 1,
       title: "Make Purchases",
-      description: "Earn 10 points on $1 spent",
+      description: "Earn 10 points on 24.000₫ spent",
     },
     {
       id: 2,

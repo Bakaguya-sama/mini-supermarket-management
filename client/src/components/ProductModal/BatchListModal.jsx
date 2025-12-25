@@ -28,33 +28,49 @@ const BatchListModal = ({
             <table className="batch-table">
               <thead>
                 <tr>
-                  <th>Batch ID</th>
+                  <th>Batch Number</th>
                   <th>Expiry Date</th>
                   <th>Quantity</th>
-                  <th>SKU</th>
-                  <th>Barcode</th>
-                  <th>Shelf</th>
+                  <th>Received Date</th>
+                  <th>Status</th>
+                  <th>Notes</th>
                 </tr>
               </thead>
               <tbody>
-                {batches.map((b) => (
-                  <tr key={b._id || b.batch_id}>
-                    <td>{b.batch_id || (b._id ? b._id : "—")}</td>
-                    <td>
-                      {b.expiry_date
-                        ? new Date(b.expiry_date).toLocaleDateString()
-                        : "—"}
-                    </td>
-                    <td>{b.totalQuantity ?? b.quantity ?? 0}</td>
-                    <td>{b.sku ?? "—"}</td>
-                    <td>{b.barcode ?? "—"}</td>
-                    <td>
-                      {(b.shelf && b.shelf.shelf_number) ||
-                        (b.shelf_id && b.shelf_id.shelf_number) ||
-                        "—"}
-                    </td>
-                  </tr>
-                ))}
+                {batches.map((b, idx) => {
+                  const expiryDate = b.expiry_date ? new Date(b.expiry_date) : null;
+                  const now = new Date();
+                  const isExpired = expiryDate && expiryDate < now;
+                  const daysToExpiry = expiryDate ? Math.ceil((expiryDate - now) / (1000 * 60 * 60 * 24)) : null;
+                  const isExpiringSoon = daysToExpiry !== null && daysToExpiry > 0 && daysToExpiry <= 30;
+
+                  return (
+                    <tr key={b._id || b.batch_number || idx} className={isExpired ? 'expired-batch' : isExpiringSoon ? 'expiring-soon-batch' : ''}>
+                      <td>{b.batch_number || `BATCH-${idx + 1}`}</td>
+                      <td>
+                        {expiryDate
+                          ? expiryDate.toLocaleDateString()
+                          : "—"}
+                      </td>
+                      <td>{b.quantity ?? 0}</td>
+                      <td>
+                        {b.received_date
+                          ? new Date(b.received_date).toLocaleDateString()
+                          : "—"}
+                      </td>
+                      <td>
+                        {isExpired ? (
+                          <span className="status-badge status-expired">Expired</span>
+                        ) : isExpiringSoon ? (
+                          <span className="status-badge status-expiring-soon">Expiring Soon</span>
+                        ) : (
+                          <span className="status-badge status-good">Good</span>
+                        )}
+                      </td>
+                      <td>{b.notes || "—"}</td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           )}

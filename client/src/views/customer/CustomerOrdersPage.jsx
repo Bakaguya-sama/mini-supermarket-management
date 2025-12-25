@@ -275,7 +275,7 @@ const CustomerOrdersPage = ({ customerId }) => {
                     </div>
                     <div className="order-card-right">
                       <div className="order-total-label">Total</div>
-                      <div className="order-total-amount">{order.total}VNĐ</div>
+                      <div className="order-total-amount">{order.total.toLocaleString("vi-VN")}₫</div>
                     </div>
                   </div>
 
@@ -286,7 +286,7 @@ const CustomerOrdersPage = ({ customerId }) => {
                           <span>
                             {item.name} × {item.quantity}
                           </span>
-                          <span>{item.price * item.quantity}VNĐ</span>
+                          <span>{(item.price * item.quantity).toLocaleString("vi-VN")}₫</span>
                         </div>
                       ))}
                     </div>
@@ -408,7 +408,7 @@ const CustomerOrdersPage = ({ customerId }) => {
                         </div>
                       </div>
                       <div className="modal-item-price">
-                        {item.price * item.quantity}VNĐ
+                        {(item.price * item.quantity).toLocaleString("vi-VN")}₫
                       </div>
                     </div>
                   ))}
@@ -418,7 +418,7 @@ const CustomerOrdersPage = ({ customerId }) => {
               <div className="modal-total">
                 <span>Total Amount</span>
                 <span className="modal-total-amount">
-                  {modalOrder.total}VNĐ
+                  {modalOrder.total.toLocaleString("vi-VN")}₫
                 </span>
               </div>
             </div>

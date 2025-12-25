@@ -121,7 +121,17 @@ const productSchema = new mongoose.Schema(
     maximum_stock_level: { type: Number },
     storage_location: { type: String },
     price: { type: Number, default: 0 },
-    expiry_date: { type: Date },
+    expiry_date: { type: Date }, // Kept for backward compatibility (represents earliest expiry)
+    // Batches array to track multiple expiry dates for the same product
+    batches: [
+      {
+        expiry_date: { type: Date, required: true },
+        quantity: { type: Number, required: true, default: 0, min: 0 },
+        received_date: { type: Date, default: Date.now },
+        batch_number: { type: String }, // Optional supplier batch reference
+        notes: { type: String },
+      },
+    ],
     status: { type: String, enum: ["active", "inactive", "discontinued"] },
     supplier_id: { type: mongoose.Schema.Types.ObjectId, ref: "Supplier" },
     category: { type: String },
@@ -134,6 +144,7 @@ const productSchema = new mongoose.Schema(
 );
 
 productSchema.index({ name: 1, category: 1, supplier_id: 1, expiry_date: 1 });
+productSchema.index({ "batches.expiry_date": 1 });
 
 // ==================== 7. SHELVES ====================
 const shelfSchema = new mongoose.Schema(

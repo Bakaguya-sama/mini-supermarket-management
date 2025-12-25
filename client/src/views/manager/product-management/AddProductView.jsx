@@ -46,8 +46,8 @@ const AddProductView = () => {
   const [selectedProductId, setSelectedProductId] = useState("");
   const [selectedProductData, setSelectedProductData] = useState(null);
   const [restockAddedStock, setRestockAddedStock] = useState("");
-  const [restockSku, setRestockSku] = useState("");
-  const [restockBarcode, setRestockBarcode] = useState("");
+  const [restockBatchNumber, setRestockBatchNumber] = useState("");
+  const [restockNotes, setRestockNotes] = useState("");
   const [restockExpiryDate, setRestockExpiryDate] = useState("");
   const [isRestocking, setIsRestocking] = useState(false);
 
@@ -98,8 +98,8 @@ const AddProductView = () => {
     setSelectedProductId(id);
     setSelectedProductData(null);
     setRestockAddedStock("");
-    setRestockSku("");
-    setRestockBarcode("");
+    setRestockBatchNumber("");
+    setRestockNotes("");
     setExportQuantity("");
     setExportNote("");
     if (!id) return;
@@ -107,8 +107,9 @@ const AddProductView = () => {
       const response = await productService.getById(id);
       if (response.success && response.data) {
         setSelectedProductData(response.data);
-        setRestockSku(response.data.sku || "");
-        setRestockBarcode(response.data.barcode || "");
+        // Auto-generate batch number with product name
+        const productName = response.data.name.substring(0, 20).replace(/\s+/g, '-').toUpperCase();
+        setRestockBatchNumber(`${productName}-${Date.now()}`);
         setRestockExpiryDate(
           response.data.expiry_date
             ? new Date(response.data.expiry_date).toISOString().slice(0, 10)
@@ -123,9 +124,10 @@ const AddProductView = () => {
     }
   };
 
-  const generateRestockBarcode = () => {
-    const barcode = Math.floor(Math.random() * 1000000000000).toString();
-    setRestockBarcode(barcode);
+  const generateBatchNumber = () => {
+    const timestamp = Date.now();
+    const productPrefix = selectedProductData?.name.substring(0, 10).replace(/\s+/g, '-').toUpperCase() || 'PROD';
+    setRestockBatchNumber(`${productPrefix}-${timestamp}`);
   };
 
   const handleInputChange = (e) => {
@@ -208,6 +210,18 @@ const AddProductView = () => {
       return false;
     }
 
+    // Batch number is required
+    if (!restockBatchNumber || restockBatchNumber.trim() === "") {
+      setErrorMessage("Batch number is required for restocking");
+      return false;
+    }
+
+    // Expiry date is required
+    if (!restockExpiryDate) {
+      setErrorMessage("Expiry date is required for batch tracking");
+      return false;
+    }
+
     // Check against maximum stock level if defined (> 0)
     const current = parseInt(selectedProductData?.current_stock) || 0;
     const max = parseInt(selectedProductData?.maximum_stock_level) || 0;
@@ -218,17 +232,15 @@ const AddProductView = () => {
       return false;
     }
 
-    // validate restock expiry date if provided
-    if (restockExpiryDate) {
-      const d = new Date(restockExpiryDate);
-      const now = new Date();
-      now.setHours(0, 0, 0, 0);
-      if (isNaN(d) || d < now) {
-        setErrorMessage(
-          "Please provide a valid future expiry date for restock"
-        );
-        return false;
-      }
+    // validate restock expiry date
+    const d = new Date(restockExpiryDate);
+    const now = new Date();
+    now.setHours(0, 0, 0, 0);
+    if (isNaN(d) || d < now) {
+      setErrorMessage(
+        "Please provide a valid future expiry date for restock"
+      );
+      return false;
     }
 
     return true;
@@ -254,56 +266,49 @@ const AddProductView = () => {
         return;
       }
 
-      const currentStock = parseInt(productResp.data.current_stock) || 0;
       const added = parseInt(restockAddedStock);
 
-      // Build restockBatch object; backend will create a ProductBatch and update product stock
-      const restockBatch = {
+      // Build addBatch object; backend will add to batches array and update product stock
+      const addBatch = {
         quantity: added,
-        expiry_date: restockExpiryDate || null,
-        sku: restockSku || undefined,
-        barcode: restockBarcode || undefined,
+        expiry_date: restockExpiryDate || new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // Default 1 year if not specified
+        batch_number: restockBatchNumber || `BATCH-${Date.now()}`,
+        notes: restockNotes || "",
+        received_date: new Date().toISOString(),
       };
 
       const response = await productService.update(selectedProductId, {
-        restockBatch,
+        addBatch,
       });
 
       if (response.success) {
-        // Backend returns { product, createdBatch } in data
-        const createdBatch = response.data?.createdBatch;
-        if (createdBatch) {
-          const exp = createdBatch.expiry_date
-            ? new Date(createdBatch.expiry_date).toLocaleDateString()
-            : "—";
-          setSuccessMessage(
-            `Restock successful: +${added} units (batch ${
-              createdBatch._id || createdBatch.batch_id || ""
-            }, expiry: ${exp})`
-          );
+        const product = response.data?.product;
+        const exp = addBatch.expiry_date
+          ? new Date(addBatch.expiry_date).toLocaleDateString()
+          : "—";
+        setSuccessMessage(
+          `Restock successful: +${added} units (expiry: ${exp}). New total: ${product?.current_stock || 'N/A'}`
+        );
 
-          // Notify other views to refresh batches for this product
-          try {
-            const detail = {
-              productId: selectedProductId,
-              batch: createdBatch,
-            };
-            window.dispatchEvent(
-              new CustomEvent("productBatchCreated", { detail })
-            );
-            // repeat shortly in case listener not mounted yet
-            setTimeout(
-              () =>
-                window.dispatchEvent(
-                  new CustomEvent("productBatchCreated", { detail })
-                ),
-              600
-            );
-          } catch (err) {
-            console.warn("Could not dispatch productBatchCreated event", err);
-          }
-        } else {
-          setSuccessMessage(`Nhập thêm ${added} cho sản phẩm thành công`);
+        // Notify other views to refresh batches for this product
+        try {
+          const detail = {
+            productId: selectedProductId,
+            batch: addBatch,
+          };
+          window.dispatchEvent(
+            new CustomEvent("productBatchCreated", { detail })
+          );
+          // repeat shortly in case listener not mounted yet
+          setTimeout(
+            () =>
+              window.dispatchEvent(
+                new CustomEvent("productBatchCreated", { detail })
+              ),
+            600
+          );
+        } catch (err) {
+          console.warn("Could not dispatch productBatchCreated event", err);
         }
 
         // Optionally navigate back to products list
@@ -365,19 +370,22 @@ const AddProductView = () => {
         return;
       }
 
-      const currentStock = parseInt(productResp.data.current_stock) || 0;
       const qty = parseInt(exportQuantity);
-      const newStock = currentStock - qty;
 
-      const payload = {
-        currentStock: newStock,
-      };
-
-      const response = await productService.update(selectedProductId, payload);
+      // Use the new FIFO export endpoint
+      const response = await productService.exportProduct(selectedProductId, {
+        quantity: qty,
+        reason: exportNote || "Manual export",
+      });
 
       if (response.success) {
+        const exportedBatches = response.data?.exported_batches || [];
+        const batchInfo = exportedBatches.length > 0
+          ? ` (from ${exportedBatches.length} batch${exportedBatches.length > 1 ? 'es' : ''})`
+          : '';
+        
         setSuccessMessage(
-          `Exported ${qty} from "${productResp.data.name}" successfully`
+          `Exported ${qty} units from "${productResp.data.name}" using FIFO${batchInfo}. New stock: ${response.data?.product?.current_stock || 'N/A'}`
         );
         setTimeout(() => {
           navigate("/products");
@@ -719,10 +727,10 @@ const AddProductView = () => {
                       name="price"
                       value={formData.price}
                       onChange={handleInputChange}
-                      placeholder="$0.00"
+                      placeholder="0"
                       className="add-product-form-input"
                       min="0"
-                      step="0.01"
+                      step="1000"
                       required
                     />
                   </div>
@@ -1013,43 +1021,28 @@ const AddProductView = () => {
                       required
                     />
                   </div>
-                  <div className="add-product-form-group">
-                    <label
-                      htmlFor="restockSku"
-                      className="add-product-form-label"
-                    >
-                      SKU
-                    </label>
-                    <input
-                      type="text"
-                      id="restockSku"
-                      value={restockSku}
-                      onChange={(e) => setRestockSku(e.target.value)}
-                      className="add-product-form-input"
-                    />
-                  </div>
                 </div>
 
                 <div className="add-product-form-row">
                   <div className="add-product-form-group barcode-group">
                     <label
-                      htmlFor="restockBarcode"
+                      htmlFor="restockBatchNumber"
                       className="add-product-form-label"
                     >
-                      Barcode
+                      Batch Number *
                     </label>
                     <div className="add-product-barcode-input-group">
                       <input
                         type="text"
-                        id="restockBarcode"
-                        value={restockBarcode}
-                        onChange={(e) => setRestockBarcode(e.target.value)}
-                        placeholder="Enter or generate..."
+                        id="restockBatchNumber"
+                        value={restockBatchNumber}
+                        onChange={(e) => setRestockBatchNumber(e.target.value)}
+                        placeholder="Auto-generated or enter manually..."
                         className="add-product-form-input"
                       />
                       <button
                         type="button"
-                        onClick={generateRestockBarcode}
+                        onClick={generateBatchNumber}
                         className="add-product-generate-btn"
                       >
                         Generate
@@ -1062,7 +1055,7 @@ const AddProductView = () => {
                       htmlFor="restockExpiryDate"
                       className="add-product-form-label"
                     >
-                      Expiry Date
+                      Expiry Date *
                     </label>
                     <input
                       type="date"
@@ -1070,6 +1063,26 @@ const AddProductView = () => {
                       value={restockExpiryDate}
                       onChange={(e) => setRestockExpiryDate(e.target.value)}
                       className="add-product-form-input"
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div className="add-product-form-row">
+                  <div className="add-product-form-group add-product-full-width">
+                    <label
+                      htmlFor="restockNotes"
+                      className="add-product-form-label"
+                    >
+                      Notes (Optional)
+                    </label>
+                    <textarea
+                      id="restockNotes"
+                      value={restockNotes}
+                      onChange={(e) => setRestockNotes(e.target.value)}
+                      placeholder="Add any notes about this batch (supplier info, special conditions, etc.)"
+                      className="add-product-form-textarea"
+                      rows="3"
                     />
                   </div>
                 </div>

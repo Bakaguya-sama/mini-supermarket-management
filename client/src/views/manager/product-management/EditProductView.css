@@ -48,6 +48,138 @@
     gap: 2rem;
 }
 
+/* Batch Information Section */
+.edit-product-batch-section {
+    background: white;
+    padding: 1.5rem;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.edit-product-batch-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #1f2937;
+    margin: 0 0 1rem 0;
+}
+
+.edit-product-batch-summary {
+    background: #f3f4f6;
+    padding: 0.75rem;
+    border-radius: 8px;
+    margin-bottom: 1rem;
+}
+
+.edit-product-batch-count,
+.edit-product-batch-total {
+    margin: 0.25rem 0;
+    font-size: 0.875rem;
+    color: #4b5563;
+    font-weight: 500;
+}
+
+.edit-product-batch-list {
+    max-height: 400px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.edit-product-batch-item {
+    background: #f9fafb;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    padding: 0.75rem;
+    transition: all 0.2s;
+}
+
+.edit-product-batch-item:hover {
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.edit-product-batch-item.expiring-soon {
+    border-color: #fbbf24;
+    background: #fef3c7;
+}
+
+.edit-product-batch-item.expired {
+    border-color: #f87171;
+    background: #fee2e2;
+}
+
+.edit-product-batch-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.5rem;
+}
+
+.edit-product-batch-number {
+    font-weight: 600;
+    font-size: 0.875rem;
+    color: #1f2937;
+}
+
+.edit-product-batch-quantity {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #10b981;
+    background: #d1fae5;
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+}
+
+.edit-product-batch-details {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.edit-product-batch-detail-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.75rem;
+}
+
+.edit-product-batch-label {
+    color: #6b7280;
+    font-weight: 500;
+}
+
+.edit-product-batch-value {
+    color: #1f2937;
+    font-weight: 600;
+}
+
+.edit-product-batch-status {
+    font-size: 0.75rem;
+    font-weight: 700;
+    padding: 0.125rem 0.375rem;
+    border-radius: 4px;
+}
+
+.edit-product-batch-status.status-expired {
+    background: #fecaca;
+    color: #991b1b;
+}
+
+.edit-product-batch-status.status-expiring {
+    background: #fed7aa;
+    color: #92400e;
+}
+
+.edit-product-batch-notes {
+    margin-top: 0.5rem;
+    font-size: 0.75rem;
+    color: #6b7280;
+    font-style: italic;
+    padding: 0.375rem;
+    background: white;
+    border-radius: 4px;
+    border: 1px dashed #d1d5db;
+}
+
 /* Product Image Section */
 .edit-product-image-section {
     background-color: white;

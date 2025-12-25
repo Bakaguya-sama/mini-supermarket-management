@@ -327,7 +327,7 @@ export const productService = {
     try {
       console.log(`📦 Fetching batches for product ${productId}`);
       const response = await apiClient.get(
-        `/product-batches/product/${productId}`
+        `${API_BASE_URL}/${productId}/batches`
       );
       console.log("✅ Batches fetched:", response.data);
       return response.data;
@@ -339,6 +339,49 @@ export const productService = {
       return {
         success: false,
         message: error.message || "Failed to fetch batches",
+        data: null,
+      };
+    }
+  },
+
+  /**
+   * Export product with FIFO logic
+   * @param {string} productId
+   * @param {Object} data - { quantity, reason }
+   * @returns {Promise} { success, data: { product, exported_quantity, exported_batches } }
+   */
+  exportProduct: async (productId, data) => {
+    try {
+      console.log(`📤 Exporting product ${productId} with FIFO:`, data);
+      const response = await apiClient.post(`${API_BASE_URL}/${productId}/export`, data);
+      console.log("✅ Product exported successfully:", response.data);
+      return response.data;
+    } catch (error) {
+      console.error(`❌ Error exporting product ${productId}:`, error);
+      return {
+        success: false,
+        message: error.response?.data?.message || error.message || "Failed to export product",
+        data: null,
+      };
+    }
+  },
+
+  /**
+   * Get product batches sorted by expiry date
+   * @param {string} productId
+   * @returns {Promise} { success, data }
+   */
+  getBatches: async (productId) => {
+    try {
+      console.log(`📦 Fetching batches for product ${productId}`);
+      const response = await apiClient.get(`${API_BASE_URL}/${productId}/batches`);
+      console.log("✅ Product batches fetched:", response.data);
+      return response.data;
+    } catch (error) {
+      console.error(`❌ Error fetching batches for product ${productId}:`, error);
+      return {
+        success: false,
+        message: error.message || "Failed to fetch product batches",
         data: null,
       };
     }

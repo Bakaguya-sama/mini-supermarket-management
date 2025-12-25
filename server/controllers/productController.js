@@ -316,6 +316,7 @@ exports.createProduct = async (req, res) => {
       category,
       image_link,
       expiry_date,
+      batches, // New: array of batches
     } = req.body;
 
     // Validate required fields
@@ -348,6 +349,60 @@ exports.createProduct = async (req, res) => {
       }
     }
 
+    // Validate and process batches if provided
+    let processedBatches = [];
+    if (batches && Array.isArray(batches) && batches.length > 0) {
+      for (const batch of batches) {
+        if (!batch.expiry_date || !batch.quantity) {
+          return res.status(400).json({
+            success: false,
+            message: "Each batch must have expiry_date and quantity",
+          });
+        }
+        const batchExpiry = new Date(batch.expiry_date);
+        if (isNaN(batchExpiry)) {
+          return res.status(400).json({
+            success: false,
+            message: "Invalid batch expiry_date",
+          });
+        }
+        if (batch.quantity < 0) {
+          return res.status(400).json({
+            success: false,
+            message: "Batch quantity must be >= 0",
+          });
+        }
+        processedBatches.push({
+          expiry_date: batchExpiry,
+          quantity: parseInt(batch.quantity),
+          received_date: batch.received_date
+            ? new Date(batch.received_date)
+            : new Date(),
+          batch_number: batch.batch_number || "",
+          notes: batch.notes || "",
+        });
+      }
+
+      // Calculate total quantity from batches
+      const totalBatchQty = processedBatches.reduce(
+        (sum, b) => sum + b.quantity,
+        0
+      );
+
+      // Auto-set current_stock from batches if not provided or is 0
+      if (!current_stock || current_stock === 0) {
+        req.body.current_stock = totalBatchQty;
+      }
+
+      // Find earliest expiry date for the main expiry_date field
+      if (!expiryDateObj && processedBatches.length > 0) {
+        expiryDateObj = processedBatches.reduce(
+          (earliest, b) => (b.expiry_date < earliest ? b.expiry_date : earliest),
+          processedBatches[0].expiry_date
+        );
+      }
+    }
+
     // Validate supplier if provided
     if (supplier_id) {
       const supplier = await Supplier.findById(supplier_id);
@@ -369,8 +424,9 @@ exports.createProduct = async (req, res) => {
     }
 
     // Validate current_stock against maximum_stock_level if provided
-    if (maximum_stock_level !== undefined && current_stock !== undefined) {
-      const curr = parseInt(current_stock);
+    const finalStock = req.body.current_stock || current_stock;
+    if (maximum_stock_level !== undefined && finalStock !== undefined) {
+      const curr = parseInt(finalStock);
       const max = parseInt(maximum_stock_level);
       if (!isNaN(max) && max > 0 && curr > max) {
         return res.status(400).json({
@@ -384,7 +440,7 @@ exports.createProduct = async (req, res) => {
       name,
       description,
       unit,
-      current_stock,
+      current_stock: finalStock,
       minimum_stock_level,
       maximum_stock_level,
       storage_location,
@@ -394,6 +450,7 @@ exports.createProduct = async (req, res) => {
       category,
       image_link,
       expiry_date: expiryDateObj || undefined,
+      batches: processedBatches,
     });
 
     await product.populate(
@@ -505,8 +562,57 @@ exports.updateProduct = async (req, res) => {
       }
     }
 
-    // If restockBatch present, create a batch and update product stock accordingly
-    const { restockBatch } = req.body;
+    // Handle batch addition/restock
+    const { addBatch, restockBatch } = req.body;
+
+    // New batch system: add to batches array
+    if (addBatch && typeof addBatch === "object") {
+      if (!addBatch.expiry_date || !addBatch.quantity) {
+        return res.status(400).json({
+          success: false,
+          message: "addBatch must have expiry_date and quantity",
+        });
+      }
+
+      const batchExpiry = new Date(addBatch.expiry_date);
+      if (isNaN(batchExpiry)) {
+        return res.status(400).json({
+          success: false,
+          message: "Invalid addBatch.expiry_date",
+        });
+      }
+
+      const qty = parseInt(addBatch.quantity);
+      if (qty <= 0) {
+        return res.status(400).json({
+          success: false,
+          message: "addBatch.quantity must be > 0",
+        });
+      }
+
+      // Add new batch to product's batches array
+      product.batches.push({
+        expiry_date: batchExpiry,
+        quantity: qty,
+        received_date: addBatch.received_date
+          ? new Date(addBatch.received_date)
+          : new Date(),
+        batch_number: addBatch.batch_number || "",
+        notes: addBatch.notes || "",
+      });
+
+      // Increment product current_stock
+      product.current_stock += qty;
+
+      // Update main expiry_date to earliest batch expiry
+      const earliestExpiry = product.batches.reduce(
+        (earliest, b) => (b.expiry_date < earliest ? b.expiry_date : earliest),
+        product.batches[0].expiry_date
+      );
+      product.expiry_date = earliestExpiry;
+    }
+
+    // Legacy support: If restockBatch present, create a batch in ProductBatch collection
     let createdBatch = null;
     if (restockBatch && typeof restockBatch === "object") {
       const qty = parseInt(restockBatch.quantity) || 0;
@@ -793,6 +899,287 @@ exports.getProductsBySupplier = async (req, res) => {
     res.status(500).json({
       success: false,
       message: "Error fetching products by supplier",
+      error: error.message,
+    });
+  }
+};
+
+// ==================== BATCH MANAGEMENT ENDPOINTS ====================
+
+// @desc    Export/Reduce product quantity with FIFO logic
+// @route   POST /api/products/:id/export
+exports.exportProduct = async (req, res) => {
+  try {
+    const { quantity, reason } = req.body;
+
+    if (!quantity || quantity <= 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Please provide valid quantity to export",
+      });
+    }
+
+    const product = await Product.findById(req.params.id);
+
+    if (!product) {
+      return res.status(404).json({
+        success: false,
+        message: "Product not found",
+      });
+    }
+
+    if (product.current_stock < quantity) {
+      return res.status(400).json({
+        success: false,
+        message: `Insufficient stock. Available: ${product.current_stock}, Requested: ${quantity}`,
+      });
+    }
+
+    let remainingToExport = quantity;
+    const exportedBatches = [];
+
+    // FIFO: Sort batches by expiry_date (earliest first)
+    product.batches.sort((a, b) => a.expiry_date - b.expiry_date);
+
+    // Deduct from batches using FIFO
+    for (let i = 0; i < product.batches.length && remainingToExport > 0; i++) {
+      const batch = product.batches[i];
+
+      if (batch.quantity > 0) {
+        const toDeduct = Math.min(batch.quantity, remainingToExport);
+
+        exportedBatches.push({
+          batch_number: batch.batch_number,
+          expiry_date: batch.expiry_date,
+          quantity_exported: toDeduct,
+          remaining_in_batch: batch.quantity - toDeduct,
+        });
+
+        batch.quantity -= toDeduct;
+        remainingToExport -= toDeduct;
+      }
+    }
+
+    // Remove empty batches
+    product.batches = product.batches.filter((b) => b.quantity > 0);
+
+    // Update current_stock
+    product.current_stock -= quantity;
+
+    // Update main expiry_date to earliest remaining batch
+    if (product.batches.length > 0) {
+      const earliestExpiry = product.batches.reduce(
+        (earliest, b) => (b.expiry_date < earliest ? b.expiry_date : earliest),
+        product.batches[0].expiry_date
+      );
+      product.expiry_date = earliestExpiry;
+    } else {
+      product.expiry_date = null;
+    }
+
+    await product.save();
+
+    res.status(200).json({
+      success: true,
+      message: `Successfully exported ${quantity} units using FIFO`,
+      data: {
+        product,
+        exported_quantity: quantity,
+        exported_batches: exportedBatches,
+        reason: reason || "Not specified",
+      },
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Error exporting product",
+      error: error.message,
+    });
+  }
+};
+
+// @desc    Get product batches sorted by expiry date
+// @route   GET /api/products/:id/batches
+exports.getProductBatches = async (req, res) => {
+  try {
+    const product = await Product.findById(req.params.id).select(
+      "name batches expiry_date current_stock"
+    );
+
+    if (!product) {
+      return res.status(404).json({
+        success: false,
+        message: "Product not found",
+      });
+    }
+
+    // Sort batches by expiry_date (earliest first)
+    const sortedBatches = [...product.batches].sort(
+      (a, b) => a.expiry_date - b.expiry_date
+    );
+
+    // Calculate total from batches
+    const totalFromBatches = sortedBatches.reduce(
+      (sum, b) => sum + b.quantity,
+      0
+    );
+
+    res.status(200).json({
+      success: true,
+      data: {
+        product_name: product.name,
+        current_stock: product.current_stock,
+        total_from_batches: totalFromBatches,
+        earliest_expiry: product.expiry_date,
+        batches: sortedBatches,
+        batches_count: sortedBatches.length,
+      },
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Error fetching product batches",
+      error: error.message,
+    });
+  }
+};
+
+// @desc    Remove/Update specific batch
+// @route   PATCH /api/products/:id/batches/:batchIndex
+exports.updateBatch = async (req, res) => {
+  try {
+    const { batchIndex } = req.params;
+    const { quantity, expiry_date, notes } = req.body;
+
+    const product = await Product.findById(req.params.id);
+
+    if (!product) {
+      return res.status(404).json({
+        success: false,
+        message: "Product not found",
+      });
+    }
+
+    const index = parseInt(batchIndex);
+    if (index < 0 || index >= product.batches.length) {
+      return res.status(404).json({
+        success: false,
+        message: "Batch not found",
+      });
+    }
+
+    const oldQuantity = product.batches[index].quantity;
+
+    // Update batch fields
+    if (quantity !== undefined) {
+      if (quantity < 0) {
+        return res.status(400).json({
+          success: false,
+          message: "Quantity must be >= 0",
+        });
+      }
+      product.batches[index].quantity = parseInt(quantity);
+
+      // Adjust current_stock
+      const diff = product.batches[index].quantity - oldQuantity;
+      product.current_stock += diff;
+    }
+
+    if (expiry_date !== undefined) {
+      const newExpiry = new Date(expiry_date);
+      if (isNaN(newExpiry)) {
+        return res.status(400).json({
+          success: false,
+          message: "Invalid expiry_date",
+        });
+      }
+      product.batches[index].expiry_date = newExpiry;
+
+      // Update main expiry_date
+      const earliestExpiry = product.batches.reduce(
+        (earliest, b) => (b.expiry_date < earliest ? b.expiry_date : earliest),
+        product.batches[0].expiry_date
+      );
+      product.expiry_date = earliestExpiry;
+    }
+
+    if (notes !== undefined) {
+      product.batches[index].notes = notes;
+    }
+
+    await product.save();
+
+    res.status(200).json({
+      success: true,
+      message: "Batch updated successfully",
+      data: product,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Error updating batch",
+      error: error.message,
+    });
+  }
+};
+
+// @desc    Delete specific batch
+// @route   DELETE /api/products/:id/batches/:batchIndex
+exports.deleteBatch = async (req, res) => {
+  try {
+    const { batchIndex } = req.params;
+
+    const product = await Product.findById(req.params.id);
+
+    if (!product) {
+      return res.status(404).json({
+        success: false,
+        message: "Product not found",
+      });
+    }
+
+    const index = parseInt(batchIndex);
+    if (index < 0 || index >= product.batches.length) {
+      return res.status(404).json({
+        success: false,
+        message: "Batch not found",
+      });
+    }
+
+    const deletedBatch = product.batches[index];
+
+    // Adjust current_stock
+    product.current_stock -= deletedBatch.quantity;
+    if (product.current_stock < 0) product.current_stock = 0;
+
+    // Remove batch
+    product.batches.splice(index, 1);
+
+    // Update main expiry_date
+    if (product.batches.length > 0) {
+      const earliestExpiry = product.batches.reduce(
+        (earliest, b) => (b.expiry_date < earliest ? b.expiry_date : earliest),
+        product.batches[0].expiry_date
+      );
+      product.expiry_date = earliestExpiry;
+    } else {
+      product.expiry_date = null;
+    }
+
+    await product.save();
+
+    res.status(200).json({
+      success: true,
+      message: "Batch deleted successfully",
+      data: {
+        product,
+        deleted_batch: deletedBatch,
+      },
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Error deleting batch",
       error: error.message,
     });
   }

@@ -192,7 +192,7 @@ const CustomerShopPage = ({ onAddToCart, onViewCart, onViewProduct }) => {
                   </p>
                   <div className="customer-product-footer">
                     <div className="customer-product-price">
-                      <span className="price-current">{product.price}VNĐ</span>
+                      <span className="price-current">{product.price.toLocaleString("vi-VN")}₫</span>
                       {product.unit && (
                         <span className="price-unit">/{product.unit}</span>
                       )}

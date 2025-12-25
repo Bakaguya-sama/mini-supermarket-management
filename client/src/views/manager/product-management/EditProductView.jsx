@@ -469,10 +469,10 @@ const EditProductView = () => {
                     name="price"
                     value={formData.price}
                     onChange={handleInputChange}
-                    placeholder="$0.00"
+                    placeholder="0"
                     className="edit-product-form-input"
                     min="0"
-                    step="0.01"
+                    step="1000"
                     required
                   />
                 </div>
@@ -634,6 +634,96 @@ const EditProductView = () => {
 
         {/* Product Image & Status Panel */}
         <div className="edit-product-sidebar">
+          {/* Batch Information Section */}
+          {productData?.batches && productData.batches.length > 0 && (
+            <div className="edit-product-batch-section">
+              <h3 className="edit-product-batch-title">Batch Information</h3>
+              <div className="edit-product-batch-summary">
+                <p className="edit-product-batch-count">
+                  Total Batches: {productData.batches.length}
+                </p>
+                <p className="edit-product-batch-total">
+                  Total Quantity:{" "}
+                  {productData.batches.reduce((sum, b) => sum + b.quantity, 0)}
+                </p>
+              </div>
+              <div className="edit-product-batch-list">
+                {[...productData.batches]
+                  .sort((a, b) => new Date(a.expiry_date) - new Date(b.expiry_date))
+                  .map((batch, index) => {
+                    const expiryDate = new Date(batch.expiry_date);
+                    const today = new Date();
+                    const daysUntilExpiry = Math.ceil(
+                      (expiryDate - today) / (1000 * 60 * 60 * 24)
+                    );
+                    const isExpiringSoon = daysUntilExpiry <= 30 && daysUntilExpiry > 0;
+                    const isExpired = daysUntilExpiry <= 0;
+
+                    return (
+                      <div
+                        key={index}
+                        className={`edit-product-batch-item ${
+                          isExpired
+                            ? "expired"
+                            : isExpiringSoon
+                            ? "expiring-soon"
+                            : ""
+                        }`}
+                      >
+                        <div className="edit-product-batch-header">
+                          <span className="edit-product-batch-number">
+                            {batch.batch_number || `Batch ${index + 1}`}
+                          </span>
+                          <span className="edit-product-batch-quantity">
+                            Qty: {batch.quantity}
+                          </span>
+                        </div>
+                        <div className="edit-product-batch-details">
+                          <div className="edit-product-batch-detail-row">
+                            <span className="edit-product-batch-label">Expiry:</span>
+                            <span className="edit-product-batch-value">
+                              {expiryDate.toLocaleDateString()}
+                            </span>
+                          </div>
+                          {daysUntilExpiry <= 60 && (
+                            <div className="edit-product-batch-detail-row">
+                              <span className="edit-product-batch-label">Status:</span>
+                              <span
+                                className={`edit-product-batch-status ${
+                                  isExpired
+                                    ? "status-expired"
+                                    : "status-expiring"
+                                }`}
+                              >
+                                {isExpired
+                                  ? "EXPIRED"
+                                  : `${daysUntilExpiry} days left`}
+                              </span>
+                            </div>
+                          )}
+                          <div className="edit-product-batch-detail-row">
+                            <span className="edit-product-batch-label">
+                              Received:
+                            </span>
+                            <span className="edit-product-batch-value">
+                              {new Date(
+                                batch.received_date
+                              ).toLocaleDateString()}
+                            </span>
+                          </div>
+                          {batch.notes && (
+                            <div className="edit-product-batch-notes">
+                              {batch.notes}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+              </div>
+            </div>
+          )}
+
           {/* Product Image Section */}
           <div className="edit-product-image-section">
             <h3 className="edit-product-image-title">Product Image</h3>
@@ -678,8 +768,8 @@ const EditProductView = () => {
               <label className="edit-product-status-label">Current Price</label>
               <span className="edit-product-status-value">
                 {formData.price
-                  ? `$${parseFloat(formData.price).toFixed(2)}`
-                  : "$0.00"}
+                  ? `${parseFloat(formData.price).toLocaleString("vi-VN")}₫`
+                  : "0₫"}
               </span>
             </div>
 

@@ -723,7 +723,7 @@ const CreateInvoice = () => {
                             </span>
                           </td>
                           <td className="create-invoice-price">
-                            {product.price.toLocaleString("vi-VN")}VNĐ
+                            {product.price.toLocaleString("vi-VN")}₫
                           </td>
                           <td className="create-invoice-stock">
                             {product.stock}
@@ -868,10 +868,10 @@ const CreateInvoice = () => {
                           </div>
                         </td>
                         <td className="create-invoice-price">
-                          {product.price.toLocaleString("vi-VN")}VNĐ
+                          {product.price.toLocaleString("vi-VN")}₫
                         </td>
                         <td className="create-invoice-total">
-                          {product.total.toLocaleString("vi-VN")}VNĐ
+                          {product.total.toLocaleString("vi-VN")}₫
                         </td>
                         <td>
                           <button
@@ -902,7 +902,7 @@ const CreateInvoice = () => {
                 <div className="create-invoice-subtotal-row">
                   <span>Subtotal ({products.length} items)</span>
                   <span className="create-invoice-subtotal-amount">
-                    {subtotal.toLocaleString("vi-VN")}VNĐ
+                    {subtotal.toLocaleString("vi-VN")}₫
                   </span>
                 </div>
               )}
@@ -1109,25 +1109,25 @@ const CreateInvoice = () => {
 
             <div className="create-invoice-summary-row">
               <span>Subtotal</span>
-              <span>{subtotal.toLocaleString("vi-VN")}VNĐ</span>
+              <span>{subtotal.toLocaleString("vi-VN")}₫</span>
             </div>
 
             <div className="create-invoice-summary-row discount">
               <span>Discount</span>
               <span className="create-invoice-discount-amount">
-                -{discountAmount.toLocaleString("vi-VN")}VNĐ
+                -{discountAmount.toLocaleString("vi-VN")}₫
               </span>
             </div>
 
             <div className="create-invoice-summary-row">
               <span>Tax (9%)</span>
-              <span>{taxAmount.toLocaleString("vi-VN")}VNĐ</span>
+              <span>{taxAmount.toLocaleString("vi-VN")}₫</span>
             </div>
 
             <div className="create-invoice-summary-row total">
               <span>Total Amount</span>
               <span className="create-invoice-total-amount">
-                {totalAmount.toLocaleString("vi-VN")}VNĐ
+                {totalAmount.toLocaleString("vi-VN")}₫
               </span>
             </div>
 

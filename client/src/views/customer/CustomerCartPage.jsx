@@ -109,7 +109,7 @@ const CustomerCartPage = ({
       );
 
       console.log(
-        `🎁 Loading applicable promotions for subtotal: $${subtotal}`
+        `🎁 Loading applicable promotions for subtotal: ${subtotal.toLocaleString("vi-VN")}₫`
       );
       const result = await promotionService.getApplicablePromotions(subtotal);
 
@@ -254,9 +254,9 @@ const CustomerCartPage = ({
   }
 
   // Points conversion for this app:
-  // - Redeem: 1 point = 1000 VNĐ
-  // - Earning (used below on checkout): 1 point earned per 10000 VNĐ spent
-  const pointsDiscount = pointsToRedeem * 1000; // 1 point = 1000 VNĐ
+  // - Redeem: 1 point = 1000₫
+  // - Earning (used below on checkout): 1 point earned per 10000₫ spent
+  const pointsDiscount = pointsToRedeem * 1000; // 1 point = 1000₫
   const total = Math.max(0, subtotal - promoDiscount - pointsDiscount);
 
   // Max points user can apply is limited by their balance and subtotal (in points)
@@ -293,18 +293,18 @@ const CustomerCartPage = ({
           `Discount: ${
             selectedPromo.type === "percentage"
               ? `${selectedPromo.discountValue}%`
-              : `$${selectedPromo.discountValue}`
-          } = -${promoDiscount}VNĐ`
+              : `${selectedPromo.discountValue.toLocaleString("vi-VN")}₫`
+          } = -${promoDiscount.toLocaleString("vi-VN")}₫`
         );
       }
       if (pointsToRedeem > 0) {
         orderNotes.push(
-          `Points Redeemed: ${pointsToRedeem} points = -${pointsDiscount}VNĐ`
+          `Points Redeemed: ${pointsToRedeem} points = -${pointsDiscount.toLocaleString("vi-VN")}₫`
         );
       }
 
       // Calculate points earned from this order (frontend estimation)
-      // Earning rule: 1 point per 10000 VNĐ spent
+      // Earning rule: 1 point per 10000₫ spent
       const pointsEarned = Math.floor(total / 10000);
       if (pointsEarned > 0) {
         orderNotes.push(`Points Earned: ${pointsEarned} points`);
@@ -324,12 +324,10 @@ const CustomerCartPage = ({
       });
 
       if (result.success) {
-        setSuccessMessage(`Order placed successfully! Total: ${total}`);
+        setSuccessMessage(`Order placed successfully! Total: ${total.toLocaleString("vi-VN")}₫`);
         console.log("✅ Order created:", result.data);
         console.log(
-          `💰 Original: ${subtotal}VNĐ → Final: $${total.toFixed(
-            2
-          )} (Saved: $${(subtotal - total).toFixed(2)})`
+          `💰 Original: ${subtotal.toLocaleString("vi-VN")}₫ → Final: ${total.toLocaleString("vi-VN")}₫ (Saved: ${(subtotal - total).toLocaleString("vi-VN")}₫)`
         );
 
         // TODO: Deduct points from customer balance (will be handled by backend later)
@@ -409,7 +407,7 @@ const CustomerCartPage = ({
                   <h3>{item.name}</h3>
                   <p className="cart-item-category">{item.category}</p>
                   <p className="cart-item-price">
-                    {item.price}VNĐ{item.unit && `/${item.unit}`}
+                    {item.price.toLocaleString("vi-VN")}₫{item.unit && `/${item.unit}`}
                   </p>
                 </div>
                 <div className="cart-item-actions">
@@ -433,7 +431,7 @@ const CustomerCartPage = ({
                     </button>
                   </div>
                   <div className="cart-item-total">
-                    {item.price * item.quantity}VNĐ
+                    {(item.price * item.quantity).toLocaleString("vi-VN")}₫
                   </div>
                   <button
                     onClick={() => handleRemoveItem(item.cartItemId)}
@@ -473,7 +471,7 @@ const CustomerCartPage = ({
                         <div className="promo-discount-badge">
                           {promo.type === "percentage"
                             ? `${promo.discountValue}% OFF`
-                            : `$${promo.discountValue.toFixed(0)} OFF`}
+                            : `${promo.discountValue.toLocaleString("vi-VN")}₫ OFF`}
                         </div>
                         <div className="promo-code-label">{promo.code}</div>
                       </div>
@@ -488,7 +486,7 @@ const CustomerCartPage = ({
                         )}
                         {promo.minOrder && (
                           <span className="promo-min-order">
-                            Min: ${promo.minOrder}
+                            Min: {promo.minOrder.toLocaleString("vi-VN")}₫
                           </span>
                         )}
                         <span className="promo-validity">
@@ -538,7 +536,7 @@ const CustomerCartPage = ({
                   setPointsToRedeem(value);
                 }}
               />
-              <span className="points-value">= {pointsToRedeem * 1000}VNĐ</span>
+              <span className="points-value">= {(pointsToRedeem * 1000).toLocaleString("vi-VN")}₫</span>
             </div>
           </div>
 
@@ -546,23 +544,23 @@ const CustomerCartPage = ({
           <div className="cart-summary-breakdown">
             <div className="breakdown-row">
               <span>Subtotal</span>
-              <span>{subtotal}VNĐ</span>
+              <span>{subtotal.toLocaleString("vi-VN")}₫</span>
             </div>
             {selectedPromo && (
               <div className="breakdown-row discount">
                 <span>Promo Discount ({selectedPromo.code})</span>
-                <span>-{promoDiscount}VNĐ</span>
+                <span>-{promoDiscount.toLocaleString("vi-VN")}₫</span>
               </div>
             )}
             {pointsToRedeem > 0 && (
               <div className="breakdown-row discount">
                 <span>Points Discount</span>
-                <span>-{pointsDiscount}VNĐ</span>
+                <span>-{pointsDiscount.toLocaleString("vi-VN")}₫</span>
               </div>
             )}
             <div className="breakdown-row total">
               <span>Total</span>
-              <span>{total}VNĐ</span>
+              <span>{total.toLocaleString("vi-VN")}₫</span>
             </div>
           </div>
 
