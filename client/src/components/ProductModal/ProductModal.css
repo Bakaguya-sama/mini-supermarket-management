@@ -189,6 +189,48 @@
     transform: translateY(1px);
 }
 
+/* Batch buttons in modal */
+.view-batches-btn,
+.refresh-batches-btn {
+    padding: 8px 12px;
+    border-radius: 8px;
+    border: 1px solid #e5e7eb;
+    background: white;
+    color: #064e3b;
+    font-size: 0.85rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.12s ease;
+}
+
+.view-batches-btn {
+    background: linear-gradient(135deg, #fff7ed, #ffd8a8);
+    color: #7c2d12;
+    border-color: #f97316;
+}
+
+.view-batches-btn:hover {
+    background: linear-gradient(135deg, #fb923c, #f97316);
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 18px rgba(249, 115, 22, 0.12);
+}
+
+.refresh-batches-btn {
+    background: transparent;
+    color: #374151;
+}
+
+.refresh-batches-btn:hover {
+    background: #f8fafc;
+    transform: translateY(-1px);
+}
+
+.refresh-batches-btn:active,
+.view-batches-btn:active {
+    transform: translateY(0);
+}
+
 /* Responsive Design */
 @media (max-width: 640px) {
     .product-modal-content {
