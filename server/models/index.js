@@ -121,6 +121,7 @@ const productSchema = new mongoose.Schema(
     maximum_stock_level: { type: Number },
     storage_location: { type: String },
     price: { type: Number, default: 0 },
+    expiry_date: { type: Date },
     status: { type: String, enum: ["active", "inactive", "discontinued"] },
     supplier_id: { type: mongoose.Schema.Types.ObjectId, ref: "Supplier" },
     category: { type: String },
@@ -132,7 +133,7 @@ const productSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-productSchema.index({ name: 1, category: 1, supplier_id: 1 });
+productSchema.index({ name: 1, category: 1, supplier_id: 1, expiry_date: 1 });
 
 // ==================== 7. SHELVES ====================
 const shelfSchema = new mongoose.Schema(
@@ -191,6 +192,7 @@ const productShelfSchema = new mongoose.Schema(
       required: true,
     },
     quantity: { type: Number, default: 0, required: true },
+    expiry_date: { type: Date },
     isDelete: { type: Boolean, default: false },
   },
   { timestamps: true }
@@ -199,8 +201,13 @@ const productShelfSchema = new mongoose.Schema(
 // Indexes for efficient lookups
 productShelfSchema.index({ product_id: 1 }); // Find all shelves for a product
 productShelfSchema.index({ shelf_id: 1 }); // Find all products on a shelf
+productShelfSchema.index({ product_id: 1, expiry_date: 1 }); // Query by product expiry
+productShelfSchema.index({ shelf_id: 1, expiry_date: 1 }); // Query by shelf expiry
 // Unique constraint: Same product cannot be on same shelf twice
-productShelfSchema.index({ product_id: 1, shelf_id: 1 }, { unique: true, partialFilterExpression: { isDelete: false } });
+productShelfSchema.index(
+  { product_id: 1, shelf_id: 1 },
+  { unique: true, partialFilterExpression: { isDelete: false } }
+);
 
 // ==================== 9. PROMOTIONS ====================
 const promotionSchema = new mongoose.Schema(
@@ -354,7 +361,7 @@ const invoiceSchema = new mongoose.Schema(
     payment_method: {
       type: String,
       enum: ["Cash", "Card Payment", "Digital Wallet", "E-Wallet"],
-      default: "Cash"
+      default: "Cash",
     },
     payment_status: {
       type: String,
@@ -495,15 +502,59 @@ const productStockSchema = new mongoose.Schema(
     damaged_quantity: { type: String },
     reason: { type: String },
     quantity: { type: Number, default: 0 },
+    expiry_date: { type: Date },
     last_updated: { type: Date, default: Date.now },
     isDelete: { type: Boolean, default: false },
   },
   { timestamps: true }
 );
 
-productStockSchema.index({ product_id: 1, warehouse_id: 1, shelf_id: 1 });
+productStockSchema.index({
+  product_id: 1,
+  warehouse_id: 1,
+  shelf_id: 1,
+  expiry_date: 1,
+});
+productStockSchema.index({ product_id: 1, expiry_date: 1 });
 
-// ==================== 21. CARTS ====================
+// ==================== 21. PRODUCT BATCHES ====================
+const productBatchSchema = new mongoose.Schema(
+  {
+    product_id: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Product",
+      required: true,
+    },
+    batch_id: { type: String }, // optional batch identifier from supplier
+    quantity: { type: Number, default: 0 },
+    expiry_date: { type: Date },
+    sku: { type: String },
+    barcode: { type: String },
+    supplier_id: { type: mongoose.Schema.Types.ObjectId, ref: "Supplier" },
+    warehouse_id: { type: mongoose.Schema.Types.ObjectId },
+    shelf_id: { type: mongoose.Schema.Types.ObjectId, ref: "Shelf" },
+    purchase_date: { type: Date, default: Date.now },
+    cost: { type: Number },
+    source: { type: String }, // e.g., 'productStock' (for migrated), 'manual'
+    source_id: { type: mongoose.Schema.Types.ObjectId },
+    status: {
+      type: String,
+      default: "available",
+      enum: ["available", "reserved", "damaged", "expired", "consumed"],
+    },
+    isDelete: { type: Boolean, default: false },
+    migrated: { type: Boolean, default: false },
+  },
+  { timestamps: true }
+);
+
+productBatchSchema.index({ product_id: 1 });
+productBatchSchema.index({ expiry_date: 1 });
+productBatchSchema.index({ sku: 1 });
+productBatchSchema.index({ barcode: 1 });
+productBatchSchema.index({ product_id: 1, expiry_date: 1 });
+
+// ==================== 22. CARTS ====================
 const cartSchema = new mongoose.Schema(
   {
     customer_id: { type: mongoose.Schema.Types.ObjectId, ref: "Customer" },
@@ -647,6 +698,7 @@ module.exports = {
   Instruction: mongoose.model("Instruction", instructionSchema),
   CustomerFeedback: mongoose.model("CustomerFeedback", customerFeedbackSchema),
   ProductStock: mongoose.model("ProductStock", productStockSchema),
+  ProductBatch: mongoose.model("ProductBatch", productBatchSchema),
   Cart: mongoose.model("Cart", cartSchema),
   CartItem: mongoose.model("CartItem", cartItemSchema),
   DamagedProduct: mongoose.model("DamagedProduct", damagedProductSchema),

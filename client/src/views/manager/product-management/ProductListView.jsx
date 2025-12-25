@@ -13,7 +13,9 @@ import {
 import { TbBoxOff } from "react-icons/tb";
 import ProductModal from "../../../components/ProductModal/ProductModal";
 import DeleteProductConfirmationModal from "../../../components/ProductModal/DeleteProductConfirmationModal";
+import BatchListModal from "../../../components/ProductModal/BatchListModal";
 import "./ProductListView.css";
+import "../../../components/ProductModal/BatchListModal.css";
 import productService from "../../../services/productService";
 
 const ProductListView = () => {
@@ -36,6 +38,11 @@ const ProductListView = () => {
     lowStockCount: 0,
     outOfStockCount: 0,
   });
+
+  // Batches map: productId -> { batches: [], total_quantity, distinctExpiryCount, expiredTotalQuantity }
+  const [batchesMap, setBatchesMap] = useState({});
+  const [isBatchModalOpen, setIsBatchModalOpen] = useState(false);
+  const [batchModalProduct, setBatchModalProduct] = useState(null);
 
   // Load products on component mount
   useEffect(() => {
@@ -60,6 +67,8 @@ const ProductListView = () => {
         console.log("✅ Setting products:", response.data);
         setProducts(response.data);
         calculateStats(response.data);
+        // Load batch summaries for the loaded products (non-blocking)
+        loadBatchSummaries(response.data);
       } else {
         console.warn("❌ Response not successful:", response);
         setError("Failed to load products");
@@ -141,6 +150,247 @@ const ProductListView = () => {
   // Pagination logic
   const itemsPerPage = 10;
 
+  // Expiry & stock helpers (moved above filters to avoid "cannot access before initialization")
+  const getExpiryStatus = (product) => {
+    if (!product || !product.expiry_date) return null;
+    const now = new Date();
+    const exp = new Date(product.expiry_date);
+    if (isNaN(exp)) return null;
+    if (exp < now) return "Expired";
+    const daysDiff = Math.ceil((exp - now) / (1000 * 60 * 60 * 24));
+    if (daysDiff <= 30) return "Expiring Soon";
+    return null;
+  };
+
+  const getStockStatus = (product) => {
+    const expiry = getExpiryStatus(product);
+    if (expiry === "Expired") return "Expired";
+    if (expiry === "Expiring Soon") return "Expiring Soon";
+
+    if (product.current_stock === 0) {
+      return "Out of Stock";
+    } else if (product.current_stock <= product.minimum_stock_level) {
+      return "Low Stock";
+    } else {
+      return "In Stock";
+    }
+  };
+
+  const getStockBadgeClass = (status) => {
+    switch (status) {
+      case "In Stock":
+        return "status-approved";
+      case "Low Stock":
+      case "Expiring Soon":
+        return "status-pending";
+      case "Out of Stock":
+      case "Expired":
+        return "status-declined";
+      default:
+        return "status-default";
+    }
+  };
+
+  // Normalize batch responses from various endpoints
+  const extractBatchesFromResponse = (resp) => {
+    try {
+      const raw =
+        resp?.data?.data?.batches ||
+        resp?.data?.batches ||
+        resp?.data ||
+        resp?.batches ||
+        resp ||
+        [];
+      if (Array.isArray(raw)) return raw;
+      if (raw && Array.isArray(raw.batches)) return raw.batches;
+      return [];
+    } catch (err) {
+      console.warn("Failed to extract batches from response", err, resp);
+      return [];
+    }
+  };
+
+  // Helper to open batch modal and ensure batches are loaded
+  const openBatchModal = async (productId) => {
+    const product = products.find((p) => p._id === productId);
+
+    // If we don't have batches loaded yet for this product, fetch now
+    if (!batchesMap[productId]) {
+      // optimistic placeholder
+      setBatchesMap((prev) => ({
+        ...prev,
+        [productId]: {
+          batches: [],
+          distinctExpiryCount: 0,
+          expiredTotalQuantity: 0,
+          loading: true,
+        },
+      }));
+      try {
+        const resp = await productService.getBatchesByProduct(productId);
+        const batches = extractBatchesFromResponse(resp);
+        const now = new Date();
+        const distinctExpiry = new Set(
+          batches.map((b) =>
+            b.expiry_date
+              ? new Date(b.expiry_date).toISOString().slice(0, 10)
+              : null
+          )
+        ).size;
+        const expiredTotalQuantity = batches.reduce((s, b) => {
+          if (b.expiry_date && new Date(b.expiry_date) < now)
+            return s + (b.totalQuantity || b.quantity || 0);
+          return s;
+        }, 0);
+        // representative expiry (earliest non-null expiry among batches)
+        const expiryDates = batches
+          .map((b) => b.expiry_date)
+          .filter(Boolean)
+          .map((d) => new Date(d).getTime());
+        const representativeExpiry =
+          expiryDates.length > 0
+            ? new Date(Math.min(...expiryDates)).toISOString()
+            : null;
+        setBatchesMap((prev) => ({
+          ...prev,
+          [productId]: {
+            batches,
+            distinctExpiryCount: distinctExpiry,
+            expiredTotalQuantity,
+            representativeExpiry,
+            loading: false,
+          },
+        }));
+      } catch (err) {
+        console.warn(
+          "Failed to fetch batches when opening modal",
+          productId,
+          err
+        );
+        setBatchesMap((prev) => ({
+          ...prev,
+          [productId]: {
+            batches: [],
+            distinctExpiryCount: 0,
+            expiredTotalQuantity: 0,
+            loading: false,
+          },
+        }));
+      }
+    }
+
+    setBatchModalProduct(product);
+    setIsBatchModalOpen(true);
+  };
+
+  // Load batch summaries for a list of products
+  const loadBatchSummaries = async (productList) => {
+    if (!Array.isArray(productList) || productList.length === 0) return;
+    const results = {};
+    await Promise.all(
+      productList.map(async (p) => {
+        try {
+          const resp = await productService.getBatchesByProduct(p._id);
+          const batches = extractBatchesFromResponse(resp);
+          // compute distinct expiry count and expired total qty
+          const now = new Date();
+          const distinctExpiry = new Set(
+            batches.map((b) =>
+              b.expiry_date
+                ? new Date(b.expiry_date).toISOString().slice(0, 10)
+                : null
+            )
+          ).size;
+          const expiredTotalQuantity = batches.reduce((s, b) => {
+            if (b.expiry_date && new Date(b.expiry_date) < now)
+              return s + (b.totalQuantity || b.quantity || 0);
+            return s;
+          }, 0);
+
+          // representative expiry (earliest non-null expiry among batches)
+          const expiryDates = batches
+            .map((b) => b.expiry_date)
+            .filter(Boolean)
+            .map((d) => new Date(d).getTime());
+          const representativeExpiry =
+            expiryDates.length > 0
+              ? new Date(Math.min(...expiryDates)).toISOString()
+              : null;
+
+          results[p._id] = {
+            batches,
+            distinctExpiryCount: distinctExpiry,
+            expiredTotalQuantity,
+            representativeExpiry,
+          };
+        } catch (err) {
+          // ignore per-product error
+          console.warn("Failed to load batches for product", p._id, err);
+          results[p._id] = {
+            batches: [],
+            distinctExpiryCount: 0,
+            expiredTotalQuantity: 0,
+          };
+        }
+      })
+    );
+    setBatchesMap(results);
+  };
+
+  // Listen to productBatchCreated events and refresh a single product's batches
+  React.useEffect(() => {
+    const handler = async (e) => {
+      const productId = e?.detail?.productId;
+      if (!productId) return;
+      try {
+        const resp = await productService.getBatchesByProduct(productId);
+        const batches = extractBatchesFromResponse(resp);
+        const now = new Date();
+        const distinctExpiry = new Set(
+          batches.map((b) =>
+            b.expiry_date
+              ? new Date(b.expiry_date).toISOString().slice(0, 10)
+              : null
+          )
+        ).size;
+        const expiredTotalQuantity = batches.reduce(
+          (s, b) =>
+            b.expiry_date && new Date(b.expiry_date) < now
+              ? s + (b.totalQuantity || b.quantity || 0)
+              : s,
+          0
+        );
+        const expiryDates = batches
+          .map((b) => b.expiry_date)
+          .filter(Boolean)
+          .map((d) => new Date(d).getTime());
+        const representativeExpiry =
+          expiryDates.length > 0
+            ? new Date(Math.min(...expiryDates)).toISOString()
+            : null;
+        setBatchesMap((prev) => ({
+          ...prev,
+          [productId]: {
+            batches,
+            distinctExpiryCount: distinctExpiry,
+            expiredTotalQuantity,
+            representativeExpiry,
+            loading: false,
+          },
+        }));
+        // refresh products list to reflect updated current_stock
+        await loadProducts();
+      } catch (err) {
+        console.warn(
+          "Failed to refresh batches after productBatchCreated",
+          err
+        );
+      }
+    };
+    window.addEventListener("productBatchCreated", handler);
+    return () => window.removeEventListener("productBatchCreated", handler);
+  }, []);
+
   // Filter and search logic
   const filteredProducts = products.filter((product) => {
     const matchesSearch =
@@ -152,14 +402,21 @@ const ProductListView = () => {
       product.category === categoryFilter;
 
     let matchesStock = true;
+    const expiryStatus = getExpiryStatus(product);
     if (stockFilter === "In Stock") {
-      matchesStock = product.current_stock > product.minimum_stock_level;
+      matchesStock =
+        product.current_stock > product.minimum_stock_level && !expiryStatus;
     } else if (stockFilter === "Low Stock") {
       matchesStock =
         product.current_stock > 0 &&
-        product.current_stock <= product.minimum_stock_level;
+        product.current_stock <= product.minimum_stock_level &&
+        !expiryStatus;
     } else if (stockFilter === "Out of Stock") {
-      matchesStock = product.current_stock === 0;
+      matchesStock = product.current_stock === 0 && !expiryStatus;
+    } else if (stockFilter === "Expiring Soon") {
+      matchesStock = expiryStatus === "Expiring Soon";
+    } else if (stockFilter === "Expired") {
+      matchesStock = expiryStatus === "Expired";
     }
 
     return matchesSearch && matchesCategory && matchesStock;
@@ -216,29 +473,6 @@ const ProductListView = () => {
   const handleCloseModal = () => {
     setIsModalOpen(false);
     setSelectedProduct(null);
-  };
-
-  const getStockStatus = (product) => {
-    if (product.current_stock === 0) {
-      return "Out of Stock";
-    } else if (product.current_stock <= product.minimum_stock_level) {
-      return "Low Stock";
-    } else {
-      return "In Stock";
-    }
-  };
-
-  const getStockBadgeClass = (status) => {
-    switch (status) {
-      case "In Stock":
-        return "status-approved";
-      case "Low Stock":
-        return "status-pending";
-      case "Out of Stock":
-        return "status-declined";
-      default:
-        return "status-default";
-    }
   };
 
   if (isLoading) {
@@ -351,6 +585,8 @@ const ProductListView = () => {
               <option value="In Stock">In Stock</option>
               <option value="Low Stock">Low Stock</option>
               <option value="Out of Stock">Out of Stock</option>
+              <option value="Expiring Soon">Expiring Soon</option>
+              <option value="Expired">Expired</option>
             </select>
           </div>
         </div>
@@ -368,9 +604,10 @@ const ProductListView = () => {
           <thead>
             <tr>
               <th>Image</th>
-              <th>Product ID</th>
+              {/* <th>Product ID</th> */}
               <th>Product Name</th>
               <th>Category & Brand</th>
+              <th>Expiry Date</th>
               <th>Price</th>
               <th>Stock</th>
               <th>Status</th>
@@ -400,8 +637,30 @@ const ProductListView = () => {
                     }}
                   />
                 </td>
-                <td className="product-id-cell">{product._id}</td>
-                <td className="product-name-cell">{product.name}</td>
+                {/* <td className="product-id-cell">{product._id}</td> */}
+                <td className="product-name-cell">
+                  {product.name}
+                  {batchesMap[product._id] &&
+                    batchesMap[product._id].distinctExpiryCount > 1 && (
+                      <span
+                        className="multi-expiry-badge"
+                        title={`$${
+                          batchesMap[product._id].distinctExpiryCount
+                        } distinct expiry dates`}
+                      >
+                        {batchesMap[product._id].distinctExpiryCount} expiries
+                      </span>
+                    )}
+                  {batchesMap[product._id] &&
+                    batchesMap[product._id].loading && (
+                      <span
+                        className="multi-expiry-loading"
+                        title="Loading batches"
+                      >
+                        …
+                      </span>
+                    )}
+                </td>
                 <td>
                   <div className="product-category">
                     <div className="category">{product.category}</div>
@@ -412,6 +671,49 @@ const ProductListView = () => {
                           : product.supplier_id.name}
                       </div>
                     )}
+                  </div>
+                </td>
+                <td className="product-expiry-date">
+                  <div
+                    style={{ display: "flex", alignItems: "center", gap: 8 }}
+                  >
+                    <div>
+                      {product.expiry_date
+                        ? new Date(product.expiry_date).toLocaleDateString()
+                        : batchesMap[product._id]?.representativeExpiry
+                        ? new Date(
+                            batchesMap[product._id].representativeExpiry
+                          ).toLocaleDateString()
+                        : "—"}
+                    </div>
+
+                    {/* Batch badge */}
+                    {batchesMap[product._id] &&
+                      batchesMap[product._id].distinctExpiryCount > 1 && (
+                        <button
+                          className="batch-badge"
+                          title={`${
+                            batchesMap[product._id].distinctExpiryCount
+                          } distinct expiry dates`}
+                          onClick={() => openBatchModal(product._id)}
+                        >
+                          {batchesMap[product._id].distinctExpiryCount} expiries
+                        </button>
+                      )}
+
+                    {/* Expired quantity indicator */}
+                    {batchesMap[product._id] &&
+                      batchesMap[product._id].expiredTotalQuantity > 0 && (
+                        <span
+                          className="expired-badge"
+                          title={`Expired qty: ${
+                            batchesMap[product._id].expiredTotalQuantity
+                          }`}
+                        >
+                          Expired:{" "}
+                          {batchesMap[product._id].expiredTotalQuantity}
+                        </span>
+                      )}
                   </div>
                 </td>
                 <td className="product-price">${product.price.toFixed(2)}</td>
@@ -548,6 +850,15 @@ const ProductListView = () => {
         product={selectedProduct}
         isOpen={isModalOpen}
         onClose={handleCloseModal}
+      />
+
+      {/* Batch Modal */}
+      <BatchListModal
+        isOpen={isBatchModalOpen}
+        onClose={() => setIsBatchModalOpen(false)}
+        product={batchModalProduct}
+        batches={batchesMap[batchModalProduct?._id]?.batches || []}
+        loading={batchesMap[batchModalProduct?._id]?.loading || false}
       />
 
       {/* Delete Confirmation Modal */}

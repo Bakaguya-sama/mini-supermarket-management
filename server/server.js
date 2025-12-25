@@ -27,8 +27,10 @@ app.use(express.json({ limit: "50mb" }));
 app.use(express.urlencoded({ limit: "50mb", extended: true }));
 app.use(morgan("dev"));
 
-// Connect to MongoDB
-connectDB();
+// Connect to MongoDB only when run directly
+if (require.main === module) {
+  connectDB();
+}
 
 // Routes
 app.get("/", (req, res) => {
@@ -74,6 +76,7 @@ app.use("/api/shelves", require("./routes/shelfRoutes"));
 app.use("/api/sections", require("./routes/sectionRoutes"));
 app.use("/api/product-shelves", require("./routes/productShelfRoutes"));
 app.use("/api/product-stocks", require("./routes/productStockRoutes"));
+app.use("/api/product-batches", require("./routes/productBatchRoutes"));
 app.use("/api/promotions", require("./routes/promotionRoutes"));
 app.use("/api/feedbacks", require("./routes/feedbackRoutes"));
 
@@ -97,8 +100,9 @@ app.use((req, res) => {
 
 const PORT = process.env.PORT || 5000;
 
-app.listen(PORT, () => {
-  console.log(`
+if (require.main === module) {
+  app.listen(PORT, () => {
+    console.log(`
 ╔═══════════════════════════════════════╗
 ║   🛒 MINI SUPERMARKET API SERVER     ║
 ║   🚀 Server running on port ${PORT}     ║
@@ -114,4 +118,7 @@ app.listen(PORT, () => {
 ║   • GET  /api/suppliers               ║
 ╚═══════════════════════════════════════╝
   `);
-});
+  });
+}
+
+module.exports = app;
