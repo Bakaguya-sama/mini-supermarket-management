@@ -409,7 +409,7 @@ const CustomerListView = () => {
                     >
                       <FaEdit />
                     </button>
-                    <button
+                    {/* <button
                       className="customer-action-btn customer-delete-btn"
                       onClick={() => handleDelete(customer)}
                       title={
@@ -424,7 +424,7 @@ const CustomerListView = () => {
                       }}
                     >
                       <FaTrash />
-                    </button>
+                    </button> */}
                   </td>
                 </tr>
               ))}
