@@ -275,6 +275,7 @@ const EditCustomerView = () => {
                     Membership Type
                   </label>
                   <select
+                    disabled="true"
                     id="membership_type"
                     name="membership_type"
                     value={formData.membership_type}
@@ -313,7 +314,7 @@ const EditCustomerView = () => {
                     value={formData.notes}
                     onChange={handleInputChange}
                     placeholder="Add any additional notes about the customer"
-                    className="customer-form-textarea"
+                    className="customer-form-textarea-edit"
                     rows="6"
                   />
                 </div>
