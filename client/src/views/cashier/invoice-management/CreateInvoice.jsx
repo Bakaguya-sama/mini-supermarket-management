@@ -46,6 +46,8 @@ const CreateInvoice = () => {
   const [demoCustomerId, setDemoCustomerId] = useState(null);
   const [currentCart, setCurrentCart] = useState(null);
   const [currentCartId, setCurrentCartId] = useState(null);
+  // Track whether we've initialized/cleared the demo cart (avoid pre-filled seed items)
+  const [cartInitialized, setCartInitialized] = useState(false);
 
   // Available customers for selection (from API)
   const [availableCustomers, setAvailableCustomers] = useState([]);
@@ -171,9 +173,12 @@ const CreateInvoice = () => {
           const firstCustomer = response.data[0]; // Use original data
           setDemoCustomerId(firstCustomer._id);
           console.log("✅ Demo customer ID set:", firstCustomer._id);
-
-          // Load cart for demo customer
-          loadCart(firstCustomer._id);
+          // Ensure cart exists and clear any seeded items on mount so cashier sees an empty cart
+          try {
+            await ensureCartExists();
+          } catch (err) {
+            console.warn("Could not ensure cart on init:", err);
+          }
         }
 
         console.log("✅ Loaded customers:", transformedCustomers.length);
@@ -225,6 +230,39 @@ const CreateInvoice = () => {
     } finally {
       setIsLoadingCart(false);
     }
+  };
+
+  // Ensure there is a cart for demoCustomerId (create if missing). On first initialization,
+  // clear any pre-existing items (seed data) so cashier starts with an empty cart.
+  const ensureCartExists = async () => {
+    if (cartInitialized) {
+      return currentCartId || null;
+    }
+    if (!demoCustomerId) {
+      return null;
+    }
+    try {
+      const resp = await cartService.getCartByCustomer(demoCustomerId);
+      if (resp.success && resp.data) {
+        setCurrentCart(resp.data);
+        setCurrentCartId(resp.data._id);
+        // If seeded cart has items, clear them on first init
+        if (resp.data.cartItems && resp.data.cartItems.length > 0) {
+          const clearResp = await cartService.clearCart(resp.data._id);
+          if (!clearResp.success) {
+            console.warn("Failed to clear seeded cart:", clearResp.message);
+          } else {
+            setProducts([]);
+          }
+        }
+        setCartInitialized(true);
+        return resp.data._id;
+      }
+    } catch (err) {
+      console.error("Error ensuring cart exists:", err);
+    }
+    setCartInitialized(true);
+    return null;
   };
 
   // Load all data on mount
@@ -305,6 +343,9 @@ const CreateInvoice = () => {
 
   // Add product with specified quantity
   const handleAddProductWithQuantity = async (product) => {
+    // Ensure cart exists (and clear seeded items if first time)
+    const cartId = await ensureCartExists();
+
     const quantity = productQuantities[product.id] || 1;
     if (quantity > 0) {
       const existingProduct = products.find((p) => p.id === product.id);
@@ -324,9 +365,9 @@ const CreateInvoice = () => {
       }
 
       // Call Cart API
-      if (currentCartId) {
+      if (cartId) {
         const response = await cartService.addItem(
-          currentCartId,
+          cartId,
           product.id,
           quantity
         );
@@ -361,6 +402,9 @@ const CreateInvoice = () => {
   };
 
   const handleAddProduct = async (product) => {
+    // Ensure cart exists (and clear seeded items if first time)
+    const cartId = await ensureCartExists();
+
     const existingProduct = products.find((p) => p.id === product.id);
     if (existingProduct) {
       if (existingProduct.quantity >= product.stock) {
@@ -372,12 +416,8 @@ const CreateInvoice = () => {
       await handleQuantityChange(product.id, existingProduct.quantity + 1);
     } else {
       // Call Cart API to add new product
-      if (currentCartId) {
-        const response = await cartService.addItem(
-          currentCartId,
-          product.id,
-          1
-        );
+      if (cartId) {
+        const response = await cartService.addItem(cartId, product.id, 1);
 
         if (response.success && response.data) {
           await loadCart(demoCustomerId);
@@ -499,7 +539,37 @@ const CreateInvoice = () => {
 
       if (response.success) {
         setSuccessMessage("Invoice created successfully!");
-        setTimeout(() => navigate("/invoice"), 2000);
+
+        // Clear backend cart if there is one so next invoice starts fresh
+        if (currentCartId) {
+          try {
+            const clearResp = await cartService.clearCart(currentCartId);
+            if (!clearResp.success) {
+              console.warn("Failed to clear cart:", clearResp.message);
+            }
+            // Reload cart state from server (should be empty)
+            await loadCart(demoCustomerId);
+          } catch (err) {
+            console.error("Error clearing cart after invoice:", err);
+          }
+        }
+
+        // Reset local form state so cashier starts fresh
+        setProducts([]);
+        setProductQuantities({});
+        setCustomerInfo({
+          id: null,
+          type: "Guest Customer",
+          name: "Guest Customer",
+          description: "Walk-in customer",
+          contact: "No contact information",
+          hasInfo: false,
+        });
+        setDiscount(null);
+        setSelectedPaymentMethod("Cash");
+
+        // Auto-hide success message after 2s
+        setTimeout(() => setSuccessMessage(""), 2000);
       } else {
         setErrorMessage(response.message || "Failed to create invoice");
       }
@@ -653,7 +723,7 @@ const CreateInvoice = () => {
                             </span>
                           </td>
                           <td className="create-invoice-price">
-                            ${product.price.toFixed(2)}
+                            {product.price.toLocaleString("vi-VN")}VNĐ
                           </td>
                           <td className="create-invoice-stock">
                             {product.stock}
@@ -798,10 +868,10 @@ const CreateInvoice = () => {
                           </div>
                         </td>
                         <td className="create-invoice-price">
-                          ${product.price.toFixed(2)}
+                          {product.price.toLocaleString("vi-VN")}VNĐ
                         </td>
                         <td className="create-invoice-total">
-                          ${product.total.toFixed(2)}
+                          {product.total.toLocaleString("vi-VN")}VNĐ
                         </td>
                         <td>
                           <button
@@ -832,7 +902,7 @@ const CreateInvoice = () => {
                 <div className="create-invoice-subtotal-row">
                   <span>Subtotal ({products.length} items)</span>
                   <span className="create-invoice-subtotal-amount">
-                    ${subtotal.toFixed(2)}
+                    {subtotal.toLocaleString("vi-VN")}VNĐ
                   </span>
                 </div>
               )}
@@ -1039,25 +1109,25 @@ const CreateInvoice = () => {
 
             <div className="create-invoice-summary-row">
               <span>Subtotal</span>
-              <span>${subtotal.toFixed(2)}</span>
+              <span>{subtotal.toLocaleString("vi-VN")}VNĐ</span>
             </div>
 
             <div className="create-invoice-summary-row discount">
               <span>Discount</span>
               <span className="create-invoice-discount-amount">
-                -${discountAmount.toFixed(2)}
+                -{discountAmount.toLocaleString("vi-VN")}VNĐ
               </span>
             </div>
 
             <div className="create-invoice-summary-row">
               <span>Tax (9%)</span>
-              <span>${taxAmount.toFixed(2)}</span>
+              <span>{taxAmount.toLocaleString("vi-VN")}VNĐ</span>
             </div>
 
             <div className="create-invoice-summary-row total">
               <span>Total Amount</span>
               <span className="create-invoice-total-amount">
-                ${totalAmount.toFixed(2)}
+                {totalAmount.toLocaleString("vi-VN")}VNĐ
               </span>
             </div>
 
