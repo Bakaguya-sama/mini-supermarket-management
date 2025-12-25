@@ -33,6 +33,7 @@ const EditProductView = () => {
     storageLocation: "",
     sku: "",
     barcode: "",
+    expiryDate: "",
   });
 
   const [productImage, setProductImage] = useState(null);
@@ -42,8 +43,10 @@ const EditProductView = () => {
   useEffect(() => {
     const loadData = async () => {
       try {
-        // Load suppliers
+        setIsLoading(true);
         setIsLoadingSuppliers(true);
+
+        // Load suppliers
         const suppliersResponse = await supplierService.getAll({ limit: 100 });
         if (suppliersResponse.success && suppliersResponse.data) {
           setSuppliers(suppliersResponse.data);
@@ -70,24 +73,19 @@ const EditProductView = () => {
             storageLocation: product.storage_location || "",
             sku: product.sku || "",
             barcode: product.barcode || "",
+            expiryDate: product.expiry_date
+              ? new Date(product.expiry_date).toISOString().slice(0, 10)
+              : "",
           });
-
-          // Set image preview
-          if (product.image_link) {
-            setImagePreview(product.image_link);
-          }
-        } else {
-          setErrorMessage("Failed to load product details");
         }
       } catch (error) {
-        console.error("Error loading data:", error);
-        setErrorMessage(error.message || "Failed to load product");
+        console.error("Failed to load product data:", error);
+        setErrorMessage("Failed to load product data");
       } finally {
         setIsLoading(false);
         setIsLoadingSuppliers(false);
       }
     };
-
     loadData();
   }, [id]);
 
@@ -192,6 +190,7 @@ const EditProductView = () => {
         maximumStockLevel: formData.maximumStockLevel,
         storageLocation: formData.storageLocation,
         image_link: image_link,
+        expiryDate: formData.expiryDate || null,
       };
 
       console.log("Updating product with name:", formData.productName);
@@ -267,6 +266,17 @@ const EditProductView = () => {
         "Current stock cannot be greater than maximum stock level"
       );
       return false;
+    }
+
+    // validate expiry date
+    if (formData.expiryDate) {
+      const d = new Date(formData.expiryDate);
+      const now = new Date();
+      now.setHours(0, 0, 0, 0);
+      if (isNaN(d) || d < now) {
+        setErrorMessage("Please provide a valid future expiry date");
+        return false;
+      }
     }
 
     return true;
@@ -402,6 +412,22 @@ const EditProductView = () => {
                     value={formData.origin}
                     onChange={handleInputChange}
                     placeholder="Enter the origin of product"
+                    className="edit-product-form-input"
+                  />
+                </div>
+                <div className="edit-product-form-group">
+                  <label
+                    htmlFor="expiryDate"
+                    className="edit-product-form-label"
+                  >
+                    Expiry Date
+                  </label>
+                  <input
+                    type="date"
+                    id="expiryDate"
+                    name="expiryDate"
+                    value={formData.expiryDate}
+                    onChange={handleInputChange}
                     className="edit-product-form-input"
                   />
                 </div>

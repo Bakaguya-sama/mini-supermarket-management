@@ -472,6 +472,14 @@ async function seedDatabase() {
 
     // 6. PRODUCTS (12 sản phẩm)
     console.log("6/23 📦 Tạo Products...");
+
+    // helper to generate dates relative to today
+    const addDays = (d) => {
+      const dt = new Date();
+      dt.setDate(dt.getDate() + d);
+      return dt;
+    };
+
     const products = await Product.insertMany([
       {
         name: "Gạo ST25 5kg",
@@ -481,6 +489,7 @@ async function seedDatabase() {
         minimum_stock_level: 20,
         maximum_stock_level: 200,
         price: 145000,
+        expiry_date: addDays(365 * 2),
         status: "active",
         supplier_id: suppliers[0]._id,
         category: "Grains",
@@ -497,6 +506,7 @@ async function seedDatabase() {
         minimum_stock_level: 50,
         maximum_stock_level: 500,
         price: 32000,
+        expiry_date: addDays(30),
         status: "active",
         supplier_id: suppliers[1]._id,
         category: "Dairy & Eggs",
@@ -513,6 +523,7 @@ async function seedDatabase() {
         minimum_stock_level: 100,
         maximum_stock_level: 1000,
         price: 10000,
+        expiry_date: addDays(365),
         status: "active",
         supplier_id: suppliers[3]._id,
         category: "Beverages",
@@ -529,6 +540,7 @@ async function seedDatabase() {
         minimum_stock_level: 20,
         maximum_stock_level: 150,
         price: 45000,
+        expiry_date: addDays(14),
         status: "active",
         supplier_id: suppliers[0]._id,
         category: "Dairy & Eggs",
@@ -545,6 +557,7 @@ async function seedDatabase() {
         minimum_stock_level: 100,
         maximum_stock_level: 600,
         price: 4000,
+        expiry_date: addDays(365 * 2),
         status: "active",
         supplier_id: suppliers[0]._id,
         category: "Snacks",
@@ -561,6 +574,7 @@ async function seedDatabase() {
         minimum_stock_level: 30,
         maximum_stock_level: 300,
         price: 28000,
+        expiry_date: addDays(3),
         status: "active",
         supplier_id: suppliers[0]._id,
         category: "Bakery",
@@ -577,6 +591,7 @@ async function seedDatabase() {
         minimum_stock_level: 100,
         maximum_stock_level: 800,
         price: 5000,
+        expiry_date: addDays(365 * 3),
         status: "active",
         supplier_id: suppliers[0]._id,
         category: "Beverages",
@@ -593,6 +608,7 @@ async function seedDatabase() {
         minimum_stock_level: 30,
         maximum_stock_level: 250,
         price: 42000,
+        expiry_date: addDays(365 * 3),
         status: "active",
         supplier_id: suppliers[0]._id,
         category: "Household",
@@ -609,6 +625,7 @@ async function seedDatabase() {
         minimum_stock_level: 40,
         maximum_stock_level: 400,
         price: 35000,
+        expiry_date: addDays(30),
         status: "active",
         supplier_id: suppliers[2]._id,
         category: "Dairy & Eggs",
@@ -625,6 +642,7 @@ async function seedDatabase() {
         minimum_stock_level: 100,
         maximum_stock_level: 1000,
         price: 9500,
+        expiry_date: addDays(365),
         status: "active",
         supplier_id: suppliers[3]._id,
         category: "Beverages",
@@ -641,6 +659,7 @@ async function seedDatabase() {
         minimum_stock_level: 20,
         maximum_stock_level: 200,
         price: 125000,
+        expiry_date: addDays(365 * 2),
         status: "active",
         supplier_id: suppliers[0]._id,
         category: "Household",
@@ -657,6 +676,7 @@ async function seedDatabase() {
         minimum_stock_level: 30,
         maximum_stock_level: 300,
         price: 22000,
+        expiry_date: addDays(365 * 2),
         status: "active",
         supplier_id: suppliers[0]._id,
         category: "Household",
@@ -981,29 +1001,59 @@ async function seedDatabase() {
     // Update shelf current_quantity based on ProductShelf mappings
     console.log("   Updating shelf quantities...");
     for (const mapping of productShelves) {
-      await Shelf.findByIdAndUpdate(
-        mapping.shelf_id,
-        { $inc: { current_quantity: mapping.quantity } }
-      );
+      await Shelf.findByIdAndUpdate(mapping.shelf_id, {
+        $inc: { current_quantity: mapping.quantity },
+      });
       // Also deduct from product current_stock
-      await Product.findByIdAndUpdate(
-        mapping.product_id,
-        { $inc: { current_stock: -mapping.quantity } }
-      );
+      await Product.findByIdAndUpdate(mapping.product_id, {
+        $inc: { current_stock: -mapping.quantity },
+      });
     }
     console.log(`   ✅ Shelf quantities and product stocks updated\n`);
 
     // 9. PROMOTIONS (Nhiều khuyến mãi đa dạng)
     console.log("9/23 🎁 Tạo Promotions...");
     const now = new Date();
-    const oneMonthAgo = new Date(now.getFullYear(), now.getMonth() - 1, now.getDate());
-    const oneWeekAgo = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 7);
-    const tomorrow = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
-    const oneWeekLater = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 7);
-    const oneMonthLater = new Date(now.getFullYear(), now.getMonth() + 1, now.getDate());
-    const threeMonthsLater = new Date(now.getFullYear(), now.getMonth() + 3, now.getDate());
-    const sixMonthsLater = new Date(now.getFullYear(), now.getMonth() + 6, now.getDate());
-    const oneYearLater = new Date(now.getFullYear() + 1, now.getMonth(), now.getDate());
+    const oneMonthAgo = new Date(
+      now.getFullYear(),
+      now.getMonth() - 1,
+      now.getDate()
+    );
+    const oneWeekAgo = new Date(
+      now.getFullYear(),
+      now.getMonth(),
+      now.getDate() - 7
+    );
+    const tomorrow = new Date(
+      now.getFullYear(),
+      now.getMonth(),
+      now.getDate() + 1
+    );
+    const oneWeekLater = new Date(
+      now.getFullYear(),
+      now.getMonth(),
+      now.getDate() + 7
+    );
+    const oneMonthLater = new Date(
+      now.getFullYear(),
+      now.getMonth() + 1,
+      now.getDate()
+    );
+    const threeMonthsLater = new Date(
+      now.getFullYear(),
+      now.getMonth() + 3,
+      now.getDate()
+    );
+    const sixMonthsLater = new Date(
+      now.getFullYear(),
+      now.getMonth() + 6,
+      now.getDate()
+    );
+    const oneYearLater = new Date(
+      now.getFullYear() + 1,
+      now.getMonth(),
+      now.getDate()
+    );
 
     const promotions = await Promotion.insertMany([
       // Active promotions - Percentage discounts
@@ -1214,7 +1264,7 @@ async function seedDatabase() {
         discount_override: null,
         isDelete: false,
       },
-      
+
       // Mega Sale 30% - Applies to all products
       {
         promotion_id: promotions[1]._id, // MEGA30
