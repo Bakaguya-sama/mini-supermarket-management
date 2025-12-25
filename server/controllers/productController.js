@@ -1,5 +1,11 @@
 // controllers/productController.js
-const { Product, Supplier, ProductShelf, ProductStock } = require("../models");
+const {
+  Product,
+  Supplier,
+  ProductShelf,
+  ProductStock,
+  ProductBatch,
+} = require("../models");
 
 // @desc    Get all products with filters and pagination
 // @route   GET /api/products
@@ -14,6 +20,8 @@ exports.getAllProducts = async (req, res) => {
       search,
       minPrice,
       maxPrice,
+      expiry_before,
+      expiry_after,
       sort = "-createdAt",
     } = req.query;
 
@@ -32,6 +40,29 @@ exports.getAllProducts = async (req, res) => {
         { name: { $regex: search, $options: "i" } },
         { description: { $regex: search, $options: "i" } },
       ];
+    }
+
+    // Expiry date range filter
+    if (expiry_before || expiry_after) {
+      query.expiry_date = {};
+      if (expiry_before) {
+        const d = new Date(expiry_before);
+        if (isNaN(d)) {
+          return res
+            .status(400)
+            .json({ success: false, message: "Invalid expiry_before date" });
+        }
+        query.expiry_date.$lte = d;
+      }
+      if (expiry_after) {
+        const d2 = new Date(expiry_after);
+        if (isNaN(d2)) {
+          return res
+            .status(400)
+            .json({ success: false, message: "Invalid expiry_after date" });
+        }
+        query.expiry_date.$gte = d2;
+      }
     }
 
     // Calculate pagination
@@ -207,11 +238,55 @@ exports.getProductById = async (req, res) => {
       product_id: product._id,
     }).populate("shelf_id");
 
+    // Aggregate batch summary (distinct expiry dates, counts, quantities)
+    const batchAgg = await ProductBatch.aggregate([
+      { $match: { product_id: product._id, isDelete: false } },
+      {
+        $group: {
+          _id: "$expiry_date",
+          batchCount: { $sum: 1 },
+          totalQuantity: { $sum: "$quantity" },
+        },
+      },
+      { $sort: { _id: 1 } },
+    ]);
+
+    const now = new Date();
+    const batches = batchAgg.map((b) => ({
+      expiry_date: b._id ? b._id : null,
+      batchCount: b.batchCount,
+      totalQuantity: b.totalQuantity,
+    }));
+
+    const distinctExpiryCount = batches.filter(
+      (b) => b.expiry_date !== null
+    ).length;
+    const expiredBatches = batches.filter(
+      (b) => b.expiry_date && new Date(b.expiry_date) < now
+    );
+    const expiredBatchesCount = expiredBatches.reduce(
+      (s, b) => s + (b.batchCount || 0),
+      0
+    );
+    const expiredTotalQuantity = expiredBatches.reduce(
+      (s, b) => s + (b.totalQuantity || 0),
+      0
+    );
+    const earliestExpiry =
+      batches.find((b) => b.expiry_date !== null)?.expiry_date || null;
+
     res.status(200).json({
       success: true,
       data: {
         ...product.toObject(),
         shelfLocations,
+        batch_summary: {
+          distinctExpiryCount,
+          batches,
+          expiredBatchesCount,
+          expiredTotalQuantity,
+          earliestExpiry,
+        },
       },
     });
   } catch (error) {
@@ -240,6 +315,7 @@ exports.createProduct = async (req, res) => {
       supplier_id,
       category,
       image_link,
+      expiry_date,
     } = req.body;
 
     // Validate required fields
@@ -248,6 +324,28 @@ exports.createProduct = async (req, res) => {
         success: false,
         message: "Please provide product name and unit",
       });
+    }
+
+    // Validate expiry_date if provided
+    let expiryDateObj;
+    if (
+      expiry_date !== undefined &&
+      expiry_date !== null &&
+      expiry_date !== ""
+    ) {
+      expiryDateObj = new Date(expiry_date);
+      if (isNaN(expiryDateObj)) {
+        return res
+          .status(400)
+          .json({ success: false, message: "Invalid expiry_date" });
+      }
+      const now = new Date();
+      if (expiryDateObj < now) {
+        return res.status(400).json({
+          success: false,
+          message: "expiry_date cannot be in the past",
+        });
+      }
     }
 
     // Validate supplier if provided
@@ -295,6 +393,7 @@ exports.createProduct = async (req, res) => {
       supplier_id,
       category,
       image_link,
+      expiry_date: expiryDateObj || undefined,
     });
 
     await product.populate(
@@ -342,6 +441,7 @@ exports.updateProduct = async (req, res) => {
       supplier_id,
       category,
       image_link,
+      expiry_date,
     } = req.body;
 
     // Validate supplier if provided
@@ -383,6 +483,77 @@ exports.updateProduct = async (req, res) => {
     if (category !== undefined) product.category = category;
     if (image_link !== undefined) product.image_link = image_link;
 
+    // expiry_date handling (allow clearing with null or empty string)
+    if (expiry_date !== undefined) {
+      if (expiry_date === null || expiry_date === "") {
+        product.expiry_date = null;
+      } else {
+        const expiryDateObj = new Date(expiry_date);
+        if (isNaN(expiryDateObj)) {
+          return res
+            .status(400)
+            .json({ success: false, message: "Invalid expiry_date" });
+        }
+        const now = new Date();
+        if (expiryDateObj < now) {
+          return res.status(400).json({
+            success: false,
+            message: "expiry_date cannot be in the past",
+          });
+        }
+        product.expiry_date = expiryDateObj;
+      }
+    }
+
+    // If restockBatch present, create a batch and update product stock accordingly
+    const { restockBatch } = req.body;
+    let createdBatch = null;
+    if (restockBatch && typeof restockBatch === "object") {
+      const qty = parseInt(restockBatch.quantity) || 0;
+      if (qty < 0)
+        return res.status(400).json({
+          success: false,
+          message: "restockBatch.quantity must be >= 0",
+        });
+
+      const expiryObj = restockBatch.expiry_date
+        ? new Date(restockBatch.expiry_date)
+        : undefined;
+      if (restockBatch.expiry_date && isNaN(expiryObj)) {
+        return res.status(400).json({
+          success: false,
+          message: "Invalid restockBatch.expiry_date",
+        });
+      }
+
+      createdBatch = await ProductBatch.create({
+        product_id: product._id,
+        batch_id: restockBatch.batch_id || undefined,
+        quantity: qty,
+        expiry_date: expiryObj,
+        sku: restockBatch.sku || product.sku || undefined,
+        barcode: restockBatch.barcode || product.barcode || undefined,
+        supplier_id:
+          restockBatch.supplier_id || product.supplier_id || undefined,
+        shelf_id: restockBatch.shelf_id || undefined,
+        purchase_date: restockBatch.purchase_date
+          ? new Date(restockBatch.purchase_date)
+          : undefined,
+        cost: restockBatch.cost || undefined,
+        source: "restock",
+      });
+
+      // Increment product current_stock
+      if (qty !== 0) {
+        await Product.findByIdAndUpdate(product._id, {
+          $inc: { current_stock: qty },
+        });
+        // refresh product.current_stock
+        const refreshed = await Product.findById(product._id);
+        product.current_stock = refreshed.current_stock;
+      }
+    }
+
     await product.save();
     await product.populate(
       "supplier_id",
@@ -392,7 +563,7 @@ exports.updateProduct = async (req, res) => {
     res.status(200).json({
       success: true,
       message: "Product updated successfully",
-      data: product,
+      data: { product, createdBatch },
     });
   } catch (error) {
     res.status(500).json({

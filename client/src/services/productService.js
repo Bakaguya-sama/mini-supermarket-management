@@ -4,9 +4,9 @@
  * Xử lí tất cả CRUD operations: Create, Read, Update, Delete
  */
 
-import apiClient from './apiClient';
+import apiClient from "./apiClient";
 
-const API_BASE_URL = '/products';
+const API_BASE_URL = "/products";
 
 export const productService = {
   /**
@@ -16,12 +16,12 @@ export const productService = {
    */
   getAll: async (params = {}) => {
     try {
-      console.log('📦 Fetching products with params:', params);
-      
+      console.log("📦 Fetching products with params:", params);
+
       const response = await apiClient.get(API_BASE_URL, { params });
-      
-      console.log('✅ Raw response:', response.data);
-      
+
+      console.log("✅ Raw response:", response.data);
+
       // Handle both formats: array directly OR object with data property
       let formattedResponse;
       if (Array.isArray(response.data)) {
@@ -30,7 +30,7 @@ export const productService = {
           success: true,
           data: response.data,
           count: response.data.length,
-          total: response.data.length
+          total: response.data.length,
         };
       } else if (response.data.success !== undefined) {
         // Backend returning object format
@@ -40,18 +40,18 @@ export const productService = {
         formattedResponse = {
           success: true,
           data: response.data || [],
-          count: Array.isArray(response.data) ? response.data.length : 0
+          count: Array.isArray(response.data) ? response.data.length : 0,
         };
       }
-      
-      console.log('✅ Products fetched successfully:', formattedResponse.data);
+
+      console.log("✅ Products fetched successfully:", formattedResponse.data);
       return formattedResponse;
     } catch (error) {
-      console.error('❌ Error fetching products:', error);
+      console.error("❌ Error fetching products:", error);
       return {
         success: false,
-        message: error.message || 'Failed to fetch products',
-        data: []
+        message: error.message || "Failed to fetch products",
+        data: [],
       };
     }
   },
@@ -64,11 +64,11 @@ export const productService = {
   getById: async (id) => {
     try {
       console.log(`📦 Fetching product with ID: ${id}`);
-      
+
       const response = await apiClient.get(`${API_BASE_URL}/${id}`);
-      
-      console.log('✅ Raw product response:', response.data);
-      
+
+      console.log("✅ Raw product response:", response.data);
+
       // Handle both formats
       let formattedResponse;
       if (response.data.success !== undefined) {
@@ -77,20 +77,20 @@ export const productService = {
         // Product data directly
         formattedResponse = {
           success: true,
-          data: response.data
+          data: response.data,
         };
       } else {
         formattedResponse = response.data;
       }
-      
-      console.log('✅ Product fetched successfully:', formattedResponse.data);
+
+      console.log("✅ Product fetched successfully:", formattedResponse.data);
       return formattedResponse;
     } catch (error) {
       console.error(`❌ Error fetching product ${id}:`, error);
       return {
         success: false,
-        message: error.message || 'Failed to fetch product',
-        data: null
+        message: error.message || "Failed to fetch product",
+        data: null,
       };
     }
   },
@@ -102,41 +102,56 @@ export const productService = {
    */
   create: async (productData) => {
     try {
-      console.log('📦 Creating new product:', productData);
-      
+      console.log("📦 Creating new product:", productData);
+
       const payload = {
         name: productData.name,
-        description: productData.description || '',
+        description: productData.description || "",
         unit: productData.unit,
         price: parseFloat(productData.price) || 0,
-        current_stock: parseInt(productData.currentStock) || parseInt(productData.current_stock) || 0,
-        minimum_stock_level: parseInt(productData.minimumStockLevel) || parseInt(productData.minimum_stock_level) || 10,
-        maximum_stock_level: parseInt(productData.maximumStockLevel) || parseInt(productData.maximum_stock_level) || 1000,
+        current_stock:
+          parseInt(productData.currentStock) ||
+          parseInt(productData.current_stock) ||
+          0,
+        minimum_stock_level:
+          parseInt(productData.minimumStockLevel) ||
+          parseInt(productData.minimum_stock_level) ||
+          10,
+        maximum_stock_level:
+          parseInt(productData.maximumStockLevel) ||
+          parseInt(productData.maximum_stock_level) ||
+          1000,
         category: productData.category,
         supplier_id: productData.supplier_id,
-        status: 'active',
-        storage_location: productData.storageLocation || productData.storage_location || '',
-        image_link: productData.image_link || null
+        status: "active",
+        storage_location:
+          productData.storageLocation || productData.storage_location || "",
+        image_link: productData.image_link || null,
+        // accept expiry_date in various keys
+        expiry_date: productData.expiry_date || productData.expiryDate || null,
       };
 
       const response = await apiClient.post(API_BASE_URL, payload);
-      
-      console.log('✅ Product created response - success:', response.data?.success);
-      
+
+      console.log(
+        "✅ Product created response - success:",
+        response.data?.success
+      );
+
       // Ensure response has proper format
       const formattedResponse = {
         success: response.data?.success ?? true,
-        message: response.data?.message || 'Product created successfully',
-        data: response.data?.data || response.data
+        message: response.data?.message || "Product created successfully",
+        data: response.data?.data || response.data,
       };
-      
+
       return formattedResponse;
     } catch (error) {
-      console.error('❌ Error creating product:', error.message);
+      console.error("❌ Error creating product:", error.message);
       return {
         success: false,
-        message: error.message || 'Failed to create product',
-        data: null
+        message: error.message || "Failed to create product",
+        data: null,
       };
     }
   },
@@ -150,40 +165,56 @@ export const productService = {
   update: async (id, productData) => {
     try {
       console.log(`📦 Updating product ${id}:`, productData);
-      
+
       const payload = {
         name: productData.name,
-        description: productData.description || '',
+        description: productData.description || "",
         unit: productData.unit,
         price: parseFloat(productData.price) || 0,
-        current_stock: parseInt(productData.currentStock) || parseInt(productData.current_stock) || 0,
-        minimum_stock_level: parseInt(productData.minimumStockLevel) || parseInt(productData.minimum_stock_level) || 10,
-        maximum_stock_level: parseInt(productData.maximumStockLevel) || parseInt(productData.maximum_stock_level) || 1000,
+        current_stock:
+          parseInt(productData.currentStock) ||
+          parseInt(productData.current_stock) ||
+          0,
+        minimum_stock_level:
+          parseInt(productData.minimumStockLevel) ||
+          parseInt(productData.minimum_stock_level) ||
+          10,
+        maximum_stock_level:
+          parseInt(productData.maximumStockLevel) ||
+          parseInt(productData.maximum_stock_level) ||
+          1000,
         category: productData.category,
         supplier_id: productData.supplier_id,
-        status: productData.status || 'active',
-        storage_location: productData.storageLocation || productData.storage_location || '',
-        image_link: productData.image_link || null
+        status: productData.status || "active",
+        storage_location:
+          productData.storageLocation || productData.storage_location || "",
+        image_link: productData.image_link || null,
+        expiry_date: productData.expiry_date || productData.expiryDate || null,
+        // Allow passing restockBatch to backend (optional)
+        restockBatch: productData.restockBatch || undefined,
       };
 
       const response = await apiClient.put(`${API_BASE_URL}/${id}`, payload);
-      
-      console.log('✅ Product updated response - success:', response.data?.success);
-      
+
+      console.log(
+        "✅ Product updated response - success:",
+        response.data?.success
+      );
+
       // Ensure response has proper format
       const formattedResponse = {
         success: response.data?.success ?? true,
-        message: response.data?.message || 'Product updated successfully',
-        data: response.data?.data || response.data
+        message: response.data?.message || "Product updated successfully",
+        data: response.data?.data || response.data,
       };
-      
+
       return formattedResponse;
     } catch (error) {
       console.error(`❌ Error updating product ${id}:`, error.message);
       return {
         success: false,
-        message: error.message || 'Failed to update product',
-        data: null
+        message: error.message || "Failed to update product",
+        data: null,
       };
     }
   },
@@ -196,23 +227,23 @@ export const productService = {
   delete: async (id) => {
     try {
       console.log(`📦 Deleting product ${id}`);
-      
+
       const response = await apiClient.delete(`${API_BASE_URL}/${id}`);
-      
-      console.log('✅ Product deleted successfully:', response.data);
-      
+
+      console.log("✅ Product deleted successfully:", response.data);
+
       // Ensure response has success property
       let formattedResponse = response.data;
       if (!formattedResponse.success) {
         formattedResponse.success = true;
       }
-      
+
       return formattedResponse;
     } catch (error) {
       console.error(`❌ Error deleting product ${id}:`, error);
       return {
         success: false,
-        message: error.message || 'Failed to delete product'
+        message: error.message || "Failed to delete product",
       };
     }
   },
@@ -223,14 +254,14 @@ export const productService = {
    */
   getLowStockProducts: async () => {
     try {
-      console.log('📦 Fetching low stock products');
-      
+      console.log("📦 Fetching low stock products");
+
       const response = await apiClient.get(`${API_BASE_URL}/low-stock`);
-      
-      console.log('✅ Low stock products fetched:', response.data);
+
+      console.log("✅ Low stock products fetched:", response.data);
       return response.data;
     } catch (error) {
-      console.error('❌ Error fetching low stock products:', error);
+      console.error("❌ Error fetching low stock products:", error);
       throw error;
     }
   },
@@ -241,18 +272,23 @@ export const productService = {
    */
   getStats: async () => {
     try {
-      console.log('📦 Fetching product statistics');
-      
+      console.log("📦 Fetching product statistics");
+
       const response = await apiClient.get(`${API_BASE_URL}/stats`);
-      
-      console.log('✅ Product stats fetched:', response.data);
+
+      console.log("✅ Product stats fetched:", response.data);
       return response.data;
     } catch (error) {
-      console.error('❌ Error fetching product stats:', error);
+      console.error("❌ Error fetching product stats:", error);
       return {
         success: false,
-        message: error.message || 'Failed to fetch stats',
-        data: { totalProducts: 0, totalValue: 0, lowStockCount: 0, outOfStockCount: 0 }
+        message: error.message || "Failed to fetch stats",
+        data: {
+          totalProducts: 0,
+          totalValue: 0,
+          lowStockCount: 0,
+          outOfStockCount: 0,
+        },
       };
     }
   },
@@ -266,19 +302,47 @@ export const productService = {
   getByCategory: async (category, params = {}) => {
     try {
       console.log(`📦 Fetching products by category: ${category}`);
-      
+
       const response = await apiClient.get(
         `${API_BASE_URL}/category/${category}`,
         { params }
       );
-      
-      console.log('✅ Category products fetched:', response.data);
+
+      console.log("✅ Category products fetched:", response.data);
       return response.data;
     } catch (error) {
-      console.error(`❌ Error fetching products by category ${category}:`, error);
+      console.error(
+        `❌ Error fetching products by category ${category}:`,
+        error
+      );
       throw error;
     }
-  }
+  },
+
+  /**
+   * Get batches of a product
+   * @param {string} productId
+   */
+  getBatchesByProduct: async (productId) => {
+    try {
+      console.log(`📦 Fetching batches for product ${productId}`);
+      const response = await apiClient.get(
+        `/product-batches/product/${productId}`
+      );
+      console.log("✅ Batches fetched:", response.data);
+      return response.data;
+    } catch (error) {
+      console.error(
+        `❌ Error fetching batches for product ${productId}:`,
+        error
+      );
+      return {
+        success: false,
+        message: error.message || "Failed to fetch batches",
+        data: null,
+      };
+    }
+  },
 };
 
 export default productService;

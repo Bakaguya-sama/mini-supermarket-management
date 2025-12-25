@@ -15,6 +15,8 @@ exports.getAllProductShelves = async (req, res) => {
       limit = 20,
       product_id,
       shelf_id,
+      expiry_before,
+      expiry_after,
       sort = "-createdAt",
     } = req.query;
 
@@ -22,6 +24,26 @@ exports.getAllProductShelves = async (req, res) => {
     const query = { isDelete: false };
     if (product_id) query.product_id = product_id;
     if (shelf_id) query.shelf_id = shelf_id;
+
+    if (expiry_before || expiry_after) {
+      query.expiry_date = {};
+      if (expiry_before) {
+        const d = new Date(expiry_before);
+        if (isNaN(d))
+          return res
+            .status(400)
+            .json({ success: false, message: "Invalid expiry_before date" });
+        query.expiry_date.$lte = d;
+      }
+      if (expiry_after) {
+        const d2 = new Date(expiry_after);
+        if (isNaN(d2))
+          return res
+            .status(400)
+            .json({ success: false, message: "Invalid expiry_after date" });
+        query.expiry_date.$gte = d2;
+      }
+    }
 
     // Calculate pagination
     const skip = (parseInt(page) - 1) * parseInt(limit);
@@ -267,7 +289,7 @@ exports.getProductsByShelf = async (req, res) => {
 // Product CAN be on multiple shelves
 exports.createProductShelf = async (req, res) => {
   try {
-    const { product_id, shelf_id, quantity } = req.body;
+    const { product_id, shelf_id, quantity, expiry_date } = req.body;
 
     // Validate required fields
     if (!product_id || !shelf_id || !quantity || quantity <= 0) {
@@ -275,6 +297,21 @@ exports.createProductShelf = async (req, res) => {
         success: false,
         message: "Product ID, Shelf ID, and valid quantity are required",
       });
+    }
+
+    // Validate expiry_date format if provided
+    let expiryDateObj;
+    if (
+      expiry_date !== undefined &&
+      expiry_date !== null &&
+      expiry_date !== ""
+    ) {
+      expiryDateObj = new Date(expiry_date);
+      if (isNaN(expiryDateObj)) {
+        return res
+          .status(400)
+          .json({ success: false, message: "Invalid expiry_date" });
+      }
     }
 
     // Check if product already exists on THIS SPECIFIC shelf (not any shelf)
@@ -331,6 +368,7 @@ exports.createProductShelf = async (req, res) => {
       product_id,
       shelf_id,
       quantity,
+      expiry_date: expiryDateObj || undefined,
     });
 
     // Deduct from warehouse inventory
@@ -364,7 +402,22 @@ exports.createProductShelf = async (req, res) => {
 // @route   PUT /api/product-shelves/:id
 exports.updateProductShelf = async (req, res) => {
   try {
-    const { quantity } = req.body;
+    const { quantity, expiry_date } = req.body;
+
+    // expiry_date handling (allow clearing)
+    if (expiry_date !== undefined) {
+      if (expiry_date === null || expiry_date === "") {
+        productShelf.expiry_date = null;
+      } else {
+        const expiryDateObj = new Date(expiry_date);
+        if (isNaN(expiryDateObj)) {
+          return res
+            .status(400)
+            .json({ success: false, message: "Invalid expiry_date" });
+        }
+        productShelf.expiry_date = expiryDateObj;
+      }
+    }
 
     const productShelf = await ProductShelf.findOne({
       _id: req.params.id,
@@ -628,7 +681,21 @@ exports.bulkAssignToShelf = async (req, res) => {
 
     for (const item of products) {
       try {
-        const { product_id, quantity } = item;
+        const { product_id, quantity, expiry_date } = item;
+
+        // Validate expiry_date format if provided
+        let itemExpiryObj;
+        if (
+          expiry_date !== undefined &&
+          expiry_date !== null &&
+          expiry_date !== ""
+        ) {
+          itemExpiryObj = new Date(expiry_date);
+          if (isNaN(itemExpiryObj)) {
+            results.errors.push({ product_id, error: "Invalid expiry_date" });
+            continue;
+          }
+        }
 
         // Get product
         const product = await Product.findById(product_id);
@@ -667,6 +734,24 @@ exports.bulkAssignToShelf = async (req, res) => {
         }
 
         if (existingSameShelf) {
+          // If expiry provided, ensure it matches existing mapping, or set if existing is null
+          if (itemExpiryObj) {
+            if (existingSameShelf.expiry_date) {
+              if (
+                existingSameShelf.expiry_date.getTime() !==
+                itemExpiryObj.getTime()
+              ) {
+                results.errors.push({
+                  product_id,
+                  error: "Expiry date mismatch with existing shelf mapping",
+                });
+                continue;
+              }
+            } else {
+              existingSameShelf.expiry_date = itemExpiryObj;
+            }
+          }
+
           // Add to existing mapping on same shelf
           existingSameShelf.quantity =
             (existingSameShelf.quantity || 0) + quantity;
@@ -695,6 +780,7 @@ exports.bulkAssignToShelf = async (req, res) => {
           product_id,
           shelf_id,
           quantity,
+          expiry_date: itemExpiryObj || undefined,
         });
 
         // Update warehouse and shelf
@@ -768,7 +854,8 @@ exports.getProductsForDamagedRecord = async (req, res) => {
       })
       .populate({
         path: "shelf_id",
-        select: "shelf_number shelf_name section_number slot_number capacity current_quantity",
+        select:
+          "shelf_number shelf_name section_number slot_number capacity current_quantity",
       })
       .sort("shelf_id product_id")
       .skip(skip)

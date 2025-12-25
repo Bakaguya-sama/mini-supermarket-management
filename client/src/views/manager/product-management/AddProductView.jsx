@@ -30,6 +30,7 @@ const AddProductView = () => {
     storageLocation: "",
     sku: "",
     barcode: "",
+    expiryDate: "",
   });
 
   const [productImage, setProductImage] = useState(null);
@@ -47,6 +48,7 @@ const AddProductView = () => {
   const [restockAddedStock, setRestockAddedStock] = useState("");
   const [restockSku, setRestockSku] = useState("");
   const [restockBarcode, setRestockBarcode] = useState("");
+  const [restockExpiryDate, setRestockExpiryDate] = useState("");
   const [isRestocking, setIsRestocking] = useState(false);
 
   // Export states
@@ -107,6 +109,11 @@ const AddProductView = () => {
         setSelectedProductData(response.data);
         setRestockSku(response.data.sku || "");
         setRestockBarcode(response.data.barcode || "");
+        setRestockExpiryDate(
+          response.data.expiry_date
+            ? new Date(response.data.expiry_date).toISOString().slice(0, 10)
+            : ""
+        );
       } else {
         setErrorMessage("Failed to load product details");
       }
@@ -211,6 +218,19 @@ const AddProductView = () => {
       return false;
     }
 
+    // validate restock expiry date if provided
+    if (restockExpiryDate) {
+      const d = new Date(restockExpiryDate);
+      const now = new Date();
+      now.setHours(0, 0, 0, 0);
+      if (isNaN(d) || d < now) {
+        setErrorMessage(
+          "Please provide a valid future expiry date for restock"
+        );
+        return false;
+      }
+    }
+
     return true;
   };
 
@@ -236,18 +256,56 @@ const AddProductView = () => {
 
       const currentStock = parseInt(productResp.data.current_stock) || 0;
       const added = parseInt(restockAddedStock);
-      const newStock = currentStock + added;
 
-      const payload = {
-        currentStock: newStock,
-        sku: restockSku,
-        barcode: restockBarcode,
+      // Build restockBatch object; backend will create a ProductBatch and update product stock
+      const restockBatch = {
+        quantity: added,
+        expiry_date: restockExpiryDate || null,
+        sku: restockSku || undefined,
+        barcode: restockBarcode || undefined,
       };
 
-      const response = await productService.update(selectedProductId, payload);
+      const response = await productService.update(selectedProductId, {
+        restockBatch,
+      });
 
       if (response.success) {
-        setSuccessMessage(`Nhập thêm ${added} cho sản phẩm thành công`);
+        // Backend returns { product, createdBatch } in data
+        const createdBatch = response.data?.createdBatch;
+        if (createdBatch) {
+          const exp = createdBatch.expiry_date
+            ? new Date(createdBatch.expiry_date).toLocaleDateString()
+            : "—";
+          setSuccessMessage(
+            `Restock successful: +${added} units (batch ${
+              createdBatch._id || createdBatch.batch_id || ""
+            }, expiry: ${exp})`
+          );
+
+          // Notify other views to refresh batches for this product
+          try {
+            const detail = {
+              productId: selectedProductId,
+              batch: createdBatch,
+            };
+            window.dispatchEvent(
+              new CustomEvent("productBatchCreated", { detail })
+            );
+            // repeat shortly in case listener not mounted yet
+            setTimeout(
+              () =>
+                window.dispatchEvent(
+                  new CustomEvent("productBatchCreated", { detail })
+                ),
+              600
+            );
+          } catch (err) {
+            console.warn("Could not dispatch productBatchCreated event", err);
+          }
+        } else {
+          setSuccessMessage(`Nhập thêm ${added} cho sản phẩm thành công`);
+        }
+
         // Optionally navigate back to products list
         setTimeout(() => {
           navigate("/products");
@@ -372,6 +430,17 @@ const AddProductView = () => {
       return false;
     }
 
+    // Validate expiry date if provided
+    if (formData.expiryDate) {
+      const d = new Date(formData.expiryDate);
+      const now = new Date();
+      now.setHours(0, 0, 0, 0);
+      if (isNaN(d) || d < now) {
+        setErrorMessage("Please provide a valid future expiry date");
+        return false;
+      }
+    }
+
     return true;
   };
 
@@ -406,6 +475,7 @@ const AddProductView = () => {
         maximumStockLevel: formData.maximumStockLevel,
         storageLocation: formData.storageLocation,
         image_link: image_link,
+        expiryDate: formData.expiryDate || null,
       };
 
       console.log("Submitting product with name:", formData.productName);
@@ -592,6 +662,22 @@ const AddProductView = () => {
                       value={formData.origin}
                       onChange={handleInputChange}
                       placeholder="Enter the origin of product"
+                      className="add-product-form-input"
+                    />
+                  </div>
+                  <div className="add-product-form-group">
+                    <label
+                      htmlFor="expiryDate"
+                      className="add-product-form-label"
+                    >
+                      Expiry Date
+                    </label>
+                    <input
+                      type="date"
+                      id="expiryDate"
+                      name="expiryDate"
+                      value={formData.expiryDate}
+                      onChange={handleInputChange}
                       className="add-product-form-input"
                     />
                   </div>
@@ -886,6 +972,23 @@ const AddProductView = () => {
                           className="add-product-form-input"
                         />
                       </div>
+                      <div className="add-product-form-group">
+                        <label className="add-product-form-label">
+                          Current Expiry
+                        </label>
+                        <input
+                          type="text"
+                          readOnly
+                          value={
+                            selectedProductData.expiry_date
+                              ? new Date(
+                                  selectedProductData.expiry_date
+                                ).toLocaleDateString()
+                              : "—"
+                          }
+                          className="add-product-form-input"
+                        />
+                      </div>
                     </div>
                   </>
                 )}
@@ -952,6 +1055,22 @@ const AddProductView = () => {
                         Generate
                       </button>
                     </div>
+                  </div>
+
+                  <div className="add-product-form-group">
+                    <label
+                      htmlFor="restockExpiryDate"
+                      className="add-product-form-label"
+                    >
+                      Expiry Date
+                    </label>
+                    <input
+                      type="date"
+                      id="restockExpiryDate"
+                      value={restockExpiryDate}
+                      onChange={(e) => setRestockExpiryDate(e.target.value)}
+                      className="add-product-form-input"
+                    />
                   </div>
                 </div>
               </div>
@@ -1050,6 +1169,23 @@ const AddProductView = () => {
                           type="number"
                           readOnly
                           value={selectedProductData.maximum_stock_level ?? 0}
+                          className="add-product-form-input"
+                        />
+                      </div>
+                      <div className="add-product-form-group">
+                        <label className="add-product-form-label">
+                          Current Expiry
+                        </label>
+                        <input
+                          type="text"
+                          readOnly
+                          value={
+                            selectedProductData.expiry_date
+                              ? new Date(
+                                  selectedProductData.expiry_date
+                                ).toLocaleDateString()
+                              : "—"
+                          }
                           className="add-product-form-input"
                         />
                       </div>
