@@ -281,7 +281,7 @@ const SectionListView = () => {
                         >
                           <FaEdit />
                         </button>
-                        <button
+                        {/* <button
                           className="section-action-btn section-delete-btn"
                           onClick={() => handleDelete(section)}
                           title={
@@ -298,7 +298,7 @@ const SectionListView = () => {
                           }}
                         >
                           <FaTrash />
-                        </button>
+                        </button> */}
                       </div>
                     </td>
                   </tr>

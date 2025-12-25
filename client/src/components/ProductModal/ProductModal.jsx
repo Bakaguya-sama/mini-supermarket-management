@@ -67,7 +67,7 @@ const ProductModal = ({ product, isOpen, onClose }) => {
 
   // Format price
   const formatPrice = (price) => {
-    return `$${parseFloat(price || 0).toFixed(2)}`;
+    return `${parseFloat(price || 0).toLocaleString("vi-VN")}VNĐ`;
   };
 
   // Get supplier name

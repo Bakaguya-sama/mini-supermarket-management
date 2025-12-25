@@ -276,6 +276,7 @@ const AddCustomerView = () => {
                     Membership Type
                   </label>
                   <select
+                    disabled="true"
                     id="membership_type"
                     name="membership_type"
                     value={formData.membership_type}
