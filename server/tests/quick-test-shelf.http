@@ -1,0 +1,51 @@
+### QUICK TEST - Add Gạo to Shelf A3
+### Using real IDs from database
+
+### Test 1: Add 1 Gạo ST25 to Shelf A3
+POST http://localhost:5000/api/product-shelves/bulk/assign
+Content-Type: application/json
+Authorization: Bearer YOUR_TOKEN_HERE
+
+{
+  "shelf_id": "694d4e4335d6f07f7df6afeb",
+  "products": [
+    {
+      "product_id": "694d4e4335d6f07f7df6afdc",
+      "quantity": 1
+    }
+  ]
+}
+
+### EXPECTED RESULT:
+# {
+#   "success": true,
+#   "message": "Successfully assigned 1 product(s). 0 error(s).",
+#   "data": {
+#     "success": [
+#       {
+#         "product_id": "694d4e4335d6f07f7df6afdc",
+#         "product_name": "Gạo ST25 5kg",
+#         "quantity": 1,
+#         "mapping_id": "..."
+#       }
+#     ],
+#     "errors": [],
+#     "total_assigned": 1
+#   }
+# }
+
+### To get token:
+# 1. Login as merchandise supervisor
+# 2. Copy token from localStorage in browser
+# 3. Or use this test to login first:
+
+### Login to get token
+POST http://localhost:5000/api/auth/login
+Content-Type: application/json
+
+{
+  "username": "merchandise_super1",
+  "password": "password123"
+}
+
+### Then copy the token from response and use in Authorization header above

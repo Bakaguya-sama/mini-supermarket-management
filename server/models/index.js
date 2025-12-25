@@ -602,18 +602,17 @@ const damagedProductSchema = new mongoose.Schema(
       default: "reported",
       enum: [
         "reported",
-        "expired",
-        "damaged",
         "reviewed",
         "removed",
         "resolved",
+        "disposed"
       ],
     },
     description: { type: String },
     image_urls: [{ type: String }],
     resolution_action: {
       type: String,
-      enum: ["discard", "return_to_supplier", "discount", "destroy"],
+      enum: ["expired", "damaged", "other"],
     },
     inventory_adjusted: { type: Boolean, default: false },
     notes: { type: String },

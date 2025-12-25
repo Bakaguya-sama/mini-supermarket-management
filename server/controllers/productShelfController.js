@@ -599,12 +599,17 @@ exports.bulkAssignToShelf = async (req, res) => {
   try {
     const { shelf_id, products } = req.body;
 
+    console.log("\n=== BULK ASSIGN REQUEST ===");
+    console.log("Shelf ID:", shelf_id);
+    console.log("Products:", JSON.stringify(products, null, 2));
+
     if (
       !shelf_id ||
       !products ||
       !Array.isArray(products) ||
       products.length === 0
     ) {
+      console.log("❌ Validation failed: Missing shelf_id or products");
       return res.status(400).json({
         success: false,
         message: "Shelf ID and products array are required",
@@ -614,11 +619,13 @@ exports.bulkAssignToShelf = async (req, res) => {
     // Get shelf
     const shelf = await Shelf.findById(shelf_id);
     if (!shelf) {
+      console.log("❌ Shelf not found:", shelf_id);
       return res.status(404).json({
         success: false,
         message: "Shelf not found",
       });
     }
+    console.log("✅ Shelf found:", shelf.shelf_number, "Capacity:", shelf.capacity, "Current:", shelf.current_quantity);
 
     const results = {
       success: [],
@@ -720,7 +727,14 @@ exports.bulkAssignToShelf = async (req, res) => {
     }
 
     // Save shelf with updated quantity
+    console.log("\n=== Saving shelf with quantity:", shelf.current_quantity, "===");
     await shelf.save();
+    console.log("✅ Shelf saved successfully");
+
+    console.log("\n=== RESULTS ===");
+    console.log("Success:", results.success.length);
+    console.log("Errors:", results.errors.length);
+    console.log("Total assigned:", results.total_assigned);
 
     res.status(results.errors.length > 0 ? 207 : 201).json({
       success: results.errors.length === 0,
