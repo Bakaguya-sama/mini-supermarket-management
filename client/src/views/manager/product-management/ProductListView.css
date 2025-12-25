@@ -269,11 +269,20 @@
 }
 
 .product-table tbody td {
-    padding: 16px;
-    border-bottom: 1px solid #f3f4f6;
+    /* reduce padding to make rows more compact */
+    padding: 10px 12px;
     font-size: 14px;
     color: #374151;
     vertical-align: middle;
+}
+
+/* make price cell align to top to avoid large empty area when other cells are tall */
+td.product-price {
+    font-weight: 600;
+    color: #059669;
+    font-size: 1rem;
+    margin: 32px 0 10px;
+    vertical-align: top;
 }
 
 .product-table tbody tr:last-child td {
@@ -314,11 +323,11 @@
 }
 
 /* Price */
-.product-price {
+/* .product-price {
     font-weight: 600;
     color: #059669;
     font-size: 1rem;
-}
+} */
 
 /* Stock Info */
 .stock-info .stock-number {
@@ -362,6 +371,62 @@
 .status-default {
     background-color: #f3f4f6;
     color: #374151;
+}
+
+/* Multiple-expiry badge */
+.multi-expiry-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-left: 10px;
+    padding: 6px 10px;
+    border-radius: 999px;
+    background: linear-gradient(135deg, #fb923c, #f97316);
+    color: white;
+    font-size: 12px;
+    font-weight: 700;
+    line-height: 1;
+    box-shadow: 0 4px 10px rgba(249, 115, 22, 0.12);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    cursor: default;
+}
+
+.multi-expiry-loading {
+    display: inline-block;
+    margin-left: 8px;
+    color: #6b7280;
+    font-weight: 600;
+}
+
+/* Batch badge (clickable) */
+.batch-badge {
+    margin-left: 8px;
+    padding: 6px 10px;
+    border-radius: 12px;
+    background: linear-gradient(135deg, #fff7ed, #ffd8a8);
+    border: 1px solid #f97316;
+    color: #7c2d12;
+    font-size: 12px;
+    font-weight: 700;
+    line-height: 1;
+    cursor: pointer;
+    transition: transform 0.12s ease, box-shadow 0.12s ease, background 0.12s ease;
+}
+
+.batch-badge:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 18px rgba(249, 115, 22, 0.16);
+    background: linear-gradient(135deg, #fb923c, #f97316);
+    color: white;
+}
+
+.batch-badge:active {
+    transform: translateY(0);
+}
+
+.batch-badge:focus {
+    outline: 2px solid rgba(249, 115, 22, 0.18);
+    outline-offset: 2px;
 }
 
 /* Action buttons */

@@ -8,7 +8,9 @@
     "dev": "nodemon server.js",
     "seed": "node scripts/seed.js",
     "seed:clear": "node scripts/seed.js --clear",
-    "test": "jest --watchAll --verbose"
+    "backfill:expiry": "node scripts/backfill-expiry-dates.js",
+    "migrate:batches": "node scripts/convert-stocks-to-batches.js",
+    "test": "cross-env NODE_ENV=test jest --runInBand --detectOpenHandles --verbose"
   },
   "keywords": [
     "supermarket",
@@ -34,6 +36,7 @@
   "devDependencies": {
     "jest": "^29.7.0",
     "nodemon": "^3.0.2",
-    "supertest": "^6.3.4"
+    "supertest": "^6.3.4",
+    "cross-env": "^7.0.3"
   }
 }
