@@ -445,7 +445,7 @@ const ShelfListView = () => {
                         >
                           <FaEdit />
                         </button>
-                        <button
+                        {/* <button
                           className="shelf-action-btn shelf-delete-btn"
                           onClick={() => handleDelete(shelf)}
                           title={
@@ -458,7 +458,7 @@ const ShelfListView = () => {
                           }}
                         >
                           <FaTrash />
-                        </button>
+                        </button> */}
                       </div>
                     </td>
                   </tr>

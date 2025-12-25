@@ -28,7 +28,7 @@ const InvoiceListView = () => {
     totalInvoices: 0,
     completedInvoices: 0,
     totalRefunded: 0,
-    unpaidAmount: 0
+    unpaidAmount: 0,
   });
   const [totalRecords, setTotalRecords] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
@@ -36,7 +36,7 @@ const InvoiceListView = () => {
   const itemsPerPage = 10;
 
   // ========== API FUNCTIONS ==========
-  
+
   // Load invoices from API
   const loadInvoices = async () => {
     setIsLoading(true);
@@ -45,28 +45,29 @@ const InvoiceListView = () => {
       const params = {
         page: currentPage,
         limit: itemsPerPage,
-        sort: '-invoice_date'
+        sort: "-invoice_date",
       };
 
       // Add filters
       if (searchTerm) {
         params.search = searchTerm;
       }
-      
+
       // Map UI status to API payment_status
-      if (statusFilter && statusFilter !== 'All Status') {
+      if (statusFilter && statusFilter !== "All Status") {
         const statusMap = {
-          'Pending': 'unpaid',
-          'Completed': 'paid',
-          'Refunded': 'refunded'
+          Pending: "unpaid",
+          Completed: "paid",
+          Refunded: "refunded",
         };
-        params.payment_status = statusMap[statusFilter] || statusFilter.toLowerCase();
+        params.payment_status =
+          statusMap[statusFilter] || statusFilter.toLowerCase();
       }
 
       // Add payment method filter (future backend support)
       // Note: Backend API doesn't support payment_method filter yet
       // This is prepared for future implementation
-      if (paymentMethodFilter && paymentMethodFilter !== 'All Methods') {
+      if (paymentMethodFilter && paymentMethodFilter !== "All Methods") {
         params.payment_method = paymentMethodFilter;
       }
 
@@ -76,43 +77,56 @@ const InvoiceListView = () => {
       }
 
       const response = await invoiceService.getAllInvoices(params);
-      
+
       if (response.success && response.data && Array.isArray(response.data)) {
         // Transform API data to UI format
-        const transformedInvoices = response.data.map(invoice => {
+        const transformedInvoices = response.data.map((invoice) => {
           const invoiceDate = new Date(invoice.invoice_date);
-          const itemCount = invoice.items?.length || 0;
-          
+          const itemCount = invoice.items?.length ?? invoice.items_count ?? 0;
+
           // Get customer name
-          const customerName = invoice.customer_id?.account_id?.full_name || 'Guest';
-          const customerInitials = customerName.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
-          
+          const customerName =
+            invoice.customer_id?.account_id?.full_name || "Guest";
+          const customerInitials = customerName
+            .split(" ")
+            .map((n) => n[0])
+            .join("")
+            .toUpperCase()
+            .slice(0, 2);
+
           // Map payment_status to UI status
           const statusMap = {
-            'unpaid': 'Pending',
-            'paid': 'Completed',
-            'partial': 'Pending',
-            'refunded': 'Refunded'
+            unpaid: "Pending",
+            paid: "Completed",
+            partial: "Pending",
+            refunded: "Refunded",
           };
 
           return {
             id: invoice.invoice_number,
             _id: invoice._id,
             txnNumber: `TXN${invoice._id.slice(-6)}`,
-            date: invoiceDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
-            time: invoiceDate.toLocaleTimeString('en-US', { hour12: false }),
+            date: invoiceDate.toLocaleDateString("en-US", {
+              month: "short",
+              day: "numeric",
+              year: "numeric",
+            }),
+            time: invoiceDate.toLocaleTimeString("en-US", { hour12: false }),
             customer: customerName,
             customerInitials: customerInitials,
             customerId: invoice.customer_id?._id,
             hasCustomerInfo: !!invoice.customer_id,
-            staff: 'Staff A', // TODO: Get from order/staff data
-            items: `${itemCount} item${itemCount !== 1 ? 's' : ''}`,
-            itemsList: invoice.notes || 'Invoice items',
-            amount: `$${invoice.total_amount.toFixed(2)}`,
-            paymentMethod: invoice.payment_method || invoice.order_id?.payment_method || 'Cash', // Get from invoice first, fallback to order
-            status: statusMap[invoice.payment_status] || 'Pending',
+            staff: "Staff A", // TODO: Get from order/staff data
+            items: `${itemCount} item${itemCount !== 1 ? "s" : ""}`,
+            itemsList: invoice.notes || "Invoice items",
+            amount: `${invoice.total_amount.toLocaleString("vi-VN")} VNĐ`,
+            paymentMethod:
+              invoice.payment_method ||
+              invoice.order_id?.payment_method ||
+              "Cash", // Get from invoice first, fallback to order
+            status: statusMap[invoice.payment_status] || "Pending",
             rawStatus: invoice.payment_status,
-            rawAmount: invoice.total_amount
+            rawAmount: invoice.total_amount,
           };
         });
 
@@ -120,13 +134,16 @@ const InvoiceListView = () => {
         setTotalRecords(response.total || 0);
         setTotalPages(response.pages || 0);
       } else {
-        console.error('Failed to load invoices:', response.message || 'No data in response');
+        console.error(
+          "Failed to load invoices:",
+          response.message || "No data in response"
+        );
         setInvoices([]);
         setTotalRecords(0);
         setTotalPages(0);
       }
     } catch (error) {
-      console.error('Error loading invoices:', error);
+      console.error("Error loading invoices:", error);
       setInvoices([]);
       setTotalRecords(0);
       setTotalPages(0);
@@ -140,28 +157,33 @@ const InvoiceListView = () => {
     setIsLoadingStats(true);
     try {
       const response = await invoiceService.getInvoiceStats();
-      
+
       if (response.success && response.data) {
         const statsData = response.data;
-        
+
         // Count completed invoices from byStatus array - safely check if exists
-        const byStatus = Array.isArray(statsData.byStatus) ? statsData.byStatus : [];
-        const completedCount = byStatus.find(s => s._id === 'paid')?.count || 0;
-        const unpaidCount = byStatus.find(s => s._id === 'unpaid')?.count || 0;
-        const refundedCount = byStatus.find(s => s._id === 'refunded')?.count || 0;
+        const byStatus = Array.isArray(statsData.byStatus)
+          ? statsData.byStatus
+          : [];
+        const completedCount =
+          byStatus.find((s) => s._id === "paid")?.count || 0;
+        const unpaidCount =
+          byStatus.find((s) => s._id === "unpaid")?.count || 0;
+        const refundedCount =
+          byStatus.find((s) => s._id === "refunded")?.count || 0;
 
         setStats({
           totalRevenue: statsData.totalAmount || 0,
           totalInvoices: statsData.totalInvoices || 0,
           completedInvoices: completedCount,
           unpaidAmount: statsData.unpaidAmount || 0,
-          totalRefunded: 0 // TODO: Calculate from refunded invoices
+          totalRefunded: 0, // TODO: Calculate from refunded invoices
         });
       } else {
-        console.error('Failed to load stats:', response.message);
+        console.error("Failed to load stats:", response.message);
       }
     } catch (error) {
-      console.error('Error loading stats:', error);
+      console.error("Error loading stats:", error);
     } finally {
       setIsLoadingStats(false);
     }
@@ -234,20 +256,22 @@ const InvoiceListView = () => {
     <div className="invoice-report-view">
       {/* Loading overlay */}
       {isLoading && (
-        <div style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          backgroundColor: 'rgba(255, 255, 255, 0.8)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          zIndex: 1000
-        }}>
-          <div style={{ textAlign: 'center' }}>
-            <div style={{ fontSize: '24px', marginBottom: '10px' }}>⏳</div>
+        <div
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: "rgba(255, 255, 255, 0.8)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 1000,
+          }}
+        >
+          <div style={{ textAlign: "center" }}>
+            <div style={{ fontSize: "24px", marginBottom: "10px" }}>⏳</div>
             <div>Loading invoices...</div>
           </div>
         </div>
@@ -262,14 +286,19 @@ const InvoiceListView = () => {
       <div className="invoice-stats-section">
         <div className="invoice-stats-grid">
           <div className="invoice-stat-card">
-            <div className="invoice-stat-icon invoice-stat-revenue">$</div>
+            <div className="invoice-stat-icon invoice-stat-revenue"></div>
             <div className="invoice-stat-content">
               <div className="invoice-stat-label">Total Revenue</div>
               <div className="invoice-stat-number">
-                ${isLoadingStats ? '...' : stats.totalRevenue.toFixed(2)}
+                {isLoadingStats
+                  ? "..."
+                  : stats.totalRevenue.toLocaleString("vi-VN")}
+                VNĐ
               </div>
               <div className="invoice-stat-sublabel">
-                {isLoadingStats ? '...' : `+${stats.completedInvoices} completed`}
+                {isLoadingStats
+                  ? "..."
+                  : `+${stats.completedInvoices} completed`}
               </div>
             </div>
           </div>
@@ -279,7 +308,7 @@ const InvoiceListView = () => {
             <div className="invoice-stat-content">
               <div className="invoice-stat-label">Total Invoices</div>
               <div className="invoice-stat-number">
-                {isLoadingStats ? '...' : stats.totalInvoices}
+                {isLoadingStats ? "..." : stats.totalInvoices}
               </div>
               <div className="invoice-stat-sublabel">invoices</div>
             </div>
@@ -290,7 +319,9 @@ const InvoiceListView = () => {
             <div className="invoice-stat-content">
               <div className="invoice-stat-label">Completed</div>
               <div className="invoice-stat-number">
-                {isLoadingStats ? '...' : `${stats.completedInvoices}/${stats.totalInvoices}`}
+                {isLoadingStats
+                  ? "..."
+                  : `${stats.completedInvoices}/${stats.totalInvoices}`}
               </div>
               <div className="invoice-stat-sublabel">transactions</div>
             </div>
@@ -301,7 +332,10 @@ const InvoiceListView = () => {
             <div className="invoice-stat-content">
               <div className="invoice-stat-label">Unpaid Amount</div>
               <div className="invoice-stat-number">
-                ${isLoadingStats ? '...' : stats.unpaidAmount.toFixed(2)}
+                {isLoadingStats
+                  ? "..."
+                  : stats.unpaidAmount.toLocaleString("vi-VN")}
+                VNĐ
               </div>
               <div className="invoice-stat-sublabel">pending payment</div>
             </div>
@@ -388,17 +422,32 @@ const InvoiceListView = () => {
           <tbody>
             {invoices.length === 0 && !isLoading ? (
               <tr>
-                <td colSpan="8" style={{ textAlign: 'center', padding: '40px' }}>
-                  <div style={{ fontSize: '48px', marginBottom: '10px' }}>📭</div>
+                <td
+                  colSpan="8"
+                  style={{ textAlign: "center", padding: "40px" }}
+                >
+                  <div style={{ fontSize: "48px", marginBottom: "10px" }}>
+                    📭
+                  </div>
                   <div>No invoices found</div>
-                  <div style={{ fontSize: '12px', color: '#666', marginTop: '5px' }}>
+                  <div
+                    style={{
+                      fontSize: "12px",
+                      color: "#666",
+                      marginTop: "5px",
+                    }}
+                  >
                     Try adjusting your filters
                   </div>
                 </td>
               </tr>
             ) : (
               invoices.map((invoice, index) => (
-                <tr key={`page-${currentPage}-${invoice._id || invoice.id}-${index}`}>
+                <tr
+                  key={`page-${currentPage}-${
+                    invoice._id || invoice.id
+                  }-${index}`}
+                >
                   <td className="invoice-id">
                     <div className="invoice-number">{invoice.id}</div>
                     <div className="invoice-txn">{invoice.txnNumber}</div>

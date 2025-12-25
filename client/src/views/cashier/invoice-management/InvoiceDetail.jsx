@@ -58,27 +58,32 @@ const InvoiceDetail = () => {
   ];
 
   // ========== API FUNCTIONS ==========
-  
+
   // Load invoice details from API
   const loadInvoice = async () => {
     setIsLoading(true);
     try {
       const response = await invoiceService.getInvoiceById(invoiceId);
-      
+
       if (response.success && response.data) {
         const invoiceData = response.data;
         setInvoice(invoiceData);
 
         // Transform invoice items to product format
-        if (invoiceData.items && Array.isArray(invoiceData.items) && invoiceData.items.length > 0) {
-          const transformedProducts = invoiceData.items.map(item => ({
+        if (
+          invoiceData.items &&
+          Array.isArray(invoiceData.items) &&
+          invoiceData.items.length > 0
+        ) {
+          const transformedProducts = invoiceData.items.map((item) => ({
             id: item._id,
-            name: item.product_id?.name || item.description || 'Unknown Product',
-            category: item.product_id?.category || 'Other',
+            name:
+              item.product_id?.name || item.description || "Unknown Product",
+            category: item.product_id?.category || "Other",
             quantity: item.quantity,
             price: item.unit_price,
             total: item.line_total,
-            sku: item.product_id?.sku
+            sku: item.product_id?.sku,
           }));
           setProducts(transformedProducts);
         } else {
@@ -91,19 +96,20 @@ const InvoiceDetail = () => {
           const accountInfo = customer.account_id;
           setCustomerInfo({
             id: customer._id,
-            type: 'Registered Customer',
+            type: "Registered Customer",
             name: accountInfo?.full_name || customer._id,
-            description: `${customer.membership_type || 'Regular'} customer`,
-            contact: accountInfo?.email || accountInfo?.phone_number || 'No contact',
+            description: `${customer.membership_type || "Regular"} customer`,
+            contact:
+              accountInfo?.email || accountInfo?.phone_number || "No contact",
             hasInfo: true,
           });
         } else {
           setCustomerInfo({
             id: null,
-            type: 'Guest Customer',
-            name: 'Guest Customer',
-            description: 'Walk-in customer',
-            contact: 'No contact information',
+            type: "Guest Customer",
+            name: "Guest Customer",
+            description: "Walk-in customer",
+            contact: "No contact information",
             hasInfo: false,
           });
         }
@@ -111,19 +117,22 @@ const InvoiceDetail = () => {
         // Set payment method from invoice (priority) or order (fallback)
         if (invoiceData.payment_method) {
           setSelectedPaymentMethod(invoiceData.payment_method);
-        } else if (invoiceData.order_id && invoiceData.order_id.payment_method) {
+        } else if (
+          invoiceData.order_id &&
+          invoiceData.order_id.payment_method
+        ) {
           setSelectedPaymentMethod(invoiceData.order_id.payment_method);
         } else {
-          setSelectedPaymentMethod('Cash'); // Default
+          setSelectedPaymentMethod("Cash"); // Default
         }
       } else {
-        setErrorMessage(response.message || 'Failed to load invoice');
-        setTimeout(() => navigate('/invoice'), 3000);
+        setErrorMessage(response.message || "Failed to load invoice");
+        setTimeout(() => navigate("/invoice"), 3000);
       }
     } catch (error) {
-      console.error('Error loading invoice:', error);
-      setErrorMessage('Failed to load invoice details');
-      setTimeout(() => navigate('/invoice'), 3000);
+      console.error("Error loading invoice:", error);
+      setErrorMessage("Failed to load invoice details");
+      setTimeout(() => navigate("/invoice"), 3000);
     } finally {
       setIsLoading(false);
     }
@@ -134,8 +143,8 @@ const InvoiceDetail = () => {
     if (invoiceId) {
       loadInvoice();
     } else {
-      setErrorMessage('Invoice ID not provided');
-      setTimeout(() => navigate('/invoice'), 2000);
+      setErrorMessage("Invoice ID not provided");
+      setTimeout(() => navigate("/invoice"), 2000);
     }
   }, [invoiceId]);
 
@@ -307,22 +316,23 @@ const InvoiceDetail = () => {
   const subtotal = products.reduce((sum, product) => sum + product.total, 0);
   const discountAmount = invoice?.discount_amount || 0;
   const taxRate = 0.09; // 9% tax
-  const taxAmount = invoice?.tax_amount || (subtotal * taxRate);
-  const totalAmount = invoice?.total_amount || (subtotal - discountAmount + taxAmount);
+  const taxAmount = invoice?.tax_amount || subtotal * taxRate;
+  const totalAmount =
+    invoice?.total_amount || subtotal - discountAmount + taxAmount;
 
   // Get invoice status for UI
-  const invoiceStatus = invoice?.payment_status || 'unpaid';
+  const invoiceStatus = invoice?.payment_status || "unpaid";
   const statusMap = {
-    'unpaid': 'pending',
-    'paid': 'completed',
-    'partial': 'pending',
-    'refunded': 'refunded'
+    unpaid: "pending",
+    paid: "completed",
+    partial: "pending",
+    refunded: "refunded",
   };
   const invoiceData = {
     id: invoice?.invoice_number || invoiceId,
-    status: statusMap[invoiceStatus] || 'pending',
+    status: statusMap[invoiceStatus] || "pending",
     paymentMethod: selectedPaymentMethod,
-    customer: customerInfo
+    customer: customerInfo,
   };
 
   // Filter available customers
@@ -385,21 +395,23 @@ const InvoiceDetail = () => {
     try {
       // First update payment method if changed
       await invoiceService.updateInvoice(invoiceId, {
-        payment_method: selectedPaymentMethod
+        payment_method: selectedPaymentMethod,
       });
-      
+
       // Then mark as paid
       const response = await invoiceService.markInvoiceAsPaid(invoiceId);
-      
+
       if (response.success) {
-        setSuccessMessage(response.message || 'Payment confirmed successfully!');
-        setTimeout(() => navigate('/invoice'), 2000);
+        setSuccessMessage(
+          response.message || "Payment confirmed successfully!"
+        );
+        setTimeout(() => navigate("/invoice"), 2000);
       } else {
-        setErrorMessage(response.message || 'Failed to confirm payment');
+        setErrorMessage(response.message || "Failed to confirm payment");
       }
     } catch (error) {
-      console.error('Error confirming payment:', error);
-      setErrorMessage('Failed to confirm payment');
+      console.error("Error confirming payment:", error);
+      setErrorMessage("Failed to confirm payment");
     }
   };
 
@@ -411,20 +423,20 @@ const InvoiceDetail = () => {
     try {
       // Update invoice to refunded status
       const response = await invoiceService.updateInvoice(invoiceId, {
-        payment_status: 'refunded'
+        payment_status: "refunded",
       });
-      
+
       if (response.success) {
-        setSuccessMessage('Transaction canceled and refunded!');
+        setSuccessMessage("Transaction canceled and refunded!");
         setShowCancelModal(false);
-        setTimeout(() => navigate('/invoice'), 2000);
+        setTimeout(() => navigate("/invoice"), 2000);
       } else {
-        setErrorMessage(response.message || 'Failed to cancel transaction');
+        setErrorMessage(response.message || "Failed to cancel transaction");
         setShowCancelModal(false);
       }
     } catch (error) {
-      console.error('Error canceling transaction:', error);
-      setErrorMessage('Failed to cancel transaction');
+      console.error("Error canceling transaction:", error);
+      setErrorMessage("Failed to cancel transaction");
       setShowCancelModal(false);
     }
   };
@@ -432,21 +444,23 @@ const InvoiceDetail = () => {
   const handlePaymentMethodChange = async (methodId) => {
     if (invoiceData.status === "pending") {
       setSelectedPaymentMethod(methodId);
-      
+
       // Auto-save payment method to database
       try {
         const response = await invoiceService.updateInvoice(invoiceId, {
-          payment_method: methodId
+          payment_method: methodId,
         });
-        
+
         if (response.success) {
           console.log("Payment method updated to:", methodId);
         } else {
-          setErrorMessage(response.message || 'Failed to update payment method');
+          setErrorMessage(
+            response.message || "Failed to update payment method"
+          );
         }
       } catch (error) {
-        console.error('Error updating payment method:', error);
-        setErrorMessage('Failed to update payment method');
+        console.error("Error updating payment method:", error);
+        setErrorMessage("Failed to update payment method");
       }
     }
   };
@@ -470,20 +484,22 @@ const InvoiceDetail = () => {
     <div className="invoice-detail-view">
       {/* Loading overlay */}
       {isLoading && (
-        <div style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          backgroundColor: 'rgba(255, 255, 255, 0.9)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          zIndex: 1000
-        }}>
-          <div style={{ textAlign: 'center' }}>
-            <div style={{ fontSize: '24px', marginBottom: '10px' }}>⏳</div>
+        <div
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: "rgba(255, 255, 255, 0.9)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 1000,
+          }}
+        >
+          <div style={{ textAlign: "center" }}>
+            <div style={{ fontSize: "24px", marginBottom: "10px" }}>⏳</div>
             <div>Loading invoice details...</div>
           </div>
         </div>
@@ -550,10 +566,10 @@ const InvoiceDetail = () => {
                         </div>
                       </td>
                       <td className="invoice-price">
-                        ${product.price.toFixed(2)}
+                        {product.price.toLocaleString("vi-VN")}VNĐ
                       </td>
                       <td className="invoice-total">
-                        ${product.total.toFixed(2)}
+                        {product.total.toLocaleString("vi-VN")}VNĐ
                       </td>
                     </tr>
                   ))}
@@ -563,7 +579,7 @@ const InvoiceDetail = () => {
               <div className="invoice-subtotal-row">
                 <span>Subtotal ({products.length} items)</span>
                 <span className="invoice-subtotal-amount">
-                  ${subtotal.toFixed(2)}
+                  {subtotal.toLocaleString("vi-VN")}VNĐ
                 </span>
               </div>
             </div>
@@ -745,23 +761,23 @@ const InvoiceDetail = () => {
 
             <div className="invoice-summary-row">
               <span>Subtotal</span>
-              <span>${subtotal.toFixed(2)}</span>
+              <span>{subtotal.toLocaleString("vi-VN")}VNĐ</span>
             </div>
 
             <div className="invoice-summary-row discount">
               <span>Discount</span>
-              <span className="invoice-discount-amount">-$0.00</span>
+              <span className="invoice-discount-amount">-0VNĐ</span>
             </div>
 
             <div className="invoice-summary-row">
               <span>Tax (9%)</span>
-              <span>${taxAmount.toFixed(2)}</span>
+              <span>{taxAmount.toLocaleString("vi-VN")}VNĐ</span>
             </div>
 
             <div className="invoice-summary-row total">
               <span>Total Amount</span>
               <span className="invoice-total-amount">
-                ${totalAmount.toFixed(2)}
+                {totalAmount.toLocaleString("vi-VN")}VNĐ
               </span>
             </div>
 
@@ -800,8 +816,9 @@ const InvoiceDetail = () => {
                 <div className="invoice-payment-readonly">
                   <div className="invoice-payment-display">
                     <span className="invoice-payment-icon">
-                      {paymentMethods.find((m) => m.id === selectedPaymentMethod)
-                        ?.icon || "💳"}
+                      {paymentMethods.find(
+                        (m) => m.id === selectedPaymentMethod
+                      )?.icon || "💳"}
                     </span>
                     <span className="invoice-payment-text">
                       {selectedPaymentMethod}
