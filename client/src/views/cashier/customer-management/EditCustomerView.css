@@ -84,6 +84,12 @@
     color: #1f2937;
 }
 
+.customer-stats-section {
+    background-color: white;
+    border: 1px solid #d1d5db;
+
+}
+
 .customer-stats-actions {
     padding: 1.5rem;
     display: flex;
@@ -212,6 +218,11 @@
     transition: border-color 0.2s, box-shadow 0.2s;
     resize: vertical;
     font-family: inherit;
+}
+
+#notes.customer-form-textarea-edit {
+    background: white;
+    border: 1px solid #d1d5db;
 }
 
 .customer-form-textarea:focus {

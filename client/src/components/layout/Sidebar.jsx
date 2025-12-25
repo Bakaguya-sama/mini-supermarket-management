@@ -177,6 +177,12 @@ const Sidebar = ({ activeItem, onItemClick, userRole = "manager" }) => {
             path: "/staff",
           },
           {
+            id: "customer",
+            label: "Customer",
+            icon: <FaUserGroup />,
+            path: "/customer",
+          },
+          {
             id: "products",
             label: "Product",
             icon: <FaBox />,
