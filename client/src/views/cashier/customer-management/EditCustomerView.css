@@ -87,7 +87,6 @@
 .customer-stats-section {
     background-color: white;
     border: 1px solid #d1d5db;
-
 }
 
 .customer-stats-actions {
@@ -223,6 +222,8 @@
 #notes.customer-form-textarea-edit {
     background: white;
     border: 1px solid #d1d5db;
+    color: black;
+
 }
 
 .customer-form-textarea:focus {

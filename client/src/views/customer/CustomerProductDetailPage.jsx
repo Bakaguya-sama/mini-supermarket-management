@@ -9,68 +9,12 @@ import {
   FaClock,
 } from "react-icons/fa";
 import SuccessMessage from "../../components/Messages/SuccessMessage";
+import ErrorMessage from "../../components/Messages/ErrorMessage";
+import productService from "../../services/productService";
 import "./CustomerProductDetailPage.css";
 
-// Mock Products Data - Same as shop page
-const mockProducts = [
-  {
-    id: 1,
-    name: "Artisan Bread",
-    category: "Fruits",
-    price: 5.99,
-    unit: "loaf",
-    description:
-      "Freshly baked artisan bread with a crispy crust and soft interior. Made with traditional methods using high-quality flour.",
-    image: "https://images.unsplash.com/photo-1586985289688-ca3cf47d3e6e?w=800",
-    images: [
-      "https://images.unsplash.com/photo-1586985289688-ca3cf47d3e6e?w=800",
-      "https://images.unsplash.com/photo-1509440159596-0249088772ff?w=800",
-      "https://images.unsplash.com/photo-1556471013-1bf5b0830a65?w=800",
-      "https://images.unsplash.com/photo-1549931319-a545dcf3bc73?w=800",
-    ],
-    inStock: true,
-    stockQuantity: 40,
-    productId: "001",
-    origin: "Local",
-    supplier: "Supplier 1",
-  },
-  {
-    id: 2,
-    name: "Fresh Organic Milk",
-    category: "Dairy",
-    price: 4.99,
-    unit: "bottle",
-    description: "Farm fresh organic whole milk",
-    image: "https://images.unsplash.com/photo-1550583724-b2692b85b150?w=800",
-    images: [
-      "https://images.unsplash.com/photo-1550583724-b2692b85b150?w=800",
-      "https://images.unsplash.com/photo-1563636619-e9143da7973b?w=800",
-    ],
-    inStock: true,
-    stockQuantity: 25,
-    productId: "002",
-    origin: "Local",
-    supplier: "Dairy Farm Co.",
-  },
-  {
-    id: 3,
-    name: "Premium Coffee Beans",
-    category: "Beverages",
-    price: 12.99,
-    unit: "bag",
-    description: "Arabica coffee beans - 500g",
-    image: "https://images.unsplash.com/photo-1559056199-641a0ac8b55e?w=800",
-    images: [
-      "https://images.unsplash.com/photo-1559056199-641a0ac8b55e?w=800",
-      "https://images.unsplash.com/photo-1447933601403-0c6688de566e?w=800",
-    ],
-    inStock: true,
-    stockQuantity: 15,
-    productId: "003",
-    origin: "Colombia",
-    supplier: "Coffee Imports Ltd.",
-  },
-];
+const PLACEHOLDER_IMAGE =
+  "https://placehold.co/800x800/e2e8f0/64748b?text=No+Image";
 
 const CustomerProductDetailPage = ({
   productId,
@@ -78,36 +22,194 @@ const CustomerProductDetailPage = ({
   onAddToCart,
   onViewProduct,
 }) => {
+  const [product, setProduct] = useState(null);
+  const [relatedProducts, setRelatedProducts] = useState([]);
   const [selectedImage, setSelectedImage] = useState(0);
   const [quantity, setQuantity] = useState(1);
   const [activeTab, setActiveTab] = useState("details");
   const [successMessage, setSuccessMessage] = useState("");
+  const [errorMessage, setErrorMessage] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
 
-  // Find the product by ID
-  const product =
-    mockProducts.find((p) => p.id === parseInt(productId)) || mockProducts[0];
+  useEffect(() => {
+    if (!productId) return;
+    fetchProductAndRelated(productId);
+    // reset UI
+    setSelectedImage(0);
+    setQuantity(1);
+  }, [productId]);
 
-  // Related products (excluding current product)
-  const relatedProducts = mockProducts
-    .filter((p) => p.id !== product.id)
-    .slice(0, 4);
+  const fetchProductAndRelated = async (id) => {
+    setIsLoading(true);
+    setErrorMessage("");
+    try {
+      const res = await productService.getById(id);
+      if (!res.success || !res.data) {
+        setErrorMessage(res.message || "Product not found");
+        setProduct(null);
+        setRelatedProducts([]);
+        return;
+      }
+
+      const p = res.data;
+      const uiProduct = {
+        id: p._id,
+        name: p.name,
+        category: p.category || "General",
+        price: p.price,
+        description: p.description || `${p.name} - ${p.unit || "unit"}`,
+        images:
+          Array.isArray(p.images) && p.images.length > 0
+            ? p.images
+            : [p.image_link || PLACEHOLDER_IMAGE],
+        image:
+          (Array.isArray(p.images) && p.images[0]) ||
+          p.image_link ||
+          PLACEHOLDER_IMAGE,
+        inStock: (p.current_stock || 0) > 0,
+        stockQuantity: p.current_stock || 0,
+        unit: p.unit,
+        productId: p.sku || p._id,
+        origin: p.origin || "Unknown",
+        supplier: p.supplier_id?.name || p.supplier || "Unknown",
+      };
+
+      setProduct(uiProduct);
+
+      // Fetch related by category
+      let related = [];
+      if (uiProduct.category) {
+        try {
+          const catRes = await productService.getByCategory(
+            uiProduct.category,
+            { limit: 10 }
+          );
+          let catData = catRes?.data || catRes;
+          if (Array.isArray(catData)) {
+            related = catData
+              .filter((item) => item._id !== uiProduct.id)
+              .slice(0, 4)
+              .map((item) => ({
+                id: item._id,
+                name: item.name,
+                category: item.category,
+                price: item.price,
+                description: item.description || `${item.name} - ${item.unit}`,
+                image: item.image_link || PLACEHOLDER_IMAGE,
+                unit: item.unit,
+                inStock: (item.current_stock || 0) > 0,
+              }));
+          }
+        } catch (err) {
+          // ignore category fetch errors and fallback to random
+          console.warn("Could not load category products:", err);
+        }
+      }
+
+      // If no related products found, fetch a few random ones
+      if (!related || related.length === 0) {
+        try {
+          const allRes = await productService.getAll({
+            limit: 10,
+            status: "active",
+          });
+          const allData = allRes?.data || [];
+          const filtered = allData.filter((it) => it._id !== uiProduct.id);
+          // pick up to 4 random
+          const shuffled = filtered.sort(() => 0.5 - Math.random()).slice(0, 4);
+          related = shuffled.map((item) => ({
+            id: item._id,
+            name: item.name,
+            category: item.category,
+            price: item.price,
+            description: item.description || `${item.name} - ${item.unit}`,
+            image: item.image_link || PLACEHOLDER_IMAGE,
+            unit: item.unit,
+            inStock: (item.current_stock || 0) > 0,
+          }));
+        } catch (err) {
+          console.warn("Could not load fallback related products:", err);
+        }
+      }
+
+      setRelatedProducts(related);
+    } catch (err) {
+      console.error("Error loading product details:", err);
+      setErrorMessage("Failed to load product. Please try again.");
+      setProduct(null);
+      setRelatedProducts([]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const handleQuantityChange = (change) => {
     const newQuantity = quantity + change;
+    if (!product) return;
     if (newQuantity >= 1 && newQuantity <= product.stockQuantity) {
       setQuantity(newQuantity);
     }
   };
 
-  const handleAddToCart = () => {
-    onAddToCart({ ...product, quantity });
-    setSuccessMessage(`${quantity} ${product.name}(s) added to cart!`);
+  const handleAddToCartClick = () => {
+    if (!product) return;
+    if (!product.inStock) {
+      setErrorMessage("Product is out of stock");
+      return;
+    }
+
+    onAddToCart({
+      id: product.id,
+      name: product.name,
+      price: product.price,
+      quantity,
+      unit: product.unit,
+      image: product.image,
+    });
+
+    setSuccessMessage(`${quantity} ${product.name} added to cart!`);
   };
 
   const handleAddRelatedToCart = (relatedProduct) => {
-    onAddToCart({ ...relatedProduct, quantity: 1 });
+    onAddToCart({
+      id: relatedProduct.id,
+      name: relatedProduct.name,
+      price: relatedProduct.price,
+      quantity: 1,
+      unit: relatedProduct.unit,
+      image: relatedProduct.image,
+    });
     setSuccessMessage(`${relatedProduct.name} added to cart!`);
   };
+
+  if (isLoading) {
+    return (
+      <div className="product-detail-page">
+        <div className="product-detail-container">
+          <div className="loading-spinner"></div>
+          <p>Loading product...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (errorMessage) {
+    return (
+      <div className="product-detail-page">
+        <div className="product-detail-container">
+          <button className="back-to-shop-btn" onClick={onBack}>
+            <FaArrowLeft /> Back to Shop
+          </button>
+          <ErrorMessage
+            message={errorMessage}
+            onClose={() => setErrorMessage("")}
+          />
+        </div>
+      </div>
+    );
+  }
+
+  if (!product) return null;
 
   return (
     <div className="product-detail-page">
@@ -146,7 +248,7 @@ const CustomerProductDetailPage = ({
             <p className="product-description">{product.description}</p>
 
             <div className="product-price">
-              <span className="price-amount">${product.price}</span>
+              <span className="price-amount">{product.price}VNĐ</span>
               <span className="price-unit">per {product.unit}</span>
             </div>
 
@@ -190,7 +292,7 @@ const CustomerProductDetailPage = ({
             </div>
 
             {/* Add to Cart Button */}
-            <button className="add-to-cart-btn" onClick={handleAddToCart}>
+            <button className="add-to-cart-btn" onClick={handleAddToCartClick}>
               <FaShoppingCart /> Add to Cart
             </button>
 
