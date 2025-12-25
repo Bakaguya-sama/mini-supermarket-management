@@ -716,7 +716,9 @@ const ProductListView = () => {
                       )}
                   </div>
                 </td>
-                <td className="product-price">${product.price.toFixed(2)}</td>
+                <td className="product-price">
+                  {Number(product.price).toLocaleString("vi-VN")} VNĐ
+                </td>
                 <td>
                   <div className="stock-info">
                     <div className="stock-number">

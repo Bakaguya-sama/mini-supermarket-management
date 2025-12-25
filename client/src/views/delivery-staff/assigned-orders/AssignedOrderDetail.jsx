@@ -451,10 +451,10 @@ const AssignedOrderDetail = () => {
                 Confirm Pickup
               </button>
 
-              <button onClick={handleReportIssue} className="report-issue-btn">
+              {/* <button onClick={handleReportIssue} className="report-issue-btn">
                 <FaClipboardList className="action-icon" />
                 Report Issue
-              </button>
+              </button> */}
 
               <button onClick={handleCancel} className="cancel-btn">
                 Cancel

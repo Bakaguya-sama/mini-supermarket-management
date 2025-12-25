@@ -103,7 +103,8 @@ const StaffListView = () => {
       staff.phone.includes(searchTerm);
     const matchesPosition =
       positionFilter === "all" ||
-      staff.position.toLowerCase() === positionFilter.toLowerCase();
+      (staff.position &&
+        staff.position.toLowerCase().includes(positionFilter.toLowerCase()));
     const matchesStatus =
       statusFilter === "all" ||
       staff.status.toLowerCase() === statusFilter.toLowerCase();
@@ -183,6 +184,12 @@ const StaffListView = () => {
       ? "status-approved"
       : "status-declined";
   };
+
+  // Dynamic position options derived from loaded staff data
+  const positions = [
+    "All positions",
+    ...new Set(staffData.map((s) => s.position).filter(Boolean)),
+  ];
 
   return (
     <div className="staff-report-view">
