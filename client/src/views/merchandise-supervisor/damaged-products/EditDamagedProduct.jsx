@@ -52,18 +52,38 @@ const EditDamagedProduct = () => {
 
       if (response.success && response.data) {
         const damaged = response.data;
+        // Debug: show damaged payload to help diagnose missing shelf fields
+        console.debug("EditDamagedProduct: damaged loaded", damaged);
+
         const product = damaged.product_id;
         const supplier = product?.supplier_id;
         const shelves = damaged.shelves || [];
-        const firstShelf = shelves[0]?.shelf_id;
+
+        // Prefer explicit populated shelf on damaged doc; otherwise use first shelf mapping
+        const shelfObj =
+          damaged.shelf_id ||
+          (shelves[0]?.shelf_id ? shelves[0].shelf_id : shelves[0]?.shelf) ||
+          null;
+
+        const shelfLocationVal = shelfObj?.shelf_number || "N/A";
+        const sectionVal =
+          shelfObj?.shelf_name ??
+          shelfObj?.section_number ??
+          shelfObj?.shelf_number?.charAt(0) ??
+          "N/A";
+        const slotVal =
+          shelfObj?.section_number ??
+          shelfObj?.slot_number ??
+          shelfObj?.shelf_number?.slice(1) ??
+          "N/A";
 
         setFormData({
           productId: product?._id || "",
           productName: product?.name || "Unknown Product",
           supplier: supplier?.name || "Unknown Supplier",
-          shelfLocation: firstShelf?.shelf_number || "N/A",
-          section: firstShelf?.shelf_number?.charAt(0) || "N/A",
-          slot: firstShelf?.shelf_number?.slice(1) || "N/A",
+          shelfLocation: shelfLocationVal,
+          section: sectionVal,
+          slot: slotVal,
           currentStock:
             (product?.current_stock ?? product?.stock_quantity)?.toString() ||
             "0",
@@ -178,12 +198,16 @@ const EditDamagedProduct = () => {
       const updateData = {};
 
       // resolution_action - expired/damaged/other
-      if (formData.reason && formData.reason !== '') {
+      if (formData.reason && formData.reason !== "") {
         updateData.resolution_action = formData.reason;
       }
 
       // description - nếu chọn "other" thì dùng customReason, nếu không thì dùng reason
-      if (formData.reason === "other" && formData.customReason && formData.customReason.trim() !== '') {
+      if (
+        formData.reason === "other" &&
+        formData.customReason &&
+        formData.customReason.trim() !== ""
+      ) {
         updateData.description = formData.customReason;
         updateData.notes = formData.customReason;
       } else if (formData.reason && formData.reason !== "other") {
@@ -191,11 +215,11 @@ const EditDamagedProduct = () => {
       }
 
       // status - chỉ update nếu có giá trị hợp lệ
-      if (formData.status && formData.status !== '') {
+      if (formData.status && formData.status !== "") {
         updateData.status = formData.status;
       }
 
-      console.log('Sending update data:', updateData);
+      console.log("Sending update data:", updateData);
 
       const response = await damagedProductService.updateDamagedProduct(
         id,
