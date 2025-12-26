@@ -72,8 +72,9 @@ const ShelfProduct = () => {
             mappingId: mapping._id,
             name: product?.name || "Unknown Product",
             category: product?.category || "",
-            brand: "N/A",
+            brand: product?.supplier_id?.name || "N/A",
             price: `${(product?.price || 0).toLocaleString("vi-VN")}₫`,
+            priceValue: product?.price || 0, // Store raw price for calculations
             stock: quantity,
             lowStockThreshold: lowStockThreshold,
             supplier: product?.supplier_id?.name || "",
@@ -177,7 +178,7 @@ const ShelfProduct = () => {
   // Calculate stats
   const totalProducts = sortedData.length;
   const totalValue = sortedData.reduce((sum, product) => {
-    const price = parseFloat(product.price.replace("$", ""));
+    const price = product.priceValue || 0;
     return sum + price * product.stock;
   }, 0);
   const lowStockProducts = sortedData.filter(

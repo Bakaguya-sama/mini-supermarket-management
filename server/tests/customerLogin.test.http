@@ -1,0 +1,195 @@
+### ==================== CUSTOMER LOGIN FLOW TESTING ====================
+### Test workflow khi manager tạo customer và customer login
+
+@baseUrl = http://localhost:5000/api
+@token = {{login_response.body.data.token}}
+
+### ==================== 1. MANAGER LOGIN ====================
+### Login as manager first to get token
+# @name login_manager
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "username": "admin",
+  "password": "admin123"
+}
+
+### ==================== 2. CREATE CUSTOMER (BY MANAGER) ====================
+### Manager creates a new customer account
+### Default password will be generated: "Customer@" + first 4 chars of username
+# @name create_customer
+POST {{baseUrl}}/customers
+Content-Type: application/json
+Authorization: Bearer {{login_manager.response.body.data.token}}
+
+{
+  "username": "testcustomer01",
+  "email": "testcustomer01@gmail.com",
+  "full_name": "Nguyen Van Test",
+  "phone": "0901234567",
+  "address": "123 Test Street, Ho Chi Minh",
+  "membership_type": "Standard",
+  "notes": "Test customer created by manager"
+}
+
+### Expected Response:
+### {
+###   "success": true,
+###   "message": "Customer created successfully",
+###   "data": { ... customer data ... },
+###   "loginInfo": {
+###     "username": "testcustomer01",
+###     "defaultPassword": "Customer@test",
+###     "message": "Customer can login with this default password..."
+###   }
+### }
+
+### ==================== 3. CUSTOMER LOGIN (FIRST TIME) ====================
+### Customer logs in with default password
+# @name login_customer
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "username": "testcustomer01",
+  "password": "Customer@test"
+}
+
+### Expected Response:
+### {
+###   "success": true,
+###   "message": "Đăng nhập thành công",
+###   "data": {
+###     "token": "...",
+###     "user": {
+###       "id": "...",
+###       "username": "testcustomer01",
+###       "role": "customer",
+###       "customer_id": "...",
+###       "membership_type": "Standard",
+###       ...
+###     }
+###   }
+### }
+
+### ==================== 4. CUSTOMER CHANGES PASSWORD ====================
+### Customer changes password after first login
+# @name change_password
+PUT {{baseUrl}}/auth/change-password
+Content-Type: application/json
+Authorization: Bearer {{login_customer.response.body.data.token}}
+
+{
+  "current_password": "Customer@test",
+  "new_password": "MyNewPassword123!"
+}
+
+### ==================== 5. CUSTOMER LOGIN (WITH NEW PASSWORD) ====================
+### Customer logs in with new password
+# @name login_customer_new_password
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "username": "testcustomer01",
+  "password": "MyNewPassword123!"
+}
+
+### ==================== 6. GET CUSTOMER PROFILE ====================
+### Get customer profile info
+# @name get_customer_profile
+GET {{baseUrl}}/auth/me
+Authorization: Bearer {{login_customer_new_password.response.body.data.token}}
+
+### ==================== 7. MANAGER RESETS CUSTOMER PASSWORD ====================
+### If customer forgets password, manager can reset it
+# @name reset_customer_password
+POST {{baseUrl}}/auth/reset-password-for-customer
+Content-Type: application/json
+Authorization: Bearer {{login_manager.response.body.data.token}}
+
+{
+  "customer_account_id": "{{create_customer.response.body.data.account_id}}",
+  "new_password": "ResetPassword123"
+}
+
+### Or reset to default password (omit new_password):
+# @name reset_customer_password_default
+POST {{baseUrl}}/auth/reset-password-for-customer
+Content-Type: application/json
+Authorization: Bearer {{login_manager.response.body.data.token}}
+
+{
+  "customer_account_id": "{{create_customer.response.body.data.account_id}}"
+}
+
+### ==================== 8. CUSTOMER LOGIN AFTER RESET ====================
+### Customer logs in with reset password
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "username": "testcustomer01",
+  "password": "ResetPassword123"
+}
+
+### ==================== 9. VERIFY CUSTOMER CAN'T LOGIN WITHOUT PASSWORD ====================
+### Try to create customer without triggering password generation (should fail on login)
+### This tests the old behavior - should not happen anymore
+
+### ==================== 10. GET ALL CUSTOMERS ====================
+### Manager views all customers
+GET {{baseUrl}}/customers?page=1&limit=10
+Authorization: Bearer {{login_manager.response.body.data.token}}
+
+### ==================== NEGATIVE TESTS ====================
+
+### Test: Login with wrong password
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "username": "testcustomer01",
+  "password": "WrongPassword123"
+}
+
+### Test: Login with non-existent customer
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "username": "nonexistent",
+  "password": "password123"
+}
+
+### Test: Create customer with existing username
+POST {{baseUrl}}/customers
+Content-Type: application/json
+Authorization: Bearer {{login_manager.response.body.data.token}}
+
+{
+  "username": "testcustomer01",
+  "email": "different@gmail.com",
+  "full_name": "Different Name"
+}
+
+### Test: Change password with wrong current password
+PUT {{baseUrl}}/auth/change-password
+Content-Type: application/json
+Authorization: Bearer {{login_customer.response.body.data.token}}
+
+{
+  "current_password": "WrongCurrentPassword",
+  "new_password": "NewPassword123"
+}
+
+### Test: Reset password for non-customer account (should fail)
+POST {{baseUrl}}/auth/reset-password-for-customer
+Content-Type: application/json
+Authorization: Bearer {{login_manager.response.body.data.token}}
+
+{
+  "customer_account_id": "{{login_manager.response.body.data.user.id}}",
+  "new_password": "ShouldNotWork123"
+}

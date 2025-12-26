@@ -1,7 +1,8 @@
 // controllers/authController.js - Authentication Controller
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const { Account, Staff, Customer, Manager } = require('../models');
+const { Account, Staff, Customer, Manager, VerificationCode } = require('../models');
+const { sendVerificationEmail, sendPasswordResetSuccessEmail } = require('../config/email');
 
 // JWT Secret (nên để trong .env trong production)
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-this-in-production';
@@ -700,6 +701,365 @@ exports.changePassword = async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Lỗi server khi đổi mật khẩu',
+      error: error.message
+    });
+  }
+};
+
+/**
+ * @route   POST /api/auth/reset-password-for-customer
+ * @desc    Reset password for customer (Admin/Manager only)
+ * @access  Private (Admin/Manager)
+ */
+exports.resetPasswordForCustomer = async (req, res) => {
+  try {
+    const { customer_account_id, new_password } = req.body;
+
+    // Validate
+    if (!customer_account_id) {
+      return res.status(400).json({
+        success: false,
+        message: 'Customer account ID is required'
+      });
+    }
+
+    // If no new_password provided, generate default password
+    let passwordToSet = new_password;
+    if (!passwordToSet) {
+      const account = await Account.findById(customer_account_id);
+      if (!account) {
+        return res.status(404).json({
+          success: false,
+          message: 'Customer account not found'
+        });
+      }
+      // Generate default password: "Customer@" + first 4 chars of username
+      passwordToSet = `Customer@${account.username.substring(0, 4)}`;
+    }
+
+    // Validate password strength if provided
+    if (new_password && new_password.length < 6) {
+      return res.status(400).json({
+        success: false,
+        message: 'Password must be at least 6 characters'
+      });
+    }
+
+    // Find and update account
+    const account = await Account.findOne({
+      _id: customer_account_id,
+      role: 'customer',
+      isDelete: false
+    });
+
+    if (!account) {
+      return res.status(404).json({
+        success: false,
+        message: 'Customer account not found'
+      });
+    }
+
+    // Hash and update password
+    account.password_hash = await hashPassword(passwordToSet);
+    await account.save();
+
+    res.json({
+      success: true,
+      message: 'Password reset successfully',
+      data: {
+        username: account.username,
+        newPassword: passwordToSet,
+        message: 'Please provide this password to the customer'
+      }
+    });
+
+  } catch (error) {
+    console.error('Reset Password Error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error resetting password',
+      error: error.message
+    });
+  }
+};
+
+// ==================== FORGOT PASSWORD FUNCTIONS ====================
+
+/**
+ * @route   POST /api/auth/forgot-password
+ * @desc    Send verification code to email
+ * @access  Public
+ */
+exports.forgotPassword = async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    // Validate email
+    if (!email) {
+      return res.status(400).json({
+        success: false,
+        message: 'Email là bắt buộc'
+      });
+    }
+
+    // Check if account exists with this email
+    const account = await Account.findOne({
+      email: email.toLowerCase(),
+      isDelete: false
+    });
+
+    if (!account) {
+      // For security, don't reveal if email exists or not
+      return res.json({
+        success: true,
+        message: 'Nếu email tồn tại trong hệ thống, mã xác thực sẽ được gửi đến email của bạn'
+      });
+    }
+
+    // Generate 6-digit verification code
+    const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
+
+    // Delete any existing unused codes for this email
+    await VerificationCode.deleteMany({
+      email: email.toLowerCase(),
+      isUsed: false
+    });
+
+    // Save verification code to database
+    await VerificationCode.create({
+      email: email.toLowerCase(),
+      code: verificationCode,
+      expiresAt: new Date(Date.now() + 10 * 60 * 1000), // 10 minutes
+      isUsed: false,
+      attempts: 0
+    });
+
+    // Send email
+    try {
+      await sendVerificationEmail(email, verificationCode, account.full_name || account.username);
+      
+      res.json({
+        success: true,
+        message: 'Mã xác thực đã được gửi đến email của bạn',
+        data: {
+          email: email.toLowerCase(),
+          expiresIn: '10 minutes'
+        }
+      });
+    } catch (emailError) {
+      console.error('Email sending error:', emailError);
+      
+      // Delete the verification code if email fails
+      await VerificationCode.deleteOne({
+        email: email.toLowerCase(),
+        code: verificationCode
+      });
+
+      return res.status(500).json({
+        success: false,
+        message: 'Không thể gửi email. Vui lòng kiểm tra cấu hình email hoặc thử lại sau.',
+        error: process.env.NODE_ENV === 'development' ? emailError.message : undefined
+      });
+    }
+
+  } catch (error) {
+    console.error('Forgot Password Error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Lỗi server khi xử lý yêu cầu',
+      error: error.message
+    });
+  }
+};
+
+/**
+ * @route   POST /api/auth/verify-reset-code
+ * @desc    Verify the reset code and reset password
+ * @access  Public
+ */
+exports.verifyResetCode = async (req, res) => {
+  try {
+    const { email, code, newPassword } = req.body;
+
+    // Validate
+    if (!email || !code || !newPassword) {
+      return res.status(400).json({
+        success: false,
+        message: 'Email, mã xác thực và mật khẩu mới là bắt buộc'
+      });
+    }
+
+    if (newPassword.length < 6) {
+      return res.status(400).json({
+        success: false,
+        message: 'Mật khẩu mới phải có ít nhất 6 ký tự'
+      });
+    }
+
+    // Find verification code
+    const verificationRecord = await VerificationCode.findOne({
+      email: email.toLowerCase(),
+      isUsed: false,
+      expiresAt: { $gt: new Date() }
+    }).sort({ createdAt: -1 }); // Get latest code
+
+    if (!verificationRecord) {
+      return res.status(400).json({
+        success: false,
+        message: 'Mã xác thực không hợp lệ hoặc đã hết hạn'
+      });
+    }
+
+    // Check attempts
+    if (verificationRecord.attempts >= 5) {
+      return res.status(400).json({
+        success: false,
+        message: 'Bạn đã nhập sai quá nhiều lần. Vui lòng yêu cầu mã mới.'
+      });
+    }
+
+    // Verify code
+    if (verificationRecord.code !== code) {
+      // Increment attempts
+      verificationRecord.attempts += 1;
+      await verificationRecord.save();
+
+      return res.status(400).json({
+        success: false,
+        message: `Mã xác thực không đúng. Còn ${5 - verificationRecord.attempts} lần thử.`
+      });
+    }
+
+    // Find account
+    const account = await Account.findOne({
+      email: email.toLowerCase(),
+      isDelete: false
+    });
+
+    if (!account) {
+      return res.status(404).json({
+        success: false,
+        message: 'Không tìm thấy tài khoản'
+      });
+    }
+
+    // Update password
+    account.password_hash = await hashPassword(newPassword);
+    await account.save();
+
+    // Mark verification code as used
+    verificationRecord.isUsed = true;
+    await verificationRecord.save();
+
+    // Send success email (don't wait for it)
+    sendPasswordResetSuccessEmail(email, account.full_name || account.username).catch(err => {
+      console.error('Error sending success email:', err);
+    });
+
+    res.json({
+      success: true,
+      message: 'Mật khẩu đã được đặt lại thành công. Bạn có thể đăng nhập với mật khẩu mới.'
+    });
+
+  } catch (error) {
+    console.error('Verify Reset Code Error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Lỗi server khi xác thực mã',
+      error: error.message
+    });
+  }
+};
+
+/**
+ * @route   POST /api/auth/resend-verification-code
+ * @desc    Resend verification code
+ * @access  Public
+ */
+exports.resendVerificationCode = async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    if (!email) {
+      return res.status(400).json({
+        success: false,
+        message: 'Email là bắt buộc'
+      });
+    }
+
+    // Check if account exists
+    const account = await Account.findOne({
+      email: email.toLowerCase(),
+      isDelete: false
+    });
+
+    if (!account) {
+      // For security, don't reveal if email exists
+      return res.json({
+        success: true,
+        message: 'Nếu email tồn tại, mã xác thực mới đã được gửi'
+      });
+    }
+
+    // Check rate limiting - don't allow resend within 1 minute
+    const recentCode = await VerificationCode.findOne({
+      email: email.toLowerCase(),
+      createdAt: { $gt: new Date(Date.now() - 60 * 1000) }
+    }).sort({ createdAt: -1 });
+
+    if (recentCode) {
+      return res.status(429).json({
+        success: false,
+        message: 'Vui lòng đợi 1 phút trước khi yêu cầu mã mới'
+      });
+    }
+
+    // Generate new code
+    const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
+
+    // Delete old unused codes
+    await VerificationCode.deleteMany({
+      email: email.toLowerCase(),
+      isUsed: false
+    });
+
+    // Create new code
+    await VerificationCode.create({
+      email: email.toLowerCase(),
+      code: verificationCode,
+      expiresAt: new Date(Date.now() + 10 * 60 * 1000),
+      isUsed: false,
+      attempts: 0
+    });
+
+    // Send email
+    try {
+      await sendVerificationEmail(email, verificationCode, account.full_name || account.username);
+
+      res.json({
+        success: true,
+        message: 'Mã xác thực mới đã được gửi đến email của bạn'
+      });
+    } catch (emailError) {
+      console.error('Email sending error:', emailError);
+
+      await VerificationCode.deleteOne({
+        email: email.toLowerCase(),
+        code: verificationCode
+      });
+
+      return res.status(500).json({
+        success: false,
+        message: 'Không thể gửi email. Vui lòng thử lại sau.',
+        error: process.env.NODE_ENV === 'development' ? emailError.message : undefined
+      });
+    }
+
+  } catch (error) {
+    console.error('Resend Verification Code Error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Lỗi server khi gửi lại mã',
       error: error.message
     });
   }

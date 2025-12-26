@@ -16,7 +16,7 @@ exports.getCartByCustomer = async (req, res) => {
       status: 'active'
     }).populate({
       path: 'cartItems',
-      populate: { path: 'product_id', select: 'name price sku unit' }
+      populate: { path: 'product_id', select: 'name price sku unit image_link' }
     }).populate('customer_id', 'account_id');
 
     // Auto-create cart if not exists
@@ -35,7 +35,7 @@ exports.getCartByCustomer = async (req, res) => {
       cart = await Cart.findById(cart._id)
         .populate({
           path: 'cartItems',
-          populate: { path: 'product_id', select: 'name price sku unit' }
+          populate: { path: 'product_id', select: 'name price sku unit image_link' }
         })
         .populate('customer_id', 'account_id');
     }
@@ -210,7 +210,7 @@ exports.addItemToCart = async (req, res) => {
     const updatedCart = await Cart.findById(req.params.cartId)
       .populate({
         path: 'cartItems',
-        populate: { path: 'product_id', select: 'name price sku unit' }
+        populate: { path: "product_id", select: "name price sku unit image_link" },
       });
 
     res.status(200).json({
@@ -278,7 +278,7 @@ exports.updateItemQuantity = async (req, res) => {
     const updatedCart = await Cart.findById(cartId)
       .populate({
         path: 'cartItems',
-        populate: { path: 'product_id', select: 'name price sku unit' }
+        populate: { path: 'product_id', select: 'name price sku unit image_link' }
       });
 
     res.status(200).json({
@@ -330,7 +330,7 @@ exports.removeItemFromCart = async (req, res) => {
     const updatedCart = await Cart.findById(cartId)
       .populate({
         path: 'cartItems',
-        populate: { path: 'product_id', select: 'name price sku unit' }
+        populate: { path: 'product_id', select: 'name price sku unit image_link' }
       });
 
     res.status(200).json({

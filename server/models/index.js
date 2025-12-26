@@ -714,3 +714,41 @@ module.exports = {
   DamagedProduct: mongoose.model("DamagedProduct", damagedProductSchema),
   Section: mongoose.model("Section", sectionSchema),
 };
+
+// ==================== VERIFICATION CODE (for password reset) ====================
+const verificationCodeSchema = new mongoose.Schema(
+  {
+    email: {
+      type: String,
+      required: true,
+      lowercase: true,
+      trim: true,
+    },
+    code: {
+      type: String,
+      required: true,
+      length: 6,
+    },
+    expiresAt: {
+      type: Date,
+      required: true,
+      default: () => new Date(Date.now() + 10 * 60 * 1000), // 10 minutes from now
+    },
+    isUsed: {
+      type: Boolean,
+      default: false,
+    },
+    attempts: {
+      type: Number,
+      default: 0,
+    },
+  },
+  { timestamps: true }
+);
+
+// Index for automatic deletion of expired codes
+verificationCodeSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 });
+verificationCodeSchema.index({ email: 1, isUsed: 1 });
+
+// Add VerificationCode to exports
+module.exports.VerificationCode = mongoose.model("VerificationCode", verificationCodeSchema);

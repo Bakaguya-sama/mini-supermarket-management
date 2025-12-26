@@ -3,15 +3,21 @@ import { useNavigate } from "react-router-dom";
 import Logo from "../../components/ui/Logo";
 import Input from "../../components/ui/Input";
 import Button from "../../components/ui/Button";
+import authService from "../../services/authService";
 import "./ForgetPass.css";
 
 const ForgetPass = () => {
-  const [currentStep, setCurrentStep] = useState("email"); // "email" or "verification"
+  const [currentStep, setCurrentStep] = useState("email"); // "email", "verification", or "success"
   const [formData, setFormData] = useState({
     email: "",
     verificationCode: "",
+    newPassword: "",
+    confirmPassword: "",
   });
+  const [isLoading, setIsLoading] = useState(false);
   const [isResending, setIsResending] = useState(false);
+  const [error, setError] = useState("");
+  const [successMessage, setSuccessMessage] = useState("");
   const navigate = useNavigate();
 
   const handleInputChange = (e) => {
@@ -20,42 +26,96 @@ const ForgetPass = () => {
       ...prev,
       [name]: value,
     }));
+    setError(""); // Clear error when user types
   };
 
-  const handleEmailSubmit = (e) => {
+  const handleEmailSubmit = async (e) => {
     e.preventDefault();
-    console.log("Sending verification code to:", formData.email);
+    setError("");
+    setIsLoading(true);
 
-    // Simple validation
-    if (!formData.email) {
+    try {
+      const response = await authService.forgotPassword(formData.email);
+      
+      if (response.success) {
+        setSuccessMessage(response.message);
+        setCurrentStep("verification");
+      } else {
+        setError(response.message || "Không thể gửi mã xác thực");
+      }
+    } catch (err) {
+      setError(err.message || "Đã xảy ra lỗi khi gửi mã xác thực");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleVerificationSubmit = async (e) => {
+    e.preventDefault();
+    setError("");
+
+    // Validate passwords
+    if (!formData.newPassword || !formData.confirmPassword) {
+      setError("Vui lòng nhập mật khẩu mới");
       return;
     }
 
-    // Simulate sending verification code
-    setCurrentStep("verification");
-  };
-
-  const handleVerificationSubmit = (e) => {
-    e.preventDefault();
-    console.log("Verifying code:", formData.verificationCode);
-
-    // Simple validation
-    if (!formData.verificationCode) {
+    if (formData.newPassword !== formData.confirmPassword) {
+      setError("Mật khẩu xác nhận không khớp");
       return;
     }
 
-    // Simulate verification
-    navigate("/auth/signin");
+    if (formData.newPassword.length < 6) {
+      setError("Mật khẩu phải có ít nhất 6 ký tự");
+      return;
+    }
+
+    setIsLoading(true);
+
+    try {
+      const response = await authService.verifyResetCode({
+        email: formData.email,
+        code: formData.verificationCode,
+        newPassword: formData.newPassword,
+      });
+
+      if (response.success) {
+        setSuccessMessage(response.message);
+        setCurrentStep("success");
+        
+        // Redirect to login after 3 seconds
+        setTimeout(() => {
+          navigate("/signin");
+        }, 3000);
+      } else {
+        setError(response.message || "Mã xác thực không hợp lệ");
+      }
+    } catch (err) {
+      setError(err.message || "Đã xảy ra lỗi khi xác thực mã");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleResendCode = async () => {
     setIsResending(true);
-    console.log("Resending verification code to:", formData.email);
+    setError("");
 
-    // Simulate API call
-    setTimeout(() => {
+    try {
+      const response = await authService.resendVerificationCode(formData.email);
+      
+      if (response.success) {
+        setSuccessMessage(response.message);
+        // Clear success message after 3 seconds
+        setTimeout(() => setSuccessMessage(""), 3000);
+      } else {
+        setError(response.message || "Không thể gửi lại mã");
+      }
+    } catch (err) {
+      setError(err.message || "Đã xảy ra lỗi khi gửi lại mã");
+    } finally {
       setIsResending(false);
-    }, 2000);
+    }
   };
 
   const handleBackToSignIn = () => {
@@ -66,6 +126,36 @@ const ForgetPass = () => {
     <div className="forget-pass-container">
       <div className="forget-pass-card">
         <Logo />
+
+        {/* Show error message */}
+        {error && (
+          <div style={{
+            padding: '10px',
+            backgroundColor: '#fee',
+            border: '1px solid #fcc',
+            borderRadius: '5px',
+            color: '#c33',
+            marginBottom: '15px',
+            textAlign: 'center'
+          }}>
+            {error}
+          </div>
+        )}
+
+        {/* Show success message */}
+        {successMessage && (
+          <div style={{
+            padding: '10px',
+            backgroundColor: '#efe',
+            border: '1px solid #cfc',
+            borderRadius: '5px',
+            color: '#3c3',
+            marginBottom: '15px',
+            textAlign: 'center'
+          }}>
+            {successMessage}
+          </div>
+        )}
 
         {currentStep === "email" ? (
           <>
@@ -88,15 +178,21 @@ const ForgetPass = () => {
                   onChange={handleInputChange}
                   icon="✉️"
                   required
+                  disabled={isLoading}
                 />
               </div>
 
-              <Button type="submit" size="large" className="forget-pass-button">
-                Send Verification Code
+              <Button 
+                type="submit" 
+                size="large" 
+                className="forget-pass-button"
+                disabled={isLoading}
+              >
+                {isLoading ? "Sending..." : "Send Verification Code"}
               </Button>
             </form>
           </>
-        ) : (
+        ) : currentStep === "verification" ? (
           <>
             <div className="forget-pass-header">
               <h2 className="forget-pass-title">Enter Verification Code</h2>
@@ -121,6 +217,35 @@ const ForgetPass = () => {
                   icon="🔢"
                   maxLength="6"
                   required
+                  disabled={isLoading}
+                />
+              </div>
+
+              <div className="forget-pass-group">
+                <label className="forget-pass-label">New Password</label>
+                <Input
+                  type="password"
+                  name="newPassword"
+                  placeholder="Enter new password (min 6 characters)"
+                  value={formData.newPassword}
+                  onChange={handleInputChange}
+                  icon="🔒"
+                  required
+                  disabled={isLoading}
+                />
+              </div>
+
+              <div className="forget-pass-group">
+                <label className="forget-pass-label">Confirm Password</label>
+                <Input
+                  type="password"
+                  name="confirmPassword"
+                  placeholder="Confirm new password"
+                  value={formData.confirmPassword}
+                  onChange={handleInputChange}
+                  icon="🔒"
+                  required
+                  disabled={isLoading}
                 />
               </div>
 
@@ -130,7 +255,7 @@ const ForgetPass = () => {
                   size="large"
                   className="forget-pass-resend-button"
                   onClick={handleResendCode}
-                  disabled={isResending}
+                  disabled={isResending || isLoading}
                 >
                   {isResending ? "Sending..." : "Resend Code"}
                 </Button>
@@ -139,11 +264,30 @@ const ForgetPass = () => {
                   type="submit"
                   size="large"
                   className="forget-pass-button"
+                  disabled={isLoading}
                 >
-                  Verify Code
+                  {isLoading ? "Verifying..." : "Reset Password"}
                 </Button>
               </div>
             </form>
+          </>
+        ) : (
+          <>
+            <div className="forget-pass-header">
+              <div style={{
+                fontSize: '48px',
+                textAlign: 'center',
+                margin: '20px 0'
+              }}>
+                ✅
+              </div>
+              <h2 className="forget-pass-title">Password Reset Successful!</h2>
+              <p className="forget-pass-subtitle">
+                Your password has been successfully reset.
+                <br />
+                Redirecting to login page...
+              </p>
+            </div>
           </>
         )}
 

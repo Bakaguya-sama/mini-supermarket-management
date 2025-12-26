@@ -1,6 +1,7 @@
 // controllers/customerController.js - CUSTOMER API HOÀN CHỈNH
 const { Customer, Account, Order, Cart } = require('../models');
 const mongoose = require('mongoose');
+const bcrypt = require('bcryptjs');
 
 /**
  * @desc    Get all customers with filters
@@ -231,9 +232,15 @@ exports.createCustomer = async (req, res) => {
         });
       }
 
-      // Create account
+      // Generate default password: "Customer@" + first 4 chars of username
+      const defaultPassword = `Customer@${username.substring(0, 4)}`;
+      const salt = await bcrypt.genSalt(10);
+      const password_hash = await bcrypt.hash(defaultPassword, salt);
+
+      // Create account with password
       const newAccount = await Account.create({
         username,
+        password_hash,
         email,
         full_name,
         phone: phone || '',
@@ -275,10 +282,19 @@ exports.createCustomer = async (req, res) => {
 
     await customer.populate('account_id', 'username email full_name phone address');
 
+    // Get the account to check if password was just created
+    const accountData = await Account.findById(account_id);
+    const defaultPassword = `Customer@${accountData.username.substring(0, 4)}`;
+
     res.status(201).json({
       success: true,
       message: 'Customer created successfully',
-      data: customer
+      data: customer,
+      loginInfo: {
+        username: accountData.username,
+        defaultPassword: defaultPassword,
+        message: 'Customer can login with this default password. Please advise them to change it after first login.'
+      }
     });
   } catch (error) {
     res.status(500).json({

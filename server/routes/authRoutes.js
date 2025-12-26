@@ -27,6 +27,27 @@ router.post('/login', authController.login);
  */
 router.post('/verify-token', authController.verifyToken);
 
+/**
+ * @route   POST /api/auth/forgot-password
+ * @desc    Gửi mã xác thực để reset password
+ * @access  Public
+ */
+router.post('/forgot-password', authController.forgotPassword);
+
+/**
+ * @route   POST /api/auth/verify-reset-code
+ * @desc    Xác thực mã và reset password
+ * @access  Public
+ */
+router.post('/verify-reset-code', authController.verifyResetCode);
+
+/**
+ * @route   POST /api/auth/resend-verification-code
+ * @desc    Gửi lại mã xác thực
+ * @access  Public
+ */
+router.post('/resend-verification-code', authController.resendVerificationCode);
+
 // ==================== PROTECTED ROUTES ====================
 
 /**
@@ -58,5 +79,12 @@ router.put('/change-password', authenticate, authController.changePassword);
  * @access  Private (Admin/Manager only)
  */
 router.post('/register/staff', authenticate, authController.registerStaff);
+
+/**
+ * @route   POST /api/auth/reset-password-for-customer
+ * @desc    Reset password cho customer (Admin/Manager only)
+ * @access  Private (Admin/Manager)
+ */
+router.post('/reset-password-for-customer', authenticate, authController.resetPasswordForCustomer);
 
 module.exports = router;
