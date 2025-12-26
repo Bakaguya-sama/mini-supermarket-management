@@ -98,6 +98,7 @@ const EditDamagedProduct = () => {
     }
   };
 
+  // Resolution action options - theo UI trong ảnh
   const reasonOptions = [
     { value: "expired", label: "Expired" },
     { value: "damaged", label: "Damaged" },
@@ -117,6 +118,7 @@ const EditDamagedProduct = () => {
     setFormData((prev) => ({
       ...prev,
       reason: value,
+      // Chỉ xóa customReason khi KHÔNG phải "other"
       customReason: value !== "other" ? "" : prev.customReason,
     }));
   };
@@ -171,13 +173,29 @@ const EditDamagedProduct = () => {
     try {
       setIsLoading(true);
 
-      // Prepare update data
-      const updateData = {
-        damaged_quantity: parseInt(formData.damagedQty),
-        resolution_action: formData.reason,
-        description:
-          formData.reason === "other" ? formData.customReason : formData.reason,
-      };
+      // Prepare update data - CHỈ UPDATE INFORMATION FIELDS
+      // KHÔNG BAO GỒM: damaged_quantity, product_id, shelf_id
+      const updateData = {};
+
+      // resolution_action - expired/damaged/other
+      if (formData.reason && formData.reason !== '') {
+        updateData.resolution_action = formData.reason;
+      }
+
+      // description - nếu chọn "other" thì dùng customReason, nếu không thì dùng reason
+      if (formData.reason === "other" && formData.customReason && formData.customReason.trim() !== '') {
+        updateData.description = formData.customReason;
+        updateData.notes = formData.customReason;
+      } else if (formData.reason && formData.reason !== "other") {
+        updateData.description = formData.reason;
+      }
+
+      // status - chỉ update nếu có giá trị hợp lệ
+      if (formData.status && formData.status !== '') {
+        updateData.status = formData.status;
+      }
+
+      console.log('Sending update data:', updateData);
 
       const response = await damagedProductService.updateDamagedProduct(
         id,
@@ -392,10 +410,8 @@ const EditDamagedProduct = () => {
                     id="damagedQty"
                     name="damagedQty"
                     value={formData.damagedQty}
-                    onChange={handleInputChange}
-                    min="0"
-                    max={formData.currentStock}
-                    className="edit-damaged-product-form-input"
+                    readOnly
+                    className="edit-damaged-product-form-input readonly"
                   />
                 </div>
 
@@ -423,6 +439,7 @@ const EditDamagedProduct = () => {
                 </div>
               </div>
 
+              {/* Custom Reason - chỉ hiển thị khi chọn "Other reason" */}
               {formData.reason === "other" && (
                 <div className="edit-damaged-product-form-row">
                   <div className="edit-damaged-product-form-group edit-damaged-product-full-width">

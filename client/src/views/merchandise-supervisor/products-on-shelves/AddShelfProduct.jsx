@@ -98,11 +98,14 @@ const AddShelfProduct = () => {
       (sum, mapping) => sum + (mapping.quantity || 0),
       0
     );
-    // Prefer `current_stock`, fallback to legacy `stock_quantity` if present
-    const totalQty = product.current_stock ?? product.stock_quantity ?? 0;
-    const availableToShelve = totalQty - shelfedQty;
+    // current_stock = quantity in warehouse (not yet on shelves)
+    // shelfedQty = quantity already on shelves
+    // availableToShelve = current_stock (what's left in warehouse to put on shelves)
+    const warehouseStock = product.current_stock ?? product.stock_quantity ?? 0;
+    const availableToShelve = warehouseStock; // current_stock already represents available warehouse stock
+    const totalQty = warehouseStock + shelfedQty; // Total = warehouse + on shelves
 
-    // Determine shelf status
+    // Determine shelf status based on warehouse availability
     let onShelfStatus = "Out of Stock";
     if (availableToShelve > 20) {
       onShelfStatus = "In Stock";
@@ -116,10 +119,10 @@ const AddShelfProduct = () => {
       category: product.category,
       price: `$${product.price}`,
       supplier: product.supplier_id?.name || "Unknown",
-      stock: totalQty,
+      stock: warehouseStock, // Show warehouse stock (available to shelve)
       onShelfStatus: onShelfStatus,
       shelfedQty: shelfedQty,
-      totalQty: totalQty,
+      totalQty: totalQty, // Total includes both warehouse and shelved
     };
   });
 
@@ -225,10 +228,10 @@ const AddShelfProduct = () => {
 
   const handleSelectProduct = (productId) => {
     const product = inventoryData.find((p) => p.id === productId);
-    const isFullyShelved = product.shelfedQty >= product.totalQty;
+    const warehouseStock = product.stock; // This is current_stock = available in warehouse
 
-    // Prevent selection of fully shelved products
-    if (isFullyShelved) {
+    // Prevent selection of products with no warehouse stock
+    if (warehouseStock <= 0) {
       return;
     }
 
@@ -240,8 +243,7 @@ const AddShelfProduct = () => {
       delete newQuantities[productId];
     } else {
       newSelected.add(productId);
-      const availableQty = product.totalQty - product.shelfedQty;
-      newQuantities[productId] = Math.min(1, availableQty); // Default to 1 or available quantity
+      newQuantities[productId] = Math.min(1, warehouseStock); // Default to 1 or available warehouse stock
     }
 
     setSelectedProducts(newSelected);
@@ -250,8 +252,8 @@ const AddShelfProduct = () => {
 
   const handleQuantityChange = (productId, quantity) => {
     const product = inventoryData.find((p) => p.id === productId);
-    const availableQty = product.totalQty - product.shelfedQty;
-    const validQuantity = Math.max(1, Math.min(quantity, availableQty));
+    const warehouseStock = product.stock; // current_stock = available in warehouse
+    const validQuantity = Math.max(1, Math.min(quantity, warehouseStock));
 
     setProductQuantities({
       ...productQuantities,
@@ -301,6 +303,7 @@ const AddShelfProduct = () => {
 
     try {
       setIsSubmitting(true);
+      console.log("🔵 START: handleAddToShelf");
 
       // Prepare products array for bulk assign
       const products = Array.from(selectedProducts).map((productId) => ({
@@ -308,14 +311,31 @@ const AddShelfProduct = () => {
         quantity: productQuantities[productId],
       }));
 
-      // Call bulk assign API
-      const response = await productShelfService.bulkAssignToShelf({
+      const requestData = {
         shelf_id: selectedShelf,
         products: products,
-      });
+      };
+
+      console.log("=== FRONTEND: Sending bulk assign request ===");
+      console.log("Shelf ID:", selectedShelf);
+      console.log("Shelf Name:", shelf.name);
+      console.log("Products to add:", products);
+      console.log("Full Request:", JSON.stringify(requestData, null, 2));
+
+      // Call bulk assign API
+      console.log("🔄 Calling productShelfService.bulkAssignToShelf...");
+      const response = await productShelfService.bulkAssignToShelf(requestData);
+      console.log("✅ Service call completed");
+      
+      console.log("=== FRONTEND: Response received ===");
+      console.log("Response success:", response.success);
+      console.log("Response message:", response.message);
+      console.log("Response data:", response.data);
+      console.log("Full Response:", JSON.stringify(response, null, 2));
 
       // Handle partial success cases
       if (response.success) {
+        console.log("✅ SUCCESS BRANCH");
         setSuccessMessage(
           `Successfully added ${totalQuantity} item(s) from ${selectedProducts.size} product(s) to ${shelf.name}!`
         );
@@ -326,8 +346,10 @@ const AddShelfProduct = () => {
         setSelectedShelf(null);
 
         // Reload data to refresh shelf quantities
+        console.log("🔄 Reloading data in 1 second...");
         setTimeout(() => loadInitialData(), 1000);
       } else if (response.data && response.data.data) {
+        console.log("⚠️ PARTIAL SUCCESS BRANCH");
         // Partial or mixed results returned from server
         const results = response.data.data;
         const successCount = results.success.length;
@@ -352,14 +374,23 @@ const AddShelfProduct = () => {
         setSelectedShelf(null);
 
         // Reload data to reflect successful assignments
+        console.log("🔄 Reloading data in 1 second...");
         setTimeout(() => loadInitialData(), 1000);
       } else {
+        console.log("❌ FAILURE BRANCH");
+        console.log("Error message:", response.message);
         setErrorMessage(response.message || "Failed to add products to shelf");
       }
     } catch (error) {
-      console.error("Error adding products to shelf:", error);
-      setErrorMessage("Error adding products to shelf");
+      console.error("❌ CATCH BLOCK - Error adding products to shelf:", error);
+      console.error("Error details:", {
+        message: error.message,
+        response: error.response,
+        stack: error.stack
+      });
+      setErrorMessage("Error adding products to shelf: " + error.message);
     } finally {
+      console.log("🔵 END: handleAddToShelf (isSubmitting = false)");
       setIsSubmitting(false);
     }
   };
@@ -576,16 +607,14 @@ const AddShelfProduct = () => {
                 ) : (
                   paginatedProductData.map((product) => {
                     const isSelected = selectedProducts.has(product.id);
-                    const isFullyShelved =
-                      product.shelfedQty >= product.totalQty;
-                    const availableToShelve =
-                      product.totalQty - product.shelfedQty;
+                    const warehouseStock = product.stock; // current_stock = available in warehouse
+                    const hasNoStock = warehouseStock <= 0;
 
                     return (
                       <tr
                         key={product.id}
                         className={`${isSelected ? "selected-row" : ""} ${
-                          isFullyShelved ? "fully-shelved-row" : ""
+                          hasNoStock ? "fully-shelved-row" : ""
                         }`}
                       >
                         <td>
@@ -593,12 +622,12 @@ const AddShelfProduct = () => {
                             type="checkbox"
                             checked={isSelected}
                             onChange={() => handleSelectProduct(product.id)}
-                            disabled={isFullyShelved}
+                            disabled={hasNoStock}
                             className={`add-shelf-checkbox ${
-                              isFullyShelved ? "disabled" : ""
+                              hasNoStock ? "disabled" : ""
                             }`}
                             title={
-                              isFullyShelved ? "Product is fully shelved" : ""
+                              hasNoStock ? "No stock available in warehouse" : ""
                             }
                           />
                         </td>
@@ -620,15 +649,15 @@ const AddShelfProduct = () => {
                           {product.shelfedQty}/{product.totalQty}
                         </td>
                         <td className="add-shelf-quantity-input-cell">
-                          {isFullyShelved ? (
+                          {hasNoStock ? (
                             <span className="add-shelf-fully-shelved-text">
-                              Fully Shelved
+                              No Stock
                             </span>
                           ) : (
                             <input
                               type="number"
                               min="1"
-                              max={availableToShelve}
+                              max={warehouseStock}
                               value={productQuantities[product.id] || ""}
                               onChange={(e) =>
                                 handleQuantityChange(
