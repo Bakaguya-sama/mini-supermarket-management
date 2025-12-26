@@ -1,37 +1,32 @@
-// config/email.js - Email Service Configuration
 const nodemailer = require('nodemailer');
 require('dotenv').config();
 
-/**
- * Email Transporter Configuration
- * Sử dụng Gmail SMTP hoặc email service khác
- */
+
 const createTransporter = () => {
-  // Option 1: Gmail SMTP (recommended for development)
   if (process.env.EMAIL_SERVICE === 'gmail') {
     return nodemailer.createTransport({
       service: 'gmail',
       auth: {
         user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASSWORD, // App Password nếu dùng Gmail
+        pass: process.env.EMAIL_PASSWORD, 
       },
       tls: {
-        rejectUnauthorized: false // ✅ Fix SSL certificate error in development
+        rejectUnauthorized: false 
       }
     });
   }
 
-  // Option 2: Custom SMTP
+
   return nodemailer.createTransport({
     host: process.env.SMTP_HOST || 'smtp.gmail.com',
     port: parseInt(process.env.SMTP_PORT) || 587,
-    secure: process.env.SMTP_SECURE === 'true', // true for 465, false for other ports
+    secure: process.env.SMTP_SECURE === 'true', 
     auth: {
       user: process.env.EMAIL_USER,
       pass: process.env.EMAIL_PASSWORD,
     },
     tls: {
-      rejectUnauthorized: false // ✅ Fix SSL certificate error in development
+      rejectUnauthorized: false 
     }
   });
 };
