@@ -284,6 +284,8 @@ const orderSchema = new mongoose.Schema(
     delivery_date: { type: Date },
     total_amount: { type: Number, default: 0 },
     payment_id: { type: mongoose.Schema.Types.ObjectId, ref: "Payment" },
+    promotion_id: { type: mongoose.Schema.Types.ObjectId, ref: "Promotion" }, // ✅ ADDED: Track applied promotion
+    discount_amount: { type: Number, default: 0 }, // ✅ ADDED: Store discount value
     notes: { type: String },
     isDelete: { type: Boolean, default: false },
   },

@@ -1494,7 +1494,9 @@ async function seedDatabase() {
         order_date: new Date("2024-12-01"),
         status: "delivered",
         total_amount: 540000,
-        notes: "Giao giờ hành chính",
+        promotion_id: promotions[0]._id, // ✅ ADDED: Weekend Special 20%
+        discount_amount: 135000, // ✅ ADDED: 20% of 675000 (before discount)
+        notes: "Giao giờ hành chính | Promotion: Weekend Special - 20% off",
         tracking_number: "TRACK-001",
         isDelete: false,
       },
@@ -1516,7 +1518,9 @@ async function seedDatabase() {
         order_date: new Date("2024-12-13"),
         status: "confirmed",
         total_amount: 220000,
-        notes: "Giao sau 5pm",
+        promotion_id: promotions[1]._id, // ✅ ADDED: Mega Sale 30%
+        discount_amount: 94285, // ✅ ADDED: 30% of 314285 (before discount)
+        notes: "Giao sau 5pm | Promotion: Mega Sale - 30% off",
         tracking_number: "TRACK-009",
         isDelete: false,
       },
@@ -1538,6 +1542,9 @@ async function seedDatabase() {
         order_date: new Date("2024-12-05"),
         status: "delivered",
         total_amount: 340000,
+        promotion_id: promotions[2]._id, // ✅ ADDED: New Customer Welcome 15%
+        discount_amount: 60000, // ✅ ADDED: 15% of 400000 (before discount)
+        notes: "Promotion: Welcome - 15% off",
         tracking_number: "TRACK-002",
         isDelete: false,
       },

@@ -177,9 +177,10 @@ exports.getOrdersByCustomer = async (req, res) => {
     const orders = await Order.find(query)
       .populate({
         path: "orderItems",
-        populate: { path: "product_id", select: "name price category sku" },
+        populate: { path: "product_id", select: "name price category sku image_link" },
       })
       .populate("customer_id", "account_id membership_type")
+      .populate("promotion_id", "name description discount_value promotion_type") // ✅ ADDED: Populate promotion info
       .skip(skip)
       .limit(parseInt(limit))
       .sort("-order_date");
@@ -328,8 +329,8 @@ exports.createOrder = async (req, res) => {
       `📦 Creating order #${orderSequence} with tracking: ${trackingNumber}`
     );
 
-    // ✅ Create order WITH empty orderItems array
-    const order = await Order.create({
+    // ✅ Prepare promotion_id and discount_amount from cart
+    const orderData = {
       order_number: orderNumber,
       customer_id,
       orderItems: [], // ← IMPORTANT: Initialize empty array
@@ -337,7 +338,16 @@ exports.createOrder = async (req, res) => {
       tracking_number: trackingNumber, // ← AUTO GENERATED
       notes,
       status: "pending",
-    });
+    };
+
+    // ✅ Add promotion info if exists in cart
+    if (cart && cart.applied_promo_id) {
+      orderData.promotion_id = cart.applied_promo_id;
+      console.log(`🎁 Adding promotion ${cart.applied_promo_id} to order`);
+    }
+
+    // ✅ Create order WITH promotion info
+    const order = await Order.create(orderData);
 
     console.log(`📦 Created order ${orderNumber}`);
 
@@ -407,20 +417,30 @@ exports.createOrder = async (req, res) => {
     let pointsDiscount = 0;
 
     if (notes) {
-      // Extract points redeemed: "Points Redeemed: 500 points = -$5.00"
-      const pointsMatch = notes.match(
-        /Points Redeemed: (\d+) points = -\$([0-9.]+)/
-      );
+      console.log(`📝 Parsing notes: ${notes}`);
+      
+      // Extract points redeemed: "Points Redeemed: 500 points = -5.000₫"
+      const pointsMatch = notes.match(/Points Redeemed: (\d+) points = -([0-9,.]+)₫/);
       if (pointsMatch) {
         pointsRedeemed = parseInt(pointsMatch[1]);
-        pointsDiscount = parseFloat(pointsMatch[2]);
+        pointsDiscount = parseFloat(pointsMatch[2].replace(/\./g, '').replace(/,/g, ''));
+        console.log(`🎁 Points: ${pointsRedeemed} points = ${pointsDiscount}₫`);
       }
 
-      // Extract promo discount: "Discount: 20% = -$6400.00"
-      const promoMatch = notes.match(/Discount: .*? = -\$([0-9.]+)/);
+      // Extract promo discount: "Discount: 30% = -13.350₫" or "Discount: 20% = -$6400.00"
+      const promoMatch = notes.match(/Discount:.*?= -[\$₫]?([0-9,.]+)/);
       if (promoMatch) {
-        promoDiscount = parseFloat(promoMatch[1]);
+        promoDiscount = parseFloat(promoMatch[1].replace(/\./g, '').replace(/,/g, ''));
+        console.log(`💰 Promo discount: ${promoDiscount}₫`);
       }
+    }
+
+    // ✅ Update order with discount_amount if promotion exists
+    if (cart && cart.applied_promo_id && promoDiscount > 0) {
+      await Order.findByIdAndUpdate(order._id, {
+        discount_amount: promoDiscount,
+      });
+      console.log(`💰 Saved discount amount: ${promoDiscount.toLocaleString("vi-VN")}₫`);
     }
 
     // Calculate actual amount paid (after all discounts)

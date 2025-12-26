@@ -77,20 +77,36 @@ const CustomerOrdersPage = ({ customerId }) => {
 
       if (result.success && result.data) {
         // Transform backend orders to UI format
-        const formattedOrders = result.data.map((order) => ({
-          id: order.order_number || order._id,
-          _id: order._id,
-          date: order.order_date || order.createdAt,
-          status: order.status,
-          total: order.total_amount,
-          trackingNumber: order.tracking_number || "N/A",
-          deliveryDate: order.delivery_date,
-          items: (order.orderItems || []).map((item) => ({
-            name: item.product_id?.name || "Unknown Product",
-            quantity: item.quantity,
-            price: item.unit_price,
-          })),
-        }));
+        const formattedOrders = result.data.map((order) => {
+          console.log(`📦 Order ${order.order_number}:`, {
+            promotion_id: order.promotion_id,
+            discount_amount: order.discount_amount,
+            hasPromotion: !!order.promotion_id
+          });
+          
+          return {
+            id: order.order_number || order._id,
+            _id: order._id,
+            date: order.order_date || order.createdAt,
+            status: order.status,
+            total: order.total_amount,
+            trackingNumber: order.tracking_number || "N/A",
+            deliveryDate: order.delivery_date,
+            promotion: order.promotion_id ? { // ✅ ADDED: Include promotion info
+              name: order.promotion_id.name,
+              description: order.promotion_id.description,
+              discount_value: order.promotion_id.discount_value,
+              promotion_type: order.promotion_id.promotion_type,
+            } : null,
+            discount_amount: order.discount_amount || 0, // ✅ ADDED: Include discount amount
+            items: (order.orderItems || []).map((item) => ({
+              name: item.product_id?.name || "Unknown Product",
+              quantity: item.quantity,
+              price: item.unit_price,
+              image: item.product_id?.image_link, // ✅ ADDED: Include product image
+            })),
+          };
+        });
 
         setOrders(formattedOrders);
         console.log(`✅ Loaded ${formattedOrders.length} orders`);
@@ -124,6 +140,11 @@ const CustomerOrdersPage = ({ customerId }) => {
 
   const openModal = (order, e) => {
     e.stopPropagation();
+    console.log('🔍 Opening modal for order:', {
+      id: order.id,
+      promotion: order.promotion,
+      discount_amount: order.discount_amount
+    });
     setModalOrder(order);
   };
 
@@ -283,6 +304,14 @@ const CustomerOrdersPage = ({ customerId }) => {
                     <div className="order-items-summary">
                       {order.items.map((item, index) => (
                         <div key={index} className="order-item-summary">
+                          {item.image && (
+                            <img 
+                              src={item.image} 
+                              alt={item.name}
+                              className="order-item-image"
+                              style={{ width: '40px', height: '40px', objectFit: 'cover', borderRadius: '4px', marginRight: '8px' }}
+                            />
+                          )}
                           <span>
                             {item.name} × {item.quantity}
                           </span>
@@ -290,6 +319,28 @@ const CustomerOrdersPage = ({ customerId }) => {
                         </div>
                       ))}
                     </div>
+
+                    {/* ✅ ADDED: Display promotion if exists */}
+                    {order.promotion && (
+                      <div className="order-promotion" style={{ 
+                        backgroundColor: '#dcfce7', 
+                        padding: '8px 12px', 
+                        borderRadius: '6px', 
+                        marginTop: '8px',
+                        fontSize: '0.9rem',
+                        color: '#16a34a',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between'
+                      }}>
+                        <span>🎁 <strong>{order.promotion.name}</strong></span>
+                        {(order.discount_amount || order.discount_amount === 0) && (
+                          <span style={{ fontWeight: 'bold', color: '#15803d' }}>
+                            -{(order.discount_amount || 0).toLocaleString("vi-VN")}₫
+                          </span>
+                        )}
+                      </div>
+                    )}
 
                     {order.trackingNumber && (
                       <div className="order-tracking">
@@ -401,6 +452,22 @@ const CustomerOrdersPage = ({ customerId }) => {
                 <div className="modal-items-list">
                   {modalOrder.items.map((item, index) => (
                     <div key={index} className="modal-item">
+                      {/* ✅ ADDED: Display product image */}
+                      {item.image && (
+                        <img 
+                          src={item.image} 
+                          alt={item.name}
+                          className="modal-item-image"
+                          style={{ 
+                            width: '60px', 
+                            height: '60px', 
+                            objectFit: 'cover', 
+                            borderRadius: '8px', 
+                            marginRight: '12px',
+                            border: '1px solid #e5e7eb'
+                          }}
+                        />
+                      )}
                       <div className="modal-item-info">
                         <div className="modal-item-name">{item.name}</div>
                         <div className="modal-item-quantity">
@@ -414,6 +481,31 @@ const CustomerOrdersPage = ({ customerId }) => {
                   ))}
                 </div>
               </div>
+
+              {/* ✅ ADDED: Display promotion in modal */}
+              {modalOrder.promotion && (
+                <div className="modal-promotion-section" style={{
+                  backgroundColor: '#dcfce7',
+                  padding: '16px',
+                  borderRadius: '8px',
+                  marginBottom: '16px'
+                }}>
+                  <h3 style={{ color: '#16a34a', fontSize: '1rem', marginBottom: '8px' }}>
+                    🎁 Applied Promotion
+                  </h3>
+                  <div style={{ color: '#166534' }}>
+                    <strong>{modalOrder.promotion.name}</strong>
+                    <p style={{ fontSize: '0.9rem', marginTop: '4px', opacity: 0.9 }}>
+                      {modalOrder.promotion.description}
+                    </p>
+                    {modalOrder.discount_amount > 0 && (
+                      <div style={{ marginTop: '8px', fontSize: '1.1rem', fontWeight: 'bold' }}>
+                        Discount: -{modalOrder.discount_amount.toLocaleString("vi-VN")}₫
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
 
               <div className="modal-total">
                 <span>Total Amount</span>

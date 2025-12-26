@@ -792,6 +792,8 @@ exports.resetPasswordForCustomer = async (req, res) => {
  */
 exports.forgotPassword = async (req, res) => {
   try {
+    console.log('📧 Forgot Password Request received:', { email: req.body.email });
+    
     const { email } = req.body;
 
     // Validate email
@@ -802,6 +804,8 @@ exports.forgotPassword = async (req, res) => {
       });
     }
 
+    console.log('🔍 Checking if account exists...');
+    
     // Check if account exists with this email
     const account = await Account.findOne({
       email: email.toLowerCase(),
@@ -809,6 +813,7 @@ exports.forgotPassword = async (req, res) => {
     });
 
     if (!account) {
+      console.log('⚠️ Account not found, but returning success for security');
       // For security, don't reveal if email exists or not
       return res.json({
         success: true,
@@ -816,8 +821,12 @@ exports.forgotPassword = async (req, res) => {
       });
     }
 
+    console.log('✅ Account found:', account.email);
+    
     // Generate 6-digit verification code
     const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
+    
+    console.log('🔢 Generated verification code:', verificationCode);
 
     // Delete any existing unused codes for this email
     await VerificationCode.deleteMany({
@@ -825,6 +834,8 @@ exports.forgotPassword = async (req, res) => {
       isUsed: false
     });
 
+    console.log('💾 Saving verification code to database...');
+    
     // Save verification code to database
     await VerificationCode.create({
       email: email.toLowerCase(),
@@ -834,9 +845,13 @@ exports.forgotPassword = async (req, res) => {
       attempts: 0
     });
 
+    console.log('📧 Attempting to send email...');
+    
     // Send email
     try {
-      await sendVerificationEmail(email, verificationCode, account.full_name || account.username);
+      const emailResult = await sendVerificationEmail(email, verificationCode, account.full_name || account.username);
+      
+      console.log('✅ Email sent successfully:', emailResult);
       
       res.json({
         success: true,
@@ -847,7 +862,8 @@ exports.forgotPassword = async (req, res) => {
         }
       });
     } catch (emailError) {
-      console.error('Email sending error:', emailError);
+      console.error('❌ Email sending error:', emailError);
+      console.error('Error stack:', emailError.stack);
       
       // Delete the verification code if email fails
       await VerificationCode.deleteOne({
@@ -863,7 +879,8 @@ exports.forgotPassword = async (req, res) => {
     }
 
   } catch (error) {
-    console.error('Forgot Password Error:', error);
+    console.error('❌ Forgot Password Error:', error);
+    console.error('Error stack:', error.stack);
     res.status(500).json({
       success: false,
       message: 'Lỗi server khi xử lý yêu cầu',

@@ -9,17 +9,20 @@ require('dotenv').config();
 const createTransporter = () => {
   // Option 1: Gmail SMTP (recommended for development)
   if (process.env.EMAIL_SERVICE === 'gmail') {
-    return nodemailer.createTransporter({
+    return nodemailer.createTransport({
       service: 'gmail',
       auth: {
         user: process.env.EMAIL_USER,
         pass: process.env.EMAIL_PASSWORD, // App Password nếu dùng Gmail
       },
+      tls: {
+        rejectUnauthorized: false // ✅ Fix SSL certificate error in development
+      }
     });
   }
 
   // Option 2: Custom SMTP
-  return nodemailer.createTransporter({
+  return nodemailer.createTransport({
     host: process.env.SMTP_HOST || 'smtp.gmail.com',
     port: parseInt(process.env.SMTP_PORT) || 587,
     secure: process.env.SMTP_SECURE === 'true', // true for 465, false for other ports
@@ -27,6 +30,9 @@ const createTransporter = () => {
       user: process.env.EMAIL_USER,
       pass: process.env.EMAIL_PASSWORD,
     },
+    tls: {
+      rejectUnauthorized: false // ✅ Fix SSL certificate error in development
+    }
   });
 };
 
@@ -39,6 +45,12 @@ const createTransporter = () => {
  */
 const sendVerificationEmail = async (to, verificationCode, userName = 'User') => {
   try {
+    console.log('\n📧 ===== SENDING VERIFICATION EMAIL =====');
+    console.log(`To: ${to}`);
+    console.log(`Verification Code: ${verificationCode}`);
+    console.log(`User: ${userName}`);
+    console.log('=========================================\n');
+    
     const transporter = createTransporter();
 
     const mailOptions = {
@@ -145,7 +157,7 @@ const sendVerificationEmail = async (to, verificationCode, userName = 'User') =>
     };
 
     const info = await transporter.sendMail(mailOptions);
-    console.log('✅ Verification email sent:', info.messageId);
+    console.log('✅ Verification email sent successfully:', info.messageId);
     return {
       success: true,
       messageId: info.messageId,
