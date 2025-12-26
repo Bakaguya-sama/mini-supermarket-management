@@ -293,35 +293,29 @@ const SignIn = () => {
         </div>
 
         {/* Demo Accounts Information */}
-        {/* <div className="demo-accounts">
-          <h4>Demo Accounts:</h4>
-
-          {activeTab === "staff" ? (
-            <div className="accounts-grid">
-              <div className="account-item">
-                <strong>Manager:</strong> admin / admin123
-              </div>
-              <div className="account-item">
-                <strong>Delivery:</strong> delivery / delivery123
-              </div>
-              <div className="account-item">
-                <strong>Merchandise:</strong> merchandise / merchandise123
-              </div>
-              <div className="account-item">
-                <strong>Warehouse:</strong> warehouse / warehouse123
-              </div>
-              <div className="account-item">
-                <strong>Cashier:</strong> cashier / cashier123
-              </div>
+        <div className="demo-accounts">
+          <h4>🔑 Tài khoản test:</h4>
+          <div className="accounts-grid">
+            <div className="account-item">
+              <strong>Manager:</strong> manager1 / password123
             </div>
-          ) : (
-            <div className="accounts-grid">
-              <div className="account-item">
-                <strong>Customer:</strong> customer1 / customer123
-              </div>
+            <div className="account-item">
+              <strong>Delivery Staff:</strong> delivery1 / password123
             </div>
-          )}
-        </div> */}
+            <div className="account-item">
+              <strong>Cashier:</strong> cashier1 / password123
+            </div>
+            <div className="account-item">
+              <strong>Merchandise Supervisor:</strong> supervisor1 / password123
+            </div>
+            <div className="account-item">
+              <strong>Warehouse Staff:</strong> warehouse1 / password123
+            </div>
+            <div className="account-item">
+              <strong>Customer:</strong> customer1 / password123
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );
