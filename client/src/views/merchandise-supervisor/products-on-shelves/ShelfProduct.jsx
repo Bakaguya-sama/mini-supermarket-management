@@ -73,7 +73,7 @@ const ShelfProduct = () => {
             name: product?.name || "Unknown Product",
             category: product?.category || "",
             brand: "N/A",
-            price: `$${(product?.price || 0).toFixed(2)}`,
+            price: `${product?.price || 0}VNĐ`,
             stock: quantity,
             lowStockThreshold: lowStockThreshold,
             supplier: product?.supplier_id?.name || "",
@@ -268,7 +268,7 @@ const ShelfProduct = () => {
             </div>
             <div className="shelf-stat-content">
               <div className="shelf-stat-number">
-                ${totalValue.toLocaleString()}
+                {totalValue.toLocaleString()}VNĐ
               </div>
               <div className="shelf-stat-label">Total Value</div>
             </div>
