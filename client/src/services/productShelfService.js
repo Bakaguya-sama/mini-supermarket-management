@@ -258,25 +258,38 @@ export const deleteProductShelf = async (productShelfId) => {
  */
 export const bulkAssignToShelf = async (bulkAssignData) => {
   try {
-    const response = await apiClient.post(
+    console.log("📡 SERVICE: Calling API POST /product-shelves/bulk/assign");
+    console.log("📡 SERVICE: Request data:", bulkAssignData);
+    
+    // apiClient already returns response.data (see apiClient.js interceptor)
+    // So we get the data object directly, not response.data.data
+    const data = await apiClient.post(
       "/product-shelves/bulk/assign",
       bulkAssignData
     );
-    const resData = response.data || response;
-    return {
-      success: resData?.success ?? true,
-      data: resData || null,
-      message:
-        resData?.message || response.message || "Products assigned to shelf",
+    
+    console.log("📡 SERVICE: API returned data:", data);
+    
+    const result = {
+      success: data?.success ?? true,
+      data: data?.data || data,  // data.data if exists, otherwise just data
+      message: data?.message || "Products assigned to shelf",
     };
+    
+    console.log("📡 SERVICE: Returning:", result);
+    return result;
   } catch (error) {
-    console.error("Error bulk assigning products:", error);
-    return {
+    console.error("📡 SERVICE ERROR:", error.message);
+    console.error("📡 SERVICE ERROR Details:", error);
+    
+    const result = {
       success: false,
       data: null,
-      message:
-        error.response?.data?.message || "Failed to assign products to shelf",
+      message: error?.message || "Failed to assign products to shelf",
     };
+    
+    console.log("📡 SERVICE: Returning error:", result);
+    return result;
   }
 };
 
