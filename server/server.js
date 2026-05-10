@@ -80,15 +80,10 @@ app.use("/api/product-batches", require("./routes/productBatchRoutes"));
 app.use("/api/promotions", require("./routes/promotionRoutes"));
 app.use("/api/feedbacks", require("./routes/feedbackRoutes"));
 
-// Error handling middleware
-app.use((err, req, res, next) => {
-  console.error(err.stack);
-  res.status(err.status || 500).json({
-    success: false,
-    message: err.message || "Internal Server Error",
-    ...(process.env.NODE_ENV === "development" && { stack: err.stack }),
-  });
-});
+// Global Error Handling Middleware
+const errorHandler = require("./middleware/errorHandler");
+app.use(errorHandler);
+
 
 // 404 handler
 app.use((req, res) => {
