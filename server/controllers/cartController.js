@@ -1,6 +1,47 @@
 // controllers/cartController.js - SHOPPING CART API HOÀN CHỈNH
 const { Cart, CartItem, Product, Customer } = require('../models');
 const mongoose = require('mongoose');
+const redisClient = require('../config/redis');
+const logger = require('../config/logger');
+
+const CART_CACHE_TTL = 900; // 15 minutes
+
+const cartCacheKey = (cartId) => `cart:session:${cartId}`;
+const customerCartCacheKey = (customerId) => `cart:session:customer:${customerId}`;
+
+async function readCartCacheByCustomer(customerId) {
+  try {
+    const cached = await redisClient.get(customerCartCacheKey(customerId));
+    if (!cached) return null;
+    return JSON.parse(cached);
+  } catch (error) {
+    logger.warn(`Cart cache read failed: ${error.message}`);
+    return null;
+  }
+}
+
+async function writeCartCache(cart, customerId) {
+  try {
+    if (!cart) return;
+    const payload = cart.toObject ? cart.toObject() : cart;
+    const cartId = payload?._id || cart._id;
+    if (!cartId) return;
+
+    const tasks = [
+      redisClient.setex(cartCacheKey(cartId), CART_CACHE_TTL, JSON.stringify(payload))
+    ];
+
+    if (customerId) {
+      tasks.push(
+        redisClient.setex(customerCartCacheKey(customerId), CART_CACHE_TTL, JSON.stringify(payload))
+      );
+    }
+
+    await Promise.all(tasks);
+  } catch (error) {
+    logger.warn(`Cart cache write failed: ${error.message}`);
+  }
+}
 
 /**
  * @desc    Get cart for customer (auto-create if not exists)
@@ -10,6 +51,14 @@ const mongoose = require('mongoose');
 exports.getCartByCustomer = async (req, res) => {
   try {
     console.log(`🛒 Fetching cart for customer: ${req.params.customerId}`);
+
+    const cachedCart = await readCartCacheByCustomer(req.params.customerId);
+    if (cachedCart) {
+      return res.status(200).json({
+        success: true,
+        data: cachedCart
+      });
+    }
     
     let cart = await Cart.findOne({
       customer_id: req.params.customerId,
@@ -42,6 +91,8 @@ exports.getCartByCustomer = async (req, res) => {
 
     console.log(`✅ Cart fetched with ${cart.cartItems.length} items`);
     
+    await writeCartCache(cart, req.params.customerId);
+
     res.status(200).json({
       success: true,
       data: cart
@@ -213,6 +264,8 @@ exports.addItemToCart = async (req, res) => {
         populate: { path: 'product_id', select: 'name price sku unit' }
       });
 
+    await writeCartCache(updatedCart, cart.customer_id?.toString());
+
     res.status(200).json({
       success: true,
       message: 'Item added to cart',
@@ -281,6 +334,8 @@ exports.updateItemQuantity = async (req, res) => {
         populate: { path: 'product_id', select: 'name price sku unit' }
       });
 
+    await writeCartCache(updatedCart, updatedCart.customer_id?.toString());
+
     res.status(200).json({
       success: true,
       message: 'Item quantity updated',
@@ -332,6 +387,8 @@ exports.removeItemFromCart = async (req, res) => {
         path: 'cartItems',
         populate: { path: 'product_id', select: 'name price sku unit' }
       });
+
+    await writeCartCache(updatedCart, updatedCart.customer_id?.toString());
 
     res.status(200).json({
       success: true,
@@ -385,6 +442,8 @@ exports.applyPromo = async (req, res) => {
       })
       .populate('applied_promo_id');
 
+    await writeCartCache(updatedCart, cart.customer_id?.toString());
+
     res.status(200).json({
       success: true,
       message: 'Promo code applied',
@@ -425,6 +484,8 @@ exports.removePromo = async (req, res) => {
         path: 'cartItems',
         populate: { path: 'product_id' }
       });
+
+    await writeCartCache(updatedCart, cart.customer_id?.toString());
 
     res.status(200).json({
       success: true,
@@ -468,6 +529,8 @@ exports.clearCart = async (req, res) => {
     cart.total = 0;
     cart.applied_promo_id = null;
     await cart.save();
+
+    await writeCartCache(cart, cart.customer_id?.toString());
 
     res.status(200).json({
       success: true,
@@ -563,6 +626,8 @@ exports.checkoutCart = async (req, res) => {
         path: 'cartItems',
         populate: { path: 'product_id' }
       });
+
+    await writeCartCache(updatedCart, cart.customer_id?.toString());
 
     res.status(200).json({
       success: true,

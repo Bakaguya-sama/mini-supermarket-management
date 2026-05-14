@@ -29,6 +29,9 @@ const accountSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+accountSchema.index({ full_name: 1 });
+accountSchema.index({ phone: 1 }, { unique: true, sparse: true });
+
 // ==================== 2. STAFF ====================
 const staffSchema = new mongoose.Schema(
   {

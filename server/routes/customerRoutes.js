@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const customerController = require('../controllers/customerController');
+const { authenticate, requireAdmin } = require('../middleware/auth');
 
 // Thống kê khách hàng
 router.get('/stats', customerController.getCustomerStats);
@@ -15,7 +16,7 @@ router.get('/account/:accountId', customerController.getCustomerByAccount);
 router.get('/:id', customerController.getCustomerById);
 
 // Tạo khách hàng
-router.post('/', customerController.createCustomer);
+router.post('/', authenticate, requireAdmin, customerController.createCustomer);
 
 // Cập nhật thông tin khách hàng
 router.put('/:id', customerController.updateCustomer);
