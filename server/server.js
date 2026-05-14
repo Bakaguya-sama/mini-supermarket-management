@@ -22,15 +22,7 @@ const app = express();
 // 1. Dashboard giám sát CPU/RAM tại route /status
 app.use(statusMonitor({ path: '/status' }));
 
-// 2. Cung cấp Metrics cho Prometheus (Capacity Planning)
-app.get('/metrics', async (req, res) => {
-  try {
-    res.set('Content-Type', register.contentType);
-    res.end(await register.metrics());
-  } catch (ex) {
-    res.status(500).end(ex);
-  }
-});
+
 
 // Set security HTTP headers (SAD 4.3 & 11.1)
 app.use(helmet());
@@ -62,6 +54,20 @@ app.use(
     credentials: true,
   })
 );
+
+// 2. Cung cấp Metrics cho Prometheus (Capacity Planning)
+app.get('/metrics', async (req, res) => {
+  try {
+    if (req.query.format === 'json') {
+      res.setHeader('Content-Type', 'application/json');
+      return res.json(await register.getMetricsAsJSON());
+    }
+    res.set('Content-Type', register.contentType);
+    res.end(await register.metrics());
+  } catch (ex) {
+    res.status(500).end(ex);
+  }
+});
 // Increase payload size limit for images (base64 encoded)
 app.use(express.json({ limit: "50mb" }));
 app.use(express.urlencoded({ limit: "50mb", extended: true }));

@@ -45,6 +45,7 @@ import SectionListView from "./views/merchandise-supervisor/section/SectionListV
 import AddSectionView from "./views/merchandise-supervisor/section/AddSectionView";
 import EditSectionView from "./views/merchandise-supervisor/section/EditSectionView";
 import CustomerPortal from "./views/customer/CustomerPortal";
+import SystemMonitor from "./views/manager/system-monitor/SystemMonitor";
 
 function App() {
   return (
@@ -441,6 +442,15 @@ function App() {
 
           {/* Customer Portal - Standalone (no Layout) */}
           <Route path="/customer-portal" element={<CustomerPortal />} />
+
+          <Route
+            path="/system-monitor"
+            element={
+              <Layout>
+                <SystemMonitor />
+              </Layout>
+            }
+          />
 
           {/* Redirect root to signin */}
           <Route path="/" element={<Navigate to="/signin" replace />} />
