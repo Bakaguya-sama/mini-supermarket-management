@@ -30,9 +30,6 @@ build/
 .env.test.local
 .env.production.local
 
-# Logs
-logs/
-*.log
 
 # OS generated files
 Thumbs.db
