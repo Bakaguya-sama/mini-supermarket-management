@@ -16,6 +16,20 @@ class AccountRepository {
     });
   }
 
+  async findByPhone(phone) {
+    return await Account.findOne({
+      phone,
+      isDelete: false
+    });
+  }
+
+  async findIdsByFullName(search) {
+    return await Account.find({
+      full_name: { $regex: search, $options: 'i' },
+      isDelete: false
+    }).select('_id').lean();
+  }
+
   async findById(id) {
     return await Account.findOne({ 
       _id: id,
