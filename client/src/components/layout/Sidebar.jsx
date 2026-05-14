@@ -227,6 +227,12 @@ const Sidebar = ({ activeItem, onItemClick, userRole = "manager" }) => {
           },
 
           {
+            id: "system-monitor",
+            label: "System Monitor",
+            icon: <MdShelves />,
+            path: "/system-monitor",
+          },
+          {
             id: "profile",
             label: "Profile",
             icon: <FaUser />,
