@@ -1,5 +1,6 @@
 // controllers/authController.js - Authentication Controller
 const authService = require('../services/AuthService');
+const logger = require('../config/logger');
 
 // ==================== REGISTER FUNCTIONS ====================
 
@@ -11,6 +12,7 @@ const authService = require('../services/AuthService');
 exports.registerCustomer = async (req, res, next) => {
   try {
     const { token, account, customer } = await authService.registerCustomer(req.body);
+    logger.info(`Customer registered successfully: ${account.email}`);
 
     res.status(201).json({
       success: true,
@@ -44,6 +46,7 @@ exports.registerCustomer = async (req, res, next) => {
 exports.registerStaff = async (req, res, next) => {
   try {
     const { account, staff } = await authService.registerStaff(req.body);
+    logger.info(`Staff registered successfully: ${account.email}`);
 
     res.status(201).json({
       success: true,
@@ -78,6 +81,7 @@ exports.login = async (req, res, next) => {
   try {
     const { username, password } = req.body;
     const { token, account, profile } = await authService.login(username, password);
+    logger.info(`User logged in successfully: ${account.username}`);
 
     let userData = {
       id: account._id || account.id,
@@ -141,6 +145,7 @@ exports.getMe = async (req, res, next) => {
 exports.updateProfile = async (req, res, next) => {
   try {
     const userData = await authService.updateProfile(req.user.id, req.body);
+    logger.info(`User profile updated successfully: ${req.user.id}`);
 
     res.json({
       success: true,
@@ -163,6 +168,7 @@ exports.changePassword = async (req, res, next) => {
   try {
     const { current_password, new_password } = req.body;
     await authService.changePassword(req.user.id, current_password, new_password);
+    logger.info(`User password changed successfully: ${req.user.id}`);
 
     res.json({
       success: true,

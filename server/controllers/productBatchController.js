@@ -1,381 +1,106 @@
 // controllers/productBatchController.js
-const { ProductBatch, Product, Shelf } = require("../models");
+const productBatchService = require('../services/ProductBatchService');
+const logger = require('../config/logger');
 
-// Create new batch
-exports.createBatch = async (req, res) => {
+/**
+ * @route   POST /api/product-batches
+ * @desc    Tạo lô hàng mới và cập nhật tồn kho
+ * @access  Private
+ */
+exports.createBatch = async (req, res, next) => {
   try {
-    const {
-      product_id,
-      batch_id,
-      quantity = 0,
-      expiry_date,
-      sku,
-      barcode,
-      supplier_id,
-      warehouse_id,
-      shelf_id,
-      purchase_date,
-      cost,
-      source = "manual",
-    } = req.body;
-
-    if (!product_id) {
-      return res
-        .status(400)
-        .json({ success: false, message: "product_id is required" });
-    }
-
-    const qty = parseInt(quantity) || 0;
-    if (qty < 0) {
-      return res
-        .status(400)
-        .json({ success: false, message: "quantity must be >= 0" });
-    }
-
-    // Validate product
-    const product = await Product.findById(product_id);
-    if (!product || product.isDelete) {
-      return res
-        .status(404)
-        .json({ success: false, message: "Product not found" });
-    }
-
-    // Validate expiry_date if provided
-    let expiryObj;
-    if (expiry_date) {
-      expiryObj = new Date(expiry_date);
-      if (isNaN(expiryObj))
-        return res
-          .status(400)
-          .json({ success: false, message: "Invalid expiry_date" });
-    }
-
-    const batch = await ProductBatch.create({
-      product_id,
-      batch_id,
-      quantity: qty,
-      expiry_date: expiryObj,
-      sku,
-      barcode,
-      supplier_id,
-      warehouse_id,
-      shelf_id,
-      purchase_date: purchase_date ? new Date(purchase_date) : undefined,
-      cost,
-      source,
-    });
-
-    // Update product current_stock
-    if (qty !== 0) {
-      await Product.findByIdAndUpdate(product_id, {
-        $inc: { current_stock: qty },
-      });
-    }
-
-    const populated = await ProductBatch.findById(batch._id)
-      .populate({
-        path: "product_id",
-        select: "name sku barcode current_stock",
-      })
-      .populate({ path: "shelf_id", select: "shelf_number" });
-
-    res.status(201).json({ success: true, data: populated });
+    const batch = await productBatchService.createBatch(req.body);
+    logger.info(`Batch created successfully in controller: ${batch._id}`);
+    res.status(201).json({ success: true, data: batch });
   } catch (error) {
-    console.error("Error creating batch:", error);
-    res
-      .status(500)
-      .json({
-        success: false,
-        message: "Error creating batch",
-        error: error.message,
-      });
+    next(error);
   }
 };
 
-// Get all batches (with filters)
-exports.getAllBatches = async (req, res) => {
+/**
+ * @route   GET /api/product-batches
+ * @desc    Lấy danh sách lô hàng (có filter, phân trang)
+ * @access  Private
+ */
+exports.getAllBatches = async (req, res, next) => {
   try {
-    const {
-      page = 1,
-      limit = 50,
-      product_id,
-      sku,
-      barcode,
-      status,
-      expiry_before,
-      expiry_after,
-      sort = "-createdAt",
-    } = req.query;
-
-    const query = { isDelete: false };
-    if (product_id) query.product_id = product_id;
-    if (sku) query.sku = sku;
-    if (barcode) query.barcode = barcode;
-    if (status) query.status = status;
-
-    if (expiry_before || expiry_after) {
-      query.expiry_date = {};
-      if (expiry_before) {
-        const d = new Date(expiry_before);
-        if (isNaN(d))
-          return res
-            .status(400)
-            .json({ success: false, message: "Invalid expiry_before" });
-        query.expiry_date.$lte = d;
-      }
-      if (expiry_after) {
-        const d2 = new Date(expiry_after);
-        if (isNaN(d2))
-          return res
-            .status(400)
-            .json({ success: false, message: "Invalid expiry_after" });
-        query.expiry_date.$gte = d2;
-      }
-    }
-
-    const skip = (parseInt(page) - 1) * parseInt(limit);
-
-    const batches = await ProductBatch.find(query)
-      .populate({ path: "product_id", select: "name sku barcode" })
-      .populate({ path: "shelf_id", select: "shelf_number" })
-      .sort(sort)
-      .skip(skip)
-      .limit(parseInt(limit));
-
-    const total = await ProductBatch.countDocuments(query);
-
-    res
-      .status(200)
-      .json({
-        success: true,
-        count: batches.length,
-        total,
-        page: parseInt(page),
-        pages: Math.ceil(total / parseInt(limit)),
-        data: batches,
-      });
+    const { batches, total, page, pages } = await productBatchService.getAllBatches(req.query);
+    res.status(200).json({ success: true, count: batches.length, total, page, pages, data: batches });
   } catch (error) {
-    console.error("Error fetching batches:", error);
-    res
-      .status(500)
-      .json({
-        success: false,
-        message: "Error fetching batches",
-        error: error.message,
-      });
+    next(error);
   }
 };
 
-// Get single batch
-exports.getBatchById = async (req, res) => {
+/**
+ * @route   GET /api/product-batches/:id
+ * @desc    Lấy chi tiết một lô hàng
+ * @access  Private
+ */
+exports.getBatchById = async (req, res, next) => {
   try {
-    const batch = await ProductBatch.findById(req.params.id)
-      .populate({ path: "product_id", select: "name sku barcode" })
-      .populate({ path: "shelf_id", select: "shelf_number" });
-
-    if (!batch || batch.isDelete) {
-      return res
-        .status(404)
-        .json({ success: false, message: "Batch not found" });
-    }
-
+    const batch = await productBatchService.getBatchById(req.params.id);
     res.status(200).json({ success: true, data: batch });
   } catch (error) {
-    res
-      .status(500)
-      .json({
-        success: false,
-        message: "Error fetching batch",
-        error: error.message,
-      });
+    next(error);
   }
 };
 
-// Get batches by product id with totals
-exports.getBatchesByProduct = async (req, res) => {
+/**
+ * @route   GET /api/product-batches/product/:productId
+ * @desc    Lấy tất cả lô hàng của một sản phẩm
+ * @access  Private
+ */
+exports.getBatchesByProduct = async (req, res, next) => {
   try {
-    const { productId } = req.params;
-    const { expiry_before, expiry_after } = req.query;
-
-    const query = { product_id: productId, isDelete: false };
-    if (expiry_before || expiry_after) {
-      query.expiry_date = {};
-      if (expiry_before) {
-        const d = new Date(expiry_before);
-        if (isNaN(d))
-          return res
-            .status(400)
-            .json({ success: false, message: "Invalid expiry_before" });
-        query.expiry_date.$lte = d;
-      }
-      if (expiry_after) {
-        const d2 = new Date(expiry_after);
-        if (isNaN(d2))
-          return res
-            .status(400)
-            .json({ success: false, message: "Invalid expiry_after" });
-        query.expiry_date.$gte = d2;
-      }
-    }
-
-    const batches = await ProductBatch.find(query)
-      .populate({ path: "shelf_id", select: "shelf_number" })
-      .sort("expiry_date");
-
-    const totalQuantity = batches.reduce((s, b) => s + (b.quantity || 0), 0);
-
-    const product = await Product.findById(productId).select(
-      "name current_stock"
-    );
-
-    res
-      .status(200)
-      .json({
-        success: true,
-        count: batches.length,
-        data: { product, total_quantity: totalQuantity, batches },
-      });
+    const result = await productBatchService.getBatchesByProduct(req.params.productId, req.query);
+    res.status(200).json({ success: true, count: result.batches.length, data: result });
   } catch (error) {
-    res
-      .status(500)
-      .json({
-        success: false,
-        message: "Error fetching product batches",
-        error: error.message,
-      });
+    next(error);
   }
 };
 
-// Update batch
-exports.updateBatch = async (req, res) => {
+/**
+ * @route   PUT /api/product-batches/:id
+ * @desc    Cập nhật lô hàng
+ * @access  Private
+ */
+exports.updateBatch = async (req, res, next) => {
   try {
-    const updates = req.body;
-    const batch = await ProductBatch.findById(req.params.id);
-    if (!batch || batch.isDelete)
-      return res
-        .status(404)
-        .json({ success: false, message: "Batch not found" });
-
-    // If quantity changes, adjust product stock
-    if (updates.quantity !== undefined) {
-      const newQty = parseInt(updates.quantity) || 0;
-      const delta = newQty - (batch.quantity || 0);
-      if (delta !== 0) {
-        await Product.findByIdAndUpdate(batch.product_id, {
-          $inc: { current_stock: delta },
-        });
-      }
-    }
-
-    // Validate expiry if provided
-    if (updates.expiry_date) {
-      const d = new Date(updates.expiry_date);
-      if (isNaN(d))
-        return res
-          .status(400)
-          .json({ success: false, message: "Invalid expiry_date" });
-      updates.expiry_date = d;
-    }
-
-    Object.assign(batch, updates);
-    await batch.save();
-
-    const populated = await ProductBatch.findById(batch._id).populate({
-      path: "product_id",
-      select: "name sku barcode",
-    });
-
-    res.status(200).json({ success: true, data: populated });
+    const batch = await productBatchService.updateBatch(req.params.id, req.body);
+    logger.info(`Batch updated successfully in controller: ${batch._id}`);
+    res.status(200).json({ success: true, data: batch });
   } catch (error) {
-    res
-      .status(500)
-      .json({
-        success: false,
-        message: "Error updating batch",
-        error: error.message,
-      });
+    next(error);
   }
 };
 
-// Adjust batch quantity by delta: { delta: number }
-exports.adjustBatchQuantity = async (req, res) => {
+/**
+ * @route   PATCH /api/product-batches/:id/adjust
+ * @desc    Điều chỉnh số lượng lô hàng theo delta
+ * @access  Private
+ */
+exports.adjustBatchQuantity = async (req, res, next) => {
   try {
     const { delta } = req.body;
-    if (delta === undefined || delta === null)
-      return res
-        .status(400)
-        .json({ success: false, message: "delta is required" });
-    const d = parseInt(delta);
-    if (isNaN(d))
-      return res
-        .status(400)
-        .json({ success: false, message: "delta must be a number" });
-
-    const batch = await ProductBatch.findById(req.params.id);
-    if (!batch || batch.isDelete)
-      return res
-        .status(404)
-        .json({ success: false, message: "Batch not found" });
-
-    const newQty = (batch.quantity || 0) + d;
-    if (newQty < 0)
-      return res
-        .status(400)
-        .json({
-          success: false,
-          message: "Resulting quantity cannot be negative",
-        });
-
-    batch.quantity = newQty;
-    await batch.save();
-
-    // Adjust product stock accordingly
-    if (d !== 0) {
-      await Product.findByIdAndUpdate(batch.product_id, {
-        $inc: { current_stock: d },
-      });
-    }
-
+    const batch = await productBatchService.adjustBatchQuantity(req.params.id, delta);
+    logger.info(`Batch quantity adjusted successfully in controller: ${batch._id}`);
     res.status(200).json({ success: true, data: batch });
   } catch (error) {
-    res
-      .status(500)
-      .json({
-        success: false,
-        message: "Error adjusting batch quantity",
-        error: error.message,
-      });
+    next(error);
   }
 };
 
-// Soft delete batch
-exports.deleteBatch = async (req, res) => {
+/**
+ * @route   DELETE /api/product-batches/:id
+ * @desc    Soft delete lô hàng và hoàn trả tồn kho
+ * @access  Private
+ */
+exports.deleteBatch = async (req, res, next) => {
   try {
-    const batch = await ProductBatch.findById(req.params.id);
-    if (!batch || batch.isDelete)
-      return res
-        .status(404)
-        .json({ success: false, message: "Batch not found" });
-
-    // Subtract remaining quantity from product stock
-    const qty = batch.quantity || 0;
-    if (qty !== 0) {
-      await Product.findByIdAndUpdate(batch.product_id, {
-        $inc: { current_stock: -qty },
-      });
-    }
-
-    batch.isDelete = true;
-    await batch.save();
-
-    res.status(200).json({ success: true, message: "Batch deleted (soft)" });
+    await productBatchService.deleteBatch(req.params.id);
+    logger.info(`Batch soft deleted successfully in controller: ${req.params.id}`);
+    res.status(200).json({ success: true, message: 'Batch deleted (soft)' });
   } catch (error) {
-    res
-      .status(500)
-      .json({
-        success: false,
-        message: "Error deleting batch",
-        error: error.message,
-      });
+    next(error);
   }
 };
