@@ -35,8 +35,8 @@ app.use(compression());
 
 // Global Rate Limiting (SAD 15.4 Request Throttling)
 const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 200, // Limit each IP to 200 requests per `window` (per 15 minutes)
+  windowMs: 15 * 60 * 1000, // 15 phút
+  max: 2000, // Tăng lên 2000 request / 15 phút để bù cho API Telemetry tự động gọi ngầm mỗi 10 giây
   standardHeaders: true,
   legacyHeaders: false,
   message: { success: false, message: "Too many requests from this IP, please try again after 15 minutes." }
@@ -50,15 +50,33 @@ app.use(attachTraceId);
 // Middleware
 app.use(
   cors({
-    origin: [
-      "http://localhost:5173",
-      "http://localhost:5174",
-      "http://localhost:5175",
-      "http://192.168.1.197:5173",
-      "http://192.168.1.197:5174",
-      "http://192.168.1.197:5175",
-    ],
+    origin: function (origin, callback) {
+      // Cho phép các request không có origin (ví dụ: Postman, curl, hoặc server-to-server)
+      if (!origin) return callback(null, true);
+      
+      const allowedOrigins = [
+        "http://localhost:3000",
+        "http://localhost:5173",
+        "http://localhost:5174",
+        "http://localhost:5175",
+        // Bạn có thể thêm Domain Production ở đây
+      ];
+      
+      // Cho phép mạng nội bộ (192.168.x.x) để test trên điện thoại
+      if (origin.startsWith("http://192.168.")) {
+        return callback(null, true);
+      }
+
+      if (allowedOrigins.indexOf(origin) === -1) {
+        var msg = "Chính sách CORS không cho phép truy cập từ Origin này (Bảo mật Anti-CSRF).";
+        return callback(new Error(msg), false);
+      }
+      return callback(null, true);
+    },
     credentials: true,
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Origin", "X-Requested-With", "Content-Type", "Accept", "Authorization"],
+    exposedHeaders: ["X-Trace-Id"] // Cho phép Client đọc được TraceID
   })
 );
 

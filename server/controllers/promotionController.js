@@ -35,3 +35,27 @@ exports.getApplicablePromotions = async (req, res, next) => {
     res.json({ success: true, data, total: data.length });
   } catch (error) { next(error); }
 };
+
+/** @route POST /api/promotions */
+exports.createPromotion = async (req, res, next) => {
+  try {
+    const data = await promotionService.createPromotion(req.body);
+    res.status(201).json({ success: true, data });
+  } catch (error) { next(error); }
+};
+
+/** @route PUT /api/promotions/:id */
+exports.updatePromotion = async (req, res, next) => {
+  try {
+    const data = await promotionService.updatePromotion(req.params.id, req.body);
+    res.json({ success: true, data });
+  } catch (error) { next(error); }
+};
+
+/** @route DELETE /api/promotions/:id */
+exports.deletePromotion = async (req, res, next) => {
+  try {
+    await promotionService.deletePromotion(req.params.id);
+    res.json({ success: true, message: 'Deleted successfully' });
+  } catch (error) { next(error); }
+};

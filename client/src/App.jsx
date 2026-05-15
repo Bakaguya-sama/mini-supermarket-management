@@ -10,6 +10,13 @@ import SignUp from "./views/auth/SignUp";
 import ForgetPass from "./views/auth/ForgetPass";
 import Layout from "./components/layout/Layout";
 import Dashboard from "./views/dashboard/Dashboard";
+
+// NEW MANAGER VIEWS
+import ProfileView from "./views/manager/ProfileView";
+import PromotionView from "./views/manager/PromotionView";
+import ReportView from "./views/manager/ReportView";
+import InstructionView from "./views/manager/InstructionView";
+
 import StaffListView from "./views/manager/staff-management/StaffListView";
 import AddStaffView from "./views/manager/staff-management/AddStaffView";
 import EditStaffView from "./views/manager/staff-management/EditStaffView";
@@ -62,7 +69,7 @@ function App() {
             path="/help"
             element={
               <Layout>
-                <h1>Help center</h1>
+                <InstructionView />
               </Layout>
             }
           />
@@ -80,7 +87,7 @@ function App() {
             path="/promotion"
             element={
               <Layout>
-                <h1>Promotion</h1>
+                <PromotionView />
               </Layout>
             }
           />
@@ -89,7 +96,7 @@ function App() {
             path="/profile"
             element={
               <Layout>
-                <h1>Profile</h1>
+                <ProfileView />
               </Layout>
             }
           />
@@ -98,7 +105,7 @@ function App() {
             path="/report"
             element={
               <Layout>
-                <h1>Report</h1>
+                <ReportView />
               </Layout>
             }
           />
@@ -107,7 +114,7 @@ function App() {
             path="/instruction"
             element={
               <Layout>
-                <h1>Instruction</h1>
+                <InstructionView />
               </Layout>
             }
           />
