@@ -13,6 +13,7 @@ const {
   Staff,
 } = require("../models");
 const mongoose = require("mongoose");
+const { traceCheckout, traceCheckoutStep } = require('../middleware/tracing');
 
 /**
  * @desc    Get all orders with filters and pagination
@@ -259,7 +260,9 @@ exports.createOrder = async (req, res) => {
   try {
     const { customer_id, cart_id, notes } = req.body;
 
-    // Validate customer
+    // Bắt đầu Trace Checkout Feature
+    await traceCheckout(customer_id, cart_id, async ({ setOrderAttributes }) => {
+      // Validate customer
     if (!customer_id) {
       return res.status(400).json({
         success: false,
@@ -534,19 +537,28 @@ exports.createOrder = async (req, res) => {
       // Fall back to returning the order even if invoice creation failed
     }
 
-    // Fetch complete order with items (fallback path if invoice create fails)
-    const completeOrder = await Order.findById(order._id)
-      .populate("customer_id", "account_id membership_type")
-      .populate({
-        path: "orderItems",
-        populate: { path: "product_id", select: "name price sku unit" },
+      // Fetch complete order with items (fallback path if invoice create fails)
+      const completeOrder = await Order.findById(order._id)
+        .populate("customer_id", "account_id membership_type")
+        .populate({
+          path: "orderItems",
+          populate: { path: "product_id", select: "name price sku unit" },
+        });
+
+      // Cập nhật metrics cho Parent Span trước khi kết thúc
+      setOrderAttributes({
+        itemCount: cartItems.length,
+        totalAmount: totalAmount,
+        promoDiscount: promoDiscount,
+        pointsRedeemed: pointsRedeemed
       });
 
-    res.status(201).json({
-      success: true,
-      message: "Order created successfully",
-      data: completeOrder,
-    });
+      res.status(201).json({
+        success: true,
+        message: "Order created successfully",
+        data: completeOrder,
+      });
+    }); // End of traceCheckout
   } catch (error) {
     console.error("❌ Error creating order:", error);
     res.status(500).json({

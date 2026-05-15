@@ -1,11 +1,16 @@
 // controllers/productController.js
 const productService = require('../services/ProductService');
 const logger = require('../config/logger');
+const { traceProductSearch } = require('../middleware/tracing');
 
 /** @route GET /api/products */
 exports.getAllProducts = async (req, res, next) => {
   try {
-    const { products, total, page, pages } = await productService.getAllProducts(req.query);
+    const dataResponse = await traceProductSearch(req.query, async () => {
+      return await productService.getAllProducts(req.query);
+    });
+    
+    const { products, total, page, pages } = dataResponse;
     res.status(200).json({ success: true, count: products.length, total, page, pages, data: products });
   } catch (error) { next(error); }
 };
