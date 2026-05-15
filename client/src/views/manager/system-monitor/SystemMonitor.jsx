@@ -377,7 +377,7 @@ const SystemMonitor = () => {
               overflowY: "auto",
             }}
           >
-            {selectedTraceId ? (
+            {selectedTraceId && groupedTraces[selectedTraceId] ? (
               <div>
                 <h3 style={{ color: "white", marginBottom: "1.5rem" }}>
                   Trace Waterfall
