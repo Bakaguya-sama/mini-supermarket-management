@@ -1,4 +1,7 @@
 // server/server.js - UPDATED WITH NEW ROUTES
+// IMPORTANT: MUST BE REQUIRED FIRST TO CAPTURE ALL TRACES
+require('./config/tracer');
+
 const express = require("express");
 const cors = require("cors");
 const morgan = require("morgan");
@@ -34,11 +37,15 @@ app.use(compression());
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: 200, // Limit each IP to 200 requests per `window` (per 15 minutes)
-  standardHeaders: true, 
+  standardHeaders: true,
   legacyHeaders: false,
   message: { success: false, message: "Too many requests from this IP, please try again after 15 minutes." }
 });
 app.use("/api", limiter);
+
+// Tracing Middleware: Attach TraceId to Response Header
+const { attachTraceId } = require('./middleware/tracing');
+app.use(attachTraceId);
 
 // Middleware
 app.use(
@@ -122,7 +129,7 @@ app.get("/api/health", (req, res) => {
   if (!isHealthy) {
     return res.status(503).json(healthStatus);
   }
-  
+
   res.json(healthStatus);
 });
 
@@ -147,6 +154,7 @@ app.use("/api/product-stocks", require("./routes/productStockRoutes"));
 app.use("/api/product-batches", require("./routes/productBatchRoutes"));
 app.use("/api/promotions", require("./routes/promotionRoutes"));
 app.use("/api/feedbacks", require("./routes/feedbackRoutes"));
+app.use("/api/telemetry", require("./routes/telemetryRoutes")); // API Demo Telemetry
 
 // Global Error Handling Middleware
 const errorHandler = require("./middleware/errorHandler");
@@ -167,7 +175,7 @@ if (require.main === module) {
   const startServer = async () => {
     // Initialize Message Broker connection (SAD 7, 10.2)
     await connectRabbitMQ();
-    
+
     app.listen(PORT, () => {
       logger.info(`
 ╔═══════════════════════════════════════╗
@@ -187,7 +195,7 @@ if (require.main === module) {
     `);
     });
   };
-  
+
   startServer();
 }
 

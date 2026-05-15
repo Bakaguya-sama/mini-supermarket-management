@@ -1,6 +1,7 @@
 // controllers/authController.js - Authentication Controller
 const authService = require('../services/AuthService');
 const logger = require('../config/logger');
+const { traceLogin } = require('../middleware/tracing');
 
 // ==================== REGISTER FUNCTIONS ====================
 
@@ -80,7 +81,17 @@ exports.registerStaff = async (req, res, next) => {
 exports.login = async (req, res, next) => {
   try {
     const { username, password } = req.body;
-    const { token, account, profile } = await authService.login(username, password);
+    
+    // Trace login operation
+    const { token, account, profile } = await traceLogin(
+      username,
+      req.ip,
+      req.headers['user-agent'],
+      async () => {
+        return await authService.login(username, password);
+      }
+    );
+
     logger.info(`User logged in successfully: ${account.username}`);
 
     let userData = {

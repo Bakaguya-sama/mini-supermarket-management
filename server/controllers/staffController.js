@@ -1,6 +1,6 @@
 // controllers/staffController.js
 const { Staff, Account } = require('../models');
-const bcrypt = require('bcrypt');
+const bcrypt = require('bcryptjs');
 
 // @desc    Get all staff with filters and pagination
 // @route   GET /api/staff
@@ -41,10 +41,10 @@ exports.getAllStaff = async (req, res) => {
           { email: { $regex: search, $options: 'i' } }
         ]
       }).select('_id');
-      
+
       const accountIds = accounts.map(acc => acc._id);
       query.account_id = { $in: accountIds };
-      
+
       staffQuery = Staff.find(query)
         .populate('account_id', '-password_hash')
         .sort(sort)
@@ -79,11 +79,11 @@ exports.getStaffStats = async (req, res) => {
     const totalStaff = await Staff.countDocuments();
     const activeStaff = await Staff.countDocuments({ is_active: true });
     const inactiveStaff = await Staff.countDocuments({ is_active: false });
-    
+
     const byPosition = await Staff.aggregate([
       { $group: { _id: '$position', count: { $sum: 1 } } }
     ]);
-    
+
     const byEmploymentType = await Staff.aggregate([
       { $group: { _id: '$employment_type', count: { $sum: 1 } } }
     ]);

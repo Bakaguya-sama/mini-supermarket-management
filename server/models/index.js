@@ -335,6 +335,12 @@ const deliveryOrderSchema = new mongoose.Schema(
     staff_id: { type: mongoose.Schema.Types.ObjectId, ref: "Staff" },
     order_date: { type: Date, default: Date.now },
     delivery_date: { type: Date },
+    assignment_status: {
+      type: String,
+      enum: ["pending", "accepted"],
+      default: "pending",
+    },
+    accepted_at: { type: Date },
     status: {
       type: String,
       default: "assigned",
