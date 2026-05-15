@@ -107,8 +107,12 @@ exports.login = async (req, res, next) => {
         userData.customer_id = profile._id;
         userData.membership_type = profile.membership_type;
       } else if (account.role === 'staff' || account.role === 'admin') {
-        userData.staff_id = profile._id;
-        userData.position = profile.position;
+        userData.staff_id = (account.role === 'staff' || profile.position) ? profile._id : null;
+        userData.position = profile.position || 'Manager';
+        userData.is_manager = account.is_manager;
+        userData.manager_id = account.manager_id;
+        userData.access_level = account.access_level;
+        userData.is_superuser = account.is_superuser;
       }
     }
 

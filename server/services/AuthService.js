@@ -140,13 +140,40 @@ class AuthService {
     
     // Get profile based on role
     let profile = null;
+    let is_manager = false;
+    let manager_id = null;
+    let access_level = null;
+    let is_superuser = false;
+
     if (account.role === 'customer') {
       profile = await customerRepository.findByAccountId(account._id);
     } else if (account.role === 'staff' || account.role === 'admin') {
+      // Try to find staff profile first
       profile = await staffRepository.findByAccountId(account._id);
+      
+      // Also check if this user is a manager
+      const manager = await managerRepository.findByAccountId(account._id);
+      if (manager) {
+        is_manager = true;
+        manager_id = manager._id;
+        access_level = manager.access_level;
+        is_superuser = manager.is_superuser;
+        // If no staff profile but manager profile exists, use manager as profile
+        if (!profile) profile = manager;
+      }
     }
 
-    return { token, account, profile };
+    return { 
+      token, 
+      account: {
+        ...account.toObject(),
+        is_manager,
+        manager_id,
+        access_level,
+        is_superuser
+      }, 
+      profile 
+    };
   }
 
   async getProfile(userId) {
