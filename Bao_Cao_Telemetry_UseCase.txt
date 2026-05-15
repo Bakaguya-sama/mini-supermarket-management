@@ -39,8 +39,31 @@ Thay vì đọc Log Console (dạng text trôi tuột, khó tra cứu), hệ th�
 2. Phân loại màu sắc UI:
    - Thanh màu Xanh (Code 0): Giao dịch thành công, HTTP 200.
    - Thanh màu Đỏ (Code 2): Bắt được Exception, HTTP 400/500 (ví dụ: sai mật khẩu, mua lố số lượng tồn kho).
-3. Attributes (Khái niệm Business Observability):
-   - Cải tiến lớn nhất: Log truyền thống chỉ ghi "POST /order 200 OK". Trace ghi lại "Mã khách hàng", "Tổng tiền", "Số lượng món". Biến màn hình kỹ thuật thành màn hình Báo cáo Kinh doanh thời gian thực.
+3. Attributes (Khái niệm Business Observability) và Cơ chế "Bơm" dữ liệu:
+   - Cải tiến lớn nhất của hệ thống: Log truyền thống chỉ ghi "POST /order 200 OK" (Rất vô hồn). Nhưng Telemetry Trace ghi lại cụ thể "Mã khách hàng", "Tổng tiền", "Số lượng món". Điều này biến màn hình kỹ thuật thành màn hình Báo cáo Kinh doanh thời gian thực.
+   - CƠ CHẾ HOẠT ĐỘNG (DƯỚI CODE): Để đưa được các chỉ số này lên màn hình UI, ở tầng Backend (`server/middleware/tracing.js`), chúng ta đã sử dụng API của thư viện OpenTelemetry (`span.setAttributes`). 
+   - Ví dụ, khi đơn hàng được tạo xong, code sẽ chủ động "bơm" dữ liệu vào Span hiện tại:
+     ```javascript
+     // Trích xuất file: server/middleware/tracing.js
+     span.setAttributes({
+       'order.item_count': cartItems.length,
+       'order.total_amount': totalAmount
+     });
+     ```
+   - Nhờ lệnh này, dữ liệu nghiệp vụ được đính kèm vào luồng Trace và truyền thẳng ra API `/api/telemetry/traces` để giao diện ReactJS bắt lấy và hiển thị ở góc phải màn hình.
+
+4. Global Resource Attributes (Thuộc tính Định danh Hệ thống):
+   - Bên cạnh các thuộc tính "Nghiệp vụ" (như tên đăng nhập, số tiền), hệ thống còn đính kèm các thuộc tính "Hệ thống" vào MỌI luồng Trace được sinh ra.
+   - CƠ CHẾ HOẠT ĐỘNG: Tại file cấu hình lõi `server/config/tracer.js`, chúng ta đã định nghĩa một đối tượng `Resource`:
+     ```javascript
+     // Trích xuất file: server/config/tracer.js
+     const resource = new Resource({
+       'service.name': process.env.OTEL_SERVICE_NAME || 'mini-supermarket-api',
+       'service.version': '1.0.0',
+       'deployment.environment': process.env.NODE_ENV || 'development',
+     });
+     ```
+   - GIÁ TRỊ KIẾN TRÚC: Khi xem bất kỳ Trace nào trên UI, nó luôn mang theo nhãn `service.name` và `deployment.environment`. Nếu sau này Siêu thị phát triển lớn lên thành kiến trúc Microservices (Tách riêng Order Service, Auth Service, Product Service chạy trên 3 server khác nhau), các thông số này chính là "Thẻ căn cước" giúp Quản trị viên biết chính xác Trace (hay lỗi) đó đang phát sinh từ Server nào và ở môi trường nào (Dev, Test hay Production) mà không cần đoán mò.
 
 ---------------------------------------------------------------
 PHẦN 2: CHỨNG MINH SỰ ĐÁP ỨNG USE CASE QUA TRACES & CODE THỰC TẾ
@@ -169,6 +192,41 @@ PHẦN 3: KỊCH BẢN DEMO HỆ THỐNG TRỰC TIẾP (QA TEST)
    - Xuất hiện Trace `order.checkout` màu XANH.
    - Mở Attributes để show: `{"order.total_amount": [Tổng tiền]}`.
    - Trình bày điểm nhấn kiến trúc (QUAN TRỌNG): Giải thích với hội đồng rằng thời gian của Trace này chạy lâu hơn một chút vì hệ thống đang thực thi lệnh Atomic Update (`$inc` và `$gte`) khóa cứng dòng dữ liệu tại tầng MongoDB. Điều này triệt tiêu hoàn toàn Race Condition, đảm bảo 100 người mua cùng lúc vẫn không bao giờ xảy ra lỗi bán âm kho.
+
+---------------------------------------------------------------
+PHẦN 4: KIẾN TRÚC CACHE VÀ LOGGING (HIỆU NĂNG & KIỂM TOÁN)
+---------------------------------------------------------------
+Bên cạnh Telemetry (dùng để vẽ biểu đồ và phân tích Bottleneck), hệ thống còn triển khai 2 trụ cột Kiến trúc cực kỳ quan trọng khác nằm trong thư mục `server/config`:
+
+1. Kiến trúc Caching bằng Redis (`server/config/redis.js`) - Tối ưu Hiệu năng & Độ sẵn sàng:
+   - Ý nghĩa: Giảm tải cho Database (MongoDB) ở các API bị gọi liên tục.
+   - Điểm nhấn Kiến trúc (Resilience): Code không chỉ đơn thuần là `new Redis()`, mà được tích hợp cơ chế `retryStrategy`. 
+   - Giải thích: Nếu máy chủ Redis bị sập, hệ thống sẽ tự động cấu hình: "Thử kết nối lại 3 lần, mỗi lần cách nhau vài mili-giây. Nếu thất bại, tự động ngắt kết nối để không làm treo Server Node.js (Tránh spam log) và fallback (rơi về) trạng thái đọc thẳng từ MongoDB". Đây là chuẩn thiết kế Hệ thống Chịu lỗi (Fault Tolerance).
+
+2. Kiến trúc Logging bằng Winston (`server/config/logger.js`) - Lưu vết Kiểm toán (Audit Trail):
+   - Ý nghĩa: Traces (Waterfall) dùng để đo tốc độ, còn Logs dùng để ghi lại chi tiết text để gỡ lỗi (Debug) và Kiểm toán (Ví dụ: Lịch sử thao tác của Admin, hay lỗi hệ thống ẩn).
+   - Điểm nhấn Kiến trúc: Hệ thống sử dụng thư viện `winston` để chuẩn hóa định dạng Log thành dạng JSON thay vì text thuần. 
+   - Dữ liệu được chia thành 2 luồng File độc lập: 
+     + `logs/error.log`: Chỉ lưu các lỗi nghiêm trọng (Exception, Database down).
+     + `logs/combined.log`: Lưu toàn bộ hành vi hệ thống để dễ truy vết.
+   - Ứng dụng thực tế: Khi đưa lên môi trường Production, các file JSON log này có thể dễ dàng được phần mềm bên thứ 3 (như ELK Stack, Splunk) "hút" về để lập báo cáo an ninh, thay vì phải ngồi đọc từng dòng log truyền thống.
+
+---------------------------------------------------------------
+PHẦN 5: KIẾN TRÚC BẢO MẬT API (CORS POLICY & ANTI-CSRF)
+---------------------------------------------------------------
+Để bảo vệ các API khỏi tình trạng bị website lạ gọi trộm dữ liệu (Tấn công CSRF - Cross-Site Request Forgery), hệ thống đã thiết lập một "Tường lửa" CORS linh hoạt và chặt chẽ tại file lõi `server.js`:
+
+1. Khai báo danh sách Trắng (Whitelist): 
+   - Hệ thống không dùng `cors('*')` (vốn là tối kỵ trong bảo mật), mà định nghĩa một mảng `allowedOrigins` chứa đích danh các URL hợp lệ (như `localhost:3000`, `localhost:5173`). 
+   - Bất kỳ Website nào không nằm trong danh sách này mà cố tình gọi API bằng AJAX/Fetch sẽ bị trình duyệt chặn đứng ngay lập tức.
+
+2. Tính linh hoạt trong Môi trường Test/Prod:
+   - Code có khả năng tự nhận diện: Nếu request đến từ mạng nội bộ `192.168.x.x` (thường dùng khi developer lấy điện thoại test web), nó sẽ tự động cho phép (`origin.startsWith("http://192.168.")`).
+   - Hỗ trợ các công cụ Backend: Cấu hình `if (!origin)` cho phép các request không có Nguồn gốc (ví dụ: test bằng Postman, curl, hay các server giao tiếp với nhau) vẫn chạy bình thường.
+
+3. Kiểm soát Headers chặt chẽ:
+   - Thay vì mở toang mọi thứ, hệ thống chỉ đích danh các HTTP Methods được phép (`GET, POST, PUT, DELETE...`).
+   - Cấu hình `exposedHeaders: ["X-Trace-Id"]`: Gắn chặt với tư duy Telemetry, dòng này cho phép Frontend đọc được ID của Trace từ Backend gửi về, phục vụ việc đối soát lỗi giữa Client và Server.
 
 ---------------------------------------------------------------
 TỔNG KẾT BÁO CÁO
