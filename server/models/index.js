@@ -495,6 +495,32 @@ const customerFeedbackSchema = new mongoose.Schema(
 
 customerFeedbackSchema.index({ customer_id: 1, status: 1 });
 
+// ==================== 20. ORDER FEEDBACK ====================
+const orderFeedbackSchema = new mongoose.Schema(
+  {
+    order_id: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Order",
+      required: true,
+    },
+    customer_id: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Customer",
+      required: true,
+    },
+    feedback_id: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "CustomerFeedback",
+    },
+    rating: { type: Number, min: 1, max: 5, required: true },
+    comment: { type: String },
+    isDelete: { type: Boolean, default: false },
+  },
+  { timestamps: true }
+);
+
+orderFeedbackSchema.index({ order_id: 1, customer_id: 1 });
+
 // ==================== 20. PRODUCT STOCK ====================
 const productStockSchema = new mongoose.Schema(
   {
@@ -684,7 +710,7 @@ const damagedProductSchema = new mongoose.Schema(
 damagedProductSchema.index({ product_id: 1, status: 1 });
 damagedProductSchema.index({ shelf_id: 1 });
 
-// ==================== EXPORT TẤT CẢ 23 MODELS ====================
+// ==================== EXPORT TẤT CẢ 24 MODELS ====================
 module.exports = {
   Account: mongoose.model("Account", accountSchema),
   Staff: mongoose.model("Staff", staffSchema),
@@ -705,6 +731,7 @@ module.exports = {
   Report: mongoose.model("Report", reportSchema),
   Instruction: mongoose.model("Instruction", instructionSchema),
   CustomerFeedback: mongoose.model("CustomerFeedback", customerFeedbackSchema),
+  OrderFeedback: mongoose.model("OrderFeedback", orderFeedbackSchema),
   ProductStock: mongoose.model("ProductStock", productStockSchema),
   ProductBatch: mongoose.model("ProductBatch", productBatchSchema),
   Cart: mongoose.model("Cart", cartSchema),
