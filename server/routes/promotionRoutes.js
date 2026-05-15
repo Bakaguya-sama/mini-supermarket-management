@@ -15,4 +15,9 @@ router.get('/:id', promotionController.getPromotionById);
 // Validate promo code
 router.post('/validate', promotionController.validatePromoCode);
 
+// CRUD
+router.post('/', promotionController.createPromotion);
+router.put('/:id', promotionController.updatePromotion);
+router.delete('/:id', promotionController.deletePromotion);
+
 module.exports = router;

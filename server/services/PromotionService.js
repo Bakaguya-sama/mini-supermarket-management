@@ -87,6 +87,26 @@ class PromotionService {
 
     return await promotionRepository.findAll(query);
   }
+
+  async createPromotion(data) {
+    const promotion = await promotionRepository.create(data);
+    await redisClient.del('promotions:all'); // Invalidate cache if needed
+    return promotion;
+  }
+
+  async updatePromotion(id, data) {
+    const promotion = await promotionRepository.update(id, data);
+    if (!promotion) throw new NotFoundError('Promotion not found');
+    await redisClient.del(`promotion:${id}`);
+    return promotion;
+  }
+
+  async deletePromotion(id) {
+    const promotion = await promotionRepository.update(id, { isDelete: true });
+    if (!promotion) throw new NotFoundError('Promotion not found');
+    await redisClient.del(`promotion:${id}`);
+    return promotion;
+  }
 }
 
 module.exports = new PromotionService();
