@@ -1,6 +1,11 @@
 // server/controllers/feedbackController.js
-const { CustomerFeedback, Customer } = require('../models');
+const { CustomerFeedback, Customer, Order, OrderFeedback } = require('../models');
 const mongoose = require('mongoose');
+
+const sanitizeText = (value) => {
+  if (typeof value !== 'string') return value;
+  return value.replace(/<[^>]*>/g, '').replace(/javascript:/gi, '').trim();
+};
 
 /**
  * @desc    Create new customer feedback
@@ -15,11 +20,15 @@ exports.createFeedback = async (req, res) => {
       detail, 
       customer_id,
       rating,
-      sentiment
+      sentiment,
+      order_id
     } = req.body;
 
+    const sanitizedSubject = sanitizeText(subject);
+    const sanitizedDetail = sanitizeText(detail);
+
     // Validate required fields
-    if (!category || !subject || !customer_id) {
+    if (!category || !sanitizedSubject || !customer_id) {
       return res.status(400).json({
         success: false,
         message: 'Please provide category, subject, and customer_id'
@@ -51,17 +60,59 @@ exports.createFeedback = async (req, res) => {
       });
     }
 
+    // Validate order rating when order_id is provided
+    if (order_id && rating) {
+      if (!mongoose.Types.ObjectId.isValid(order_id)) {
+        return res.status(400).json({
+          success: false,
+          message: 'Invalid order ID'
+        });
+      }
+
+      const order = await Order.findById(order_id);
+      if (!order) {
+        return res.status(404).json({
+          success: false,
+          message: 'Order not found'
+        });
+      }
+
+      if (order.status !== 'delivered') {
+        return res.status(400).json({
+          success: false,
+          message: 'Order must be delivered before rating'
+        });
+      }
+
+      if (order.customer_id?.toString() !== customer_id.toString()) {
+        return res.status(403).json({
+          success: false,
+          message: 'Order does not belong to this customer'
+        });
+      }
+    }
+
     // Create feedback
     const feedback = await CustomerFeedback.create({
       category,
-      subject,
-      detail,
+      subject: sanitizedSubject,
+      detail: sanitizedDetail,
       customer_id,
-      rating: rating || null,
+      rating: order_id ? null : (rating || null),
       sentiment: sentiment || null,
       status: 'open',
       isDelete: false
     });
+    if (order_id && rating) {
+      await OrderFeedback.create({
+        order_id,
+        customer_id,
+        feedback_id: feedback._id,
+        rating,
+        comment: sanitizedDetail || undefined
+      });
+    }
+
 
     // Populate customer info
     const populatedFeedback = await CustomerFeedback.findById(feedback._id)
@@ -86,7 +137,8 @@ exports.createFeedback = async (req, res) => {
       success: true,
       message: 'Feedback submitted successfully',
       data: populatedFeedback,
-      bonusPoints: detail && detail.length > 100 ? 50 : 0
+      bonusPoints: detail && detail.length > 100 ? 50 : 0,
+      reference_code: feedback._id
     });
   } catch (error) {
     console.error('❌ Error creating feedback:', error);

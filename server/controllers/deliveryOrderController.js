@@ -7,6 +7,20 @@ const {
   OrderItem,
 } = require("../models");
 const mongoose = require("mongoose");
+const logger = require("../config/logger");
+
+const allowedStatusTransitions = {
+  assigned: ["in_transit", "failed"],
+  in_transit: ["delivered", "failed"],
+  delivered: [],
+  failed: [],
+};
+
+const canStaffAccess = (req, deliveryOrder) => {
+  if (!req.user || req.user.role !== "staff") return true;
+  if (!req.user.staffId) return false;
+  return deliveryOrder.staff_id?.toString() === req.user.staffId.toString();
+};
 
 /**
  * @desc    Get all delivery orders with filters
@@ -87,7 +101,7 @@ exports.getAllDeliveryOrders = async (req, res) => {
  */
 exports.getDeliveryOrderById = async (req, res) => {
   try {
-    const deliveryOrder = await DeliveryOrder.findById(req.params.id)
+    let deliveryOrder = await DeliveryOrder.findById(req.params.id)
       .populate({
         path: "order_id",
         populate: [
@@ -111,10 +125,43 @@ exports.getDeliveryOrderById = async (req, res) => {
         },
       });
 
+    if (!deliveryOrder && mongoose.Types.ObjectId.isValid(req.params.id)) {
+      deliveryOrder = await DeliveryOrder.findOne({ order_id: req.params.id })
+        .populate({
+          path: "order_id",
+          populate: [
+            {
+              path: "customer_id",
+              select: "account_id membership_type",
+              populate: {
+                path: "account_id",
+                select: "full_name email phone address avatar_link",
+              },
+            },
+            { path: "payment_id" },
+          ],
+        })
+        .populate({
+          path: "staff_id",
+          select: "position account_id",
+          populate: {
+            path: "account_id",
+            select: "full_name phone",
+          },
+        });
+    }
+
     if (!deliveryOrder) {
       return res.status(404).json({
         success: false,
         message: "Delivery order not found",
+      });
+    }
+
+    if (!canStaffAccess(req, deliveryOrder)) {
+      return res.status(403).json({
+        success: false,
+        message: "You are not allowed to view this delivery order",
       });
     }
 
@@ -129,7 +176,7 @@ exports.getDeliveryOrderById = async (req, res) => {
     res.status(200).json({
       success: true,
       data: {
-        ...deliveryOrder.toObject(),
+        ...(deliveryOrder.toObject ? deliveryOrder.toObject() : deliveryOrder),
         orderItems,
       },
     });
@@ -150,7 +197,9 @@ exports.getDeliveryOrderById = async (req, res) => {
 exports.getDeliveriesByStaff = async (req, res) => {
   try {
     const { page = 1, limit = 20, status } = req.query;
-    const skip = (parseInt(page) - 1) * parseInt(limit);
+    const limitNum = Math.min(parseInt(limit) || 20, 20);
+    const pageNum = parseInt(page) || 1;
+    const skip = (pageNum - 1) * limitNum;
 
     // Verify staff exists
     const staff = await Staff.findById(req.params.staffId);
@@ -172,7 +221,8 @@ exports.getDeliveriesByStaff = async (req, res) => {
       }
     }
 
-    const deliveries = await DeliveryOrder.find(query)
+    const [deliveries, total, statusBreakdown] = await Promise.all([
+      DeliveryOrder.find(query)
       .populate({
         path: "order_id",
         select: "order_number customer_id total_amount",
@@ -186,10 +236,19 @@ exports.getDeliveriesByStaff = async (req, res) => {
         },
       })
       .skip(skip)
-      .limit(parseInt(limit))
-      .sort("-order_date");
+      .limit(limitNum)
+      .sort("-order_date"),
+      DeliveryOrder.countDocuments(query),
+      DeliveryOrder.aggregate([
+        { $match: { staff_id: staff._id } },
+        { $group: { _id: "$status", count: { $sum: 1 } } },
+      ]),
+    ]);
 
-    const total = await DeliveryOrder.countDocuments(query);
+    const deliveredCount = statusBreakdown.find((s) => s._id === "delivered")?.count || 0;
+    const failedCount = statusBreakdown.find((s) => s._id === "failed")?.count || 0;
+    const totalCount = statusBreakdown.reduce((sum, s) => sum + (s.count || 0), 0);
+    const successRate = totalCount > 0 ? (deliveredCount / totalCount) * 100 : 0;
 
     res.status(200).json({
       success: true,
@@ -199,8 +258,14 @@ exports.getDeliveriesByStaff = async (req, res) => {
       },
       count: deliveries.length,
       total,
-      page: parseInt(page),
-      pages: Math.ceil(total / parseInt(limit)),
+      page: pageNum,
+      pages: Math.ceil(total / limitNum),
+      metrics: {
+        total: totalCount,
+        delivered: deliveredCount,
+        failed: failedCount,
+        success_rate: Number(successRate.toFixed(2)),
+      },
       data: deliveries,
     });
   } catch (error) {
@@ -344,6 +409,7 @@ exports.createDeliveryOrder = async (req, res) => {
       tracking_number: trackingNumber,
       notes,
       status: "assigned",
+      assignment_status: "pending",
     });
 
     // Update order status
@@ -376,12 +442,19 @@ exports.createDeliveryOrder = async (req, res) => {
  */
 exports.updateDeliveryOrder = async (req, res) => {
   try {
-    const deliveryOrder = await DeliveryOrder.findById(req.params.id);
+    let deliveryOrder = await DeliveryOrder.findById(req.params.id);
 
     if (!deliveryOrder) {
       return res.status(404).json({
         success: false,
         message: "Delivery order not found",
+      });
+    }
+
+    if (!canStaffAccess(req, deliveryOrder)) {
+      return res.status(403).json({
+        success: false,
+        message: "You are not allowed to update this delivery order",
       });
     }
 
@@ -396,7 +469,43 @@ exports.updateDeliveryOrder = async (req, res) => {
       }
 
       const prevStatus = deliveryOrder.status;
-      deliveryOrder.status = status;
+      const allowedNext = allowedStatusTransitions[prevStatus] || [];
+      if (!allowedNext.includes(status)) {
+        return res.status(400).json({
+          success: false,
+          message: "Invalid status transition",
+        });
+      }
+
+      if (prevStatus === "assigned" && status === "in_transit") {
+        const acceptedAt = new Date();
+        const updated = await DeliveryOrder.findOneAndUpdate(
+          {
+            _id: deliveryOrder._id,
+            status: "assigned",
+            assignment_status: "pending",
+          },
+          {
+            $set: {
+              status: "in_transit",
+              assignment_status: "accepted",
+              accepted_at: acceptedAt,
+            },
+          },
+          { new: true }
+        );
+
+        if (!updated) {
+          return res.status(409).json({
+            success: false,
+            message: "Delivery task already accepted",
+          });
+        }
+
+        deliveryOrder = updated;
+      } else {
+        deliveryOrder.status = status;
+      }
 
       // Update order status accordingly
       const order = await Order.findById(deliveryOrder.order_id);
@@ -429,6 +538,10 @@ exports.updateDeliveryOrder = async (req, res) => {
           }
         }
       }
+
+      logger.info(
+        `Delivery status updated: ${deliveryOrder._id} -> ${status}`
+      );
     }
 
     if (delivery_date) deliveryOrder.delivery_date = new Date(delivery_date);
@@ -531,6 +644,8 @@ exports.reassignDelivery = async (req, res) => {
 
     // Apply reassignment
     deliveryOrder.staff_id = new_staff_id;
+    deliveryOrder.assignment_status = "pending";
+    deliveryOrder.accepted_at = null;
     await deliveryOrder.save();
     await deliveryOrder.populate([
       { path: "order_id" },
