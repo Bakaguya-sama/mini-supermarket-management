@@ -11,6 +11,7 @@ const {
   Cart,
   CartItem,
   Staff,
+  ProductBatch,
 } = require("../models");
 const mongoose = require("mongoose");
 const { traceCheckout, traceCheckoutStep } = require('../middleware/tracing');
@@ -318,6 +319,57 @@ exports.createOrder = async (req, res) => {
     cartItems.forEach((item) => {
       totalAmount += item.line_total;
     });
+
+    // ==========================================
+    // BƯỚC QUAN TRỌNG: TRỪ KHO (ATOMIC UPDATE)
+    // Đảm bảo không bán âm kho khi có concurrency
+    // ==========================================
+    for (const item of cartItems) {
+      const qty = item.quantity;
+      const productId = item.product_id._id;
+
+      // 1. Kiểm tra và trừ tổng kho Product
+      const productUpdate = await Product.updateOne(
+        { _id: productId, current_stock: { $gte: qty } },
+        { $inc: { current_stock: -qty } }
+      );
+
+      if (productUpdate.modifiedCount === 0) {
+        throw new Error(`Sản phẩm ${item.product_id.name} đã hết hàng hoặc không đủ số lượng.`);
+      }
+
+      // 2. Trừ chi tiết từng lô (Batch) theo FIFO
+      const batches = await ProductBatch.find({
+        product_id: productId,
+        quantity: { $gt: 0 },
+        isDelete: false
+      }).sort({ expiry_date: 1 });
+
+      let remainingToDeduct = qty;
+      for (const batch of batches) {
+        if (remainingToDeduct <= 0) break;
+
+        const deductQty = Math.min(batch.quantity, remainingToDeduct);
+        
+        // Ràng buộc DB: Số lượng còn lại phải >= số lượng mua (Giống trong báo cáo)
+        const updateResult = await ProductBatch.updateOne(
+          { _id: batch._id, quantity: { $gte: deductQty } }, 
+          { $inc: { quantity: -deductQty } }
+        );
+
+        if (updateResult.modifiedCount > 0) {
+          remainingToDeduct -= deductQty;
+        }
+      }
+      
+      // Nếu dự án có xài ProductBatch thì báo lỗi khi lô hàng thiếu, 
+      // còn nếu Seed data chưa tạo Batch (như hiện tại) thì chỉ cần trừ current_stock là đủ an toàn.
+      if (remainingToDeduct > 0 && batches.length > 0) {
+        // Fallback: Nếu tổng kho đủ nhưng các lô hàng không khớp, vẫn phải báo lỗi
+        throw new Error(`Kho lô hàng không đủ cho sản phẩm: ${item.product_id.name}`);
+      }
+    }
+    // ==========================================
 
     // Count total orders để tạo tracking number sequential
     const totalOrders = await Order.countDocuments();

@@ -13,8 +13,8 @@
 
 'use strict';
 
-const { NodeSDK }           = require('@opentelemetry/sdk-node');
-const { Resource }          = require('@opentelemetry/resources');
+const { NodeSDK } = require('@opentelemetry/sdk-node');
+const { Resource } = require('@opentelemetry/resources');
 const { getNodeAutoInstrumentations } = require('@opentelemetry/auto-instrumentations-node');
 const { ConsoleSpanExporter, SimpleSpanProcessor, BatchSpanProcessor, InMemorySpanExporter } = require('@opentelemetry/sdk-trace-node');
 const { OTLPTraceExporter } = require('@opentelemetry/exporter-trace-otlp-http');
@@ -24,7 +24,7 @@ const memoryExporter = new InMemorySpanExporter();
 
 // ─── Resource: định danh service trên Jaeger/Zipkin ───────────────────────
 const resource = new Resource({
-  'service.name':    process.env.OTEL_SERVICE_NAME || 'mini-supermarket-api',
+  'service.name': process.env.OTEL_SERVICE_NAME || 'mini-supermarket-api',
   'service.version': '1.0.0',
   'deployment.environment': process.env.NODE_ENV || 'development',
 });
@@ -37,9 +37,11 @@ const isDev = (process.env.NODE_ENV !== 'production');
 // Sử dụng SimpleSpanProcessor kết hợp với custom Exporter để gửi tới cả Console và Memory
 class MultiExporter {
   export(spans, resultCallback) {
+    /*
     if (isDev) {
-      new ConsoleSpanExporter().export(spans, () => {});
+      new ConsoleSpanExporter().export(spans, () => { });
     }
+    */
     memoryExporter.export(spans, resultCallback);
   }
   shutdown() {
@@ -59,11 +61,14 @@ const sdk = new NodeSDK({
     getNodeAutoInstrumentations({
       '@opentelemetry/instrumentation-http': {
         ignoreIncomingRequestHook: (req) => {
-          const ignorePaths = ['/metrics', '/api/health', '/status'];
+          const ignorePaths = ['/metrics', '/api/health', '/status', '/api/telemetry'];
           return ignorePaths.some((p) => req.url?.startsWith(p));
         },
       },
       '@opentelemetry/instrumentation-fs': { enabled: false }, // tắt fs traces (quá nhiều)
+      '@opentelemetry/instrumentation-mongodb': { enabled: false },
+      '@opentelemetry/instrumentation-mongoose': { enabled: false },
+      '@opentelemetry/instrumentation-net': { enabled: false }, // tắt tcp.connect traces
     }),
   ],
 });
@@ -73,7 +78,7 @@ sdk.start();
 
 // ─── Graceful shutdown ─────────────────────────────────────────────────────
 process.on('SIGTERM', () => sdk.shutdown());
-process.on('SIGINT',  () => sdk.shutdown());
+process.on('SIGINT', () => sdk.shutdown());
 
 // Export tracer để tạo Custom Spans trong business code
 const { trace, context, SpanStatusCode } = require('@opentelemetry/api');
