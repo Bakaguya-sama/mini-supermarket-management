@@ -1,0 +1,131 @@
+### DamagedProduct Integration Test - Manual HTTP Testing
+
+@baseUrl = http://localhost:3000/api
+@adminToken = <replace with actual admin token>
+@productId = <replace with actual product ID>
+@shelfId = <replace with actual shelf ID>
+
+### 1. Get Damaged Product Statistics
+GET {{baseUrl}}/damaged-products/stats
+
+### 2. Get Damaged Products by Product ID
+GET {{baseUrl}}/damaged-products/product/{{productId}}
+
+### 3. Get Damaged Product Shelves
+GET {{baseUrl}}/damaged-products/{{damagedProductId}}/shelves
+
+### 4. Create Damaged Product Report
+POST {{baseUrl}}/damaged-products
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "product_id": "{{productId}}",
+  "quantity": 5,
+  "damage_reason": "Broken packaging during delivery",
+  "reported_date": "{{$datetime iso8601}}",
+  "status": "pending"
+}
+
+### 5. Create Damaged Product - Expired
+POST {{baseUrl}}/damaged-products
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "product_id": "{{productId}}",
+  "quantity": 10,
+  "damage_reason": "Expired - Beyond shelf life",
+  "reported_date": "{{$datetime iso8601}}",
+  "status": "pending"
+}
+
+### 6. Create Damaged Product - Water Damage
+POST {{baseUrl}}/damaged-products
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "product_id": "{{productId}}",
+  "quantity": 3,
+  "damage_reason": "Water damage in warehouse",
+  "reported_date": "{{$datetime iso8601}}",
+  "status": "pending"
+}
+
+### Save Damaged Product ID for Further Tests
+@damagedProductId = <replace with actual damaged product ID>
+
+### 7. Adjust Inventory for Damaged Product
+PUT {{baseUrl}}/damaged-products/{{damagedProductId}}/adjust-inventory
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "quantity_to_remove": 3,
+  "notes": "Removed damaged items from system"
+}
+
+### 8. Bulk Update Status - Mark as Resolved
+PUT {{baseUrl}}/damaged-products/bulk/update-status
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "ids": ["{{damagedProductId}}"],
+  "status": "resolved",
+  "resolution_notes": "Items discarded"
+}
+
+### 9. Bulk Update Multiple Records
+PUT {{baseUrl}}/damaged-products/bulk/update-status
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "ids": [
+    "{{damagedProductId1}}",
+    "{{damagedProductId2}}",
+    "{{damagedProductId3}}"
+  ],
+  "status": "investigated"
+}
+
+### 10. Get All Damaged Products
+GET {{baseUrl}}/damaged-products
+
+### 11. Get Damaged Products with Filter
+GET {{baseUrl}}/damaged-products?status=pending
+
+### 12. Get Damaged Products with Date Range
+GET {{baseUrl}}/damaged-products?from_date={{$datetime offset(-7, 'd') iso8601}}&to_date={{$datetime iso8601}}
+
+### 13. Update Damage Status Manually
+PUT {{baseUrl}}/damaged-products/{{damagedProductId}}
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "status": "resolved",
+  "resolution_notes": "Item repaired and restocked"
+}
+
+### 14. Get Statistics for Reporting
+GET {{baseUrl}}/damaged-products/stats?period=month
+
+### 15. Test High Volume Damage Report
+POST {{baseUrl}}/damaged-products
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "product_id": "{{productId}}",
+  "quantity": 50,
+  "damage_reason": "Bulk damage in transit",
+  "reported_date": "{{$datetime iso8601}}",
+  "status": "pending",
+  "shelf_id": "{{shelfId}}"
+}
+
+### 16. Get Shelves with Damaged Items
+GET {{baseUrl}}/damaged-products/{{damagedProductId}}/shelves

@@ -1,0 +1,125 @@
+### Product Integration Test - Manual HTTP Testing
+
+@baseUrl = http://localhost:3000/api
+@adminToken = <replace with actual admin token>
+@supplierId = <replace with actual supplier ID>
+
+### 1. Get All Products
+GET {{baseUrl}}/products
+
+### 2. Get Product Statistics
+GET {{baseUrl}}/products/stats
+
+### 3. Get Low Stock Products
+GET {{baseUrl}}/products/low-stock
+
+### 4. Get Products by Category - Electronics
+GET {{baseUrl}}/products/category/Electronics
+
+### 5. Get Products by Category - Food
+GET {{baseUrl}}/products/category/Food
+
+### 6. Get Single Product
+GET {{baseUrl}}/products/{{productId}}
+
+### 7. Get Products by Supplier
+GET {{baseUrl}}/products/supplier/{{supplierId}}
+
+### 8. Create New Product
+POST {{baseUrl}}/products
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "name": "New Electronic Device",
+  "sku": "SKU-PROD-{{$timestamp}}",
+  "category": "Electronics",
+  "current_stock": 100,
+  "unit_price": 75000,
+  "description": "A new electronic product",
+  "supplier_id": "{{supplierId}}"
+}
+
+### 9. Create Product - Missing Required Field (Should Fail)
+POST {{baseUrl}}/products
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "name": "Incomplete Product",
+  "sku": "SKU-INC"
+}
+
+### 10. Create Product - Without Auth (Should Fail)
+POST {{baseUrl}}/products
+Content-Type: application/json
+
+{
+  "name": "Unauthorized Product",
+  "sku": "SKU-UNAUTH",
+  "category": "Test",
+  "current_stock": 50,
+  "unit_price": 25000,
+  "supplier_id": "{{supplierId}}"
+}
+
+### Save Product ID for Further Tests
+@productId = <replace with actual product ID from creation response>
+
+### 11. Update Product
+PUT {{baseUrl}}/products/{{productId}}
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "name": "Updated Product Name",
+  "unit_price": 80000,
+  "description": "Updated description"
+}
+
+### 12. Update Product Stock
+PATCH {{baseUrl}}/products/{{productId}}/stock
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "current_stock": 150
+}
+
+### 13. Update Product Price
+PATCH {{baseUrl}}/products/{{productId}}/price
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "unit_price": 85000
+}
+
+### 14. Activate Product
+PATCH {{baseUrl}}/products/{{productId}}/activate
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "is_active": true
+}
+
+### 15. Soft Delete Product
+DELETE {{baseUrl}}/products/{{productId}}
+Authorization: Bearer {{adminToken}}
+
+### 16. Permanent Delete Product
+DELETE {{baseUrl}}/products/{{productId}}/permanent
+Authorization: Bearer {{adminToken}}
+
+### 17. Test Pagination
+GET {{baseUrl}}/products?page=1&limit=10
+
+### 18. Test Search/Filter
+GET {{baseUrl}}/products?category=Electronics&min_price=50000&max_price=100000
+
+### 19. Get Product with Batch Summary
+GET {{baseUrl}}/products/{{productId}}
+
+### 20. Verify Deleted Product (Should Return 404 or Not Found)
+GET {{baseUrl}}/products/{{deletedProductId}}
