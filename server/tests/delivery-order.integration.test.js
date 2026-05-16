@@ -12,8 +12,6 @@ let authToken;
 beforeAll(async () => {
   await setupDB();
   app = getApp();
-  const acc = await createAccount('staff');
-  authToken = makeTokenForAccount(acc);
 });
 
 afterAll(async () => {
@@ -25,6 +23,9 @@ beforeEach(async () => {
   const { DeliveryOrder } = require('../models');
   await DeliveryOrder.deleteMany({});
   await Staff.deleteMany({});
+  
+  const acc = await createAccount('staff');
+  authToken = makeTokenForAccount(acc);
 });
 
 /** Helper: create a delivery staff account + staff profile */

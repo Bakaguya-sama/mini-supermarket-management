@@ -103,8 +103,11 @@ describe('Cart Controller Unit Tests', () => {
       const cartWithItem = { ...mockCart, cartItems: [mockCartItem._id] };
 
       Cart.findById
-        .mockResolvedValueOnce({ ...mockCart })             // first call: fetch cart for validation
-        .mockReturnValueOnce({                               // second call: after save, populated
+        .mockResolvedValueOnce({ ...mockCart })             // 1. fetch cart for validation
+        .mockReturnValueOnce({                               // 2. call inside calculateCartTotals
+          populate: jest.fn().mockResolvedValue({ ...mockCart, applied_promo_id: null }),
+        })
+        .mockReturnValueOnce({                               // 3. final fetch, populated
           populate: jest.fn().mockResolvedValue(cartWithItem),
         });
       Product.findById.mockResolvedValue(mockProduct);

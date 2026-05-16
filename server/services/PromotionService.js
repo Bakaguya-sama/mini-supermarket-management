@@ -82,7 +82,7 @@ class PromotionService {
     };
     
     if (subtotal !== undefined) {
-      query.min_purchase_amount = { $lte: subtotal };
+      query.min_purchase_amount = { $lte: Number(subtotal) };
     }
 
     return await promotionRepository.findAll(query);
