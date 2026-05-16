@@ -60,43 +60,43 @@ describe('ProductStock Integration Tests', () => {
     shelfId = shelf._id.toString();
   });
 
-  describe('GET /api/product-stock/stats', () => {
+  describe('GET /api/product-stocks/stats', () => {
     test('should return product stock statistics', async () => {
-      const res = await request(app).get('/api/product-stock/stats');
+      const res = await request(app).get('/api/product-stocks/stats');
 
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
     });
   });
 
-  describe('GET /api/product-stock/low-stock', () => {
+  describe('GET /api/product-stocks/low-stock', () => {
     test('should return low stock products', async () => {
-      const res = await request(app).get('/api/product-stock/low-stock');
+      const res = await request(app).get('/api/product-stocks/low-stock');
 
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
     });
   });
 
-  describe('GET /api/product-stock/product/:productId', () => {
+  describe('GET /api/product-stocks/product/:productId', () => {
     test('should return stock for a product', async () => {
-      const res = await request(app).get(`/api/product-stock/product/${productId}`);
+      const res = await request(app).get(`/api/product-stocks/product/${productId}`);
 
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
     });
   });
 
-  describe('GET /api/product-stock/shelf/:shelfId', () => {
+  describe('GET /api/product-stocks/shelf/:shelfId', () => {
     test('should return stock by shelf', async () => {
-      const res = await request(app).get(`/api/product-stock/shelf/${shelfId}`);
+      const res = await request(app).get(`/api/product-stocks/shelf/${shelfId}`);
 
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
     });
   });
 
-  describe('PUT /api/product-stock/:id/adjust', () => {
+  describe('PUT /api/product-stocks/:id/adjust', () => {
     test('should adjust stock quantity', async () => {
       // Create a stock record first
       const stock = await ProductStock.create({
@@ -107,16 +107,16 @@ describe('ProductStock Integration Tests', () => {
       });
 
       const res = await request(app)
-        .put(`/api/product-stock/${stock._id.toString()}/adjust`)
+        .put(`/api/product-stocks/${stock._id.toString()}/adjust`)
         .set('Authorization', `Bearer ${adminToken}`)
-        .send({ quantity_adjustment: -5, reason: 'Damage' });
+        .send({ adjustment: -5, reason: 'Damage' });
 
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
     });
   });
 
-  describe('PUT /api/product-stock/bulk/update-status', () => {
+  describe('PUT /api/product-stocks/bulk/update-status', () => {
     test('should bulk update stock status', async () => {
       const stock1 = await ProductStock.create({
         product_id: productId,
@@ -126,11 +126,11 @@ describe('ProductStock Integration Tests', () => {
       });
 
       const res = await request(app)
-        .put('/api/product-stock/bulk/update-status')
+        .put('/api/product-stocks/bulk/update-status')
         .set('Authorization', `Bearer ${adminToken}`)
         .send({
-          stock_ids: [stock1._id.toString()],
-          status: 'low_stock'
+          ids: [stock1._id.toString()],
+          status: 'inactive'
         });
 
       expect(res.status).toBe(200);

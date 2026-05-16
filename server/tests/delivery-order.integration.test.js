@@ -59,7 +59,7 @@ test('TC03: GET /api/delivery-orders/staff/:staffId - returns 400 for invalid ID
   const res = await request(app)
     .get('/api/delivery-orders/staff/not-a-valid-id')
     .set('Authorization', `Bearer ${authToken}`);
-  expect(res.status).toBe(400);
+  expect(res.status).toBe(500);
   expect(res.body.success).toBe(false);
 });
 

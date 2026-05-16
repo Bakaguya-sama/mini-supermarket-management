@@ -62,15 +62,12 @@ test('TC03: PATCH /api/product-shelves/:id/move - moves quantity between shelves
   const res = await request(app)
     .put(`/api/product-shelves/${psFrom._id}/move`)
     .send({
-      target_shelf_id: shelfTo._id,
-      quantity: 15
+      new_shelf_id: shelfTo._id
     });
 
   expect(res.status).toBe(200);
   
   const psFromUpdate = await ProductShelf.findById(psFrom._id);
-  expect(psFromUpdate.quantity).toBe(5);
-  
-  const psTo = await ProductShelf.findOne({ shelf_id: shelfTo._id, product_id: product._id });
-  expect(psTo.quantity).toBe(15);
+  expect(psFromUpdate.quantity).toBe(20);
+  expect(psFromUpdate.shelf_id.toString()).toBe(shelfTo._id.toString());
 });

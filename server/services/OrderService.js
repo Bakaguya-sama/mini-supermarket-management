@@ -236,7 +236,7 @@ class OrderService {
     // UC21.3: Generate order identifiers
     const totalOrders = await orderRepository.countDocuments({ isDelete: false });
     const orderSequence = totalOrders + 1;
-    const orderNumber = `ORD-${Date.now()}`;
+    const orderNumber = `ORD-${Date.now()}-${Math.random().toString(36).substring(2, 7).toUpperCase()}`;
     const trackingNumber = `TRK-${String(orderSequence).padStart(6, '0')}`;
 
     logger.info(`Creating order ${orderNumber} with tracking ${trackingNumber}`);
