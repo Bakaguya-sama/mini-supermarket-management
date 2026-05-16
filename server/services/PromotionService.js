@@ -44,7 +44,7 @@ class PromotionService {
   async validatePromoCode(code, subtotal) {
     if (!code) throw new BadRequestError('Vui lòng nhập mã khuyến mãi');
 
-    const promotion = await promotionRepository.findOne({ code, isDelete: false });
+    const promotion = await promotionRepository.findOne({ promo_code: code, isDelete: false });
     if (!promotion) throw new NotFoundError('Mã khuyến mãi không tồn tại');
 
     const now = new Date();
@@ -56,12 +56,12 @@ class PromotionService {
     }
 
     let discountAmount = 0;
-    if (promotion.discount_type === 'percentage') {
+    if (promotion.promotion_type === 'percentage') {
       discountAmount = (subtotal * promotion.discount_value) / 100;
       if (promotion.max_discount_amount && discountAmount > promotion.max_discount_amount) {
         discountAmount = promotion.max_discount_amount;
       }
-    } else if (promotion.discount_type === 'fixed_amount') {
+    } else if (promotion.promotion_type === 'fixed_amount') {
       discountAmount = promotion.discount_value;
     }
 
@@ -82,7 +82,7 @@ class PromotionService {
     };
     
     if (subtotal !== undefined) {
-      query.min_purchase_amount = { $lte: subtotal };
+      query.min_purchase_amount = { $lte: Number(subtotal) };
     }
 
     return await promotionRepository.findAll(query);

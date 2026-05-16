@@ -61,7 +61,14 @@ class SectionService {
   async getSectionById(id) {
     const section = await sectionRepository.findById(id);
     if (!section || section.isDelete) throw new NotFoundError('Section not found');
-    return section;
+    
+    // Fetch shelves for this section
+    const shelves = await sectionRepository.findShelves({
+      shelf_name: section.section_name,
+      isDelete: false,
+    });
+    
+    return { ...section, shelves };
   }
 
   async createSection(data) {
