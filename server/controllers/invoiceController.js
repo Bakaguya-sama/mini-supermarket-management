@@ -1,639 +1,173 @@
-// controllers/invoiceController.js - INVOICE API HOÀN CHỈNH
-const { Invoice, InvoiceItem, Order, Customer, Product } = require("../models");
-const mongoose = require("mongoose");
+// server/controllers/invoiceController.js
+const invoiceService = require('../services/InvoiceService');
+const logger = require('../config/logger');
 
 /**
- * @desc    Get all invoices with filters
  * @route   GET /api/invoices
+ * @desc    Get all invoices with filters
  * @access  Public
  */
-exports.getAllInvoices = async (req, res) => {
+exports.getAllInvoices = async (req, res, next) => {
   try {
-    const {
-      page = 1,
-      limit = 10,
-      customer_id,
-      payment_status,
-      payment_method,
-      search,
-      minAmount,
-      maxAmount,
-      startDate,
-      endDate,
-      sort = "-invoice_date",
-    } = req.query;
-
-    // Build query
-    const query = { isDelete: false };
-    if (customer_id) query.customer_id = customer_id;
-    if (payment_status) query.payment_status = payment_status;
-    if (search) {
-      query.$or = [
-        { invoice_number: { $regex: search, $options: "i" } },
-        { notes: { $regex: search, $options: "i" } },
-      ];
-    }
-    if (minAmount || maxAmount) {
-      query.total_amount = {};
-      if (minAmount) query.total_amount.$gte = parseFloat(minAmount);
-      if (maxAmount) query.total_amount.$lte = parseFloat(maxAmount);
-    }
-    if (startDate || endDate) {
-      query.invoice_date = {};
-      if (startDate) query.invoice_date.$gte = new Date(startDate);
-      if (endDate) query.invoice_date.$lte = new Date(endDate);
-    }
-
-    // Calculate pagination
-    const skip = (parseInt(page) - 1) * parseInt(limit);
-
-    // Execute query with optional payment_method filter
-    let invoicesQuery = Invoice.find(query)
-      .populate({
-        path: "customer_id",
-        select: "account_id membership_type",
-        populate: {
-          path: "account_id",
-          select: "full_name email phone_number",
-        },
-      })
-      .populate("order_id", "order_number status payment_method")
-      .populate({
-        path: "staff_id",
-        select: "account_id position",
-        populate: {
-          path: "account_id",
-          select: "full_name email",
-        },
-      })
-      .sort(sort)
-      .skip(skip)
-      .limit(parseInt(limit));
-
-    let invoices = await invoicesQuery;
-
-    // Filter by payment_method if provided (since it's in Order, not Invoice)
-    if (payment_method && payment_method !== "All Methods") {
-      invoices = invoices.filter(
-        (invoice) =>
-          invoice.order_id && invoice.order_id.payment_method === payment_method
-      );
-    }
-
-    // Attach item counts to each invoice to avoid N+1 queries in the client
-    const invoiceIds = invoices.map((i) => i._id);
-    let countsMap = {};
-    if (invoiceIds.length > 0) {
-      const counts = await InvoiceItem.aggregate([
-        { $match: { invoice_id: { $in: invoiceIds } } },
-        { $group: { _id: "$invoice_id", count: { $sum: 1 } } },
-      ]);
-      countsMap = counts.reduce((m, c) => {
-        m[c._id.toString()] = c.count;
-        return m;
-      }, {});
-    }
-
-    const invoicesWithCounts = invoices.map((inv) => ({
-      ...inv.toObject(),
-      items_count: countsMap[inv._id.toString()] || 0,
-    }));
-
-    const total = await Invoice.countDocuments(query);
-
+    const { invoices, total, page, pages } = await invoiceService.getAllInvoices(req.query);
     res.status(200).json({
       success: true,
-      count: invoicesWithCounts.length,
-      total,
-      page: parseInt(page),
-      pages: Math.ceil(total / parseInt(limit)),
-      data: invoicesWithCounts,
-    });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: "Error fetching invoices",
-      error: error.message,
-    });
-  }
-};
-
-/**
- * @desc    Get single invoice by ID
- * @route   GET /api/invoices/:id
- * @access  Public
- */
-exports.getInvoiceById = async (req, res) => {
-  try {
-    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
-      return res.status(400).json({
-        success: false,
-        message: "Invalid invoice ID",
-      });
-    }
-
-    const invoice = await Invoice.findById(req.params.id)
-      .populate({
-        path: "customer_id",
-        select: "account_id membership_type total_spent",
-        populate: {
-          path: "account_id",
-          select: "full_name email phone_number",
-        },
-      })
-      .populate({
-        path: "order_id",
-        select: "order_number status total_amount delivery_date payment_method",
-      })
-      .populate({
-        path: "staff_id",
-        select: "account_id position",
-        populate: {
-          path: "account_id",
-          select: "full_name email",
-        },
-      });
-
-    if (!invoice) {
-      return res.status(404).json({
-        success: false,
-        message: "Invoice not found",
-      });
-    }
-
-    // Get invoice items
-    const items = await InvoiceItem.find({
-      invoice_id: req.params.id,
-    }).populate("product_id", "name sku category retail_price");
-
-    res.status(200).json({
-      success: true,
-      data: {
-        ...invoice.toObject(),
-        items,
-      },
-    });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: "Error fetching invoice",
-      error: error.message,
-    });
-  }
-};
-
-/**
- * @desc    Get invoices by customer
- * @route   GET /api/invoices/customer/:customerId
- * @access  Public
- */
-exports.getInvoicesByCustomer = async (req, res) => {
-  try {
-    const { page = 1, limit = 10 } = req.query;
-    const skip = (parseInt(page) - 1) * parseInt(limit);
-
-    // Verify customer exists
-    const customer = await Customer.findById(req.params.customerId);
-    if (!customer) {
-      return res.status(404).json({
-        success: false,
-        message: "Customer not found",
-      });
-    }
-
-    const invoices = await Invoice.find({
-      customer_id: req.params.customerId,
-      isDelete: false,
-    })
-      .populate("order_id", "order_number status")
-      .skip(skip)
-      .limit(parseInt(limit))
-      .sort("-invoice_date");
-
-    const total = await Invoice.countDocuments({
-      customer_id: req.params.customerId,
-      isDelete: false,
-    });
-
-    res.status(200).json({
-      success: true,
-      customer: {
-        id: customer._id,
-        account_id: customer.account_id,
-      },
       count: invoices.length,
       total,
-      page: parseInt(page),
-      pages: Math.ceil(total / parseInt(limit)),
-      data: invoices,
+      page,
+      pages,
+      data: invoices
     });
   } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: "Error fetching customer invoices",
-      error: error.message,
-    });
+    next(error);
   }
 };
 
 /**
- * @desc    Get invoice statistics
- * @route   GET /api/invoices/stats
+ * @route   GET /api/invoices/:id
+ * @desc    Get single invoice by ID
  * @access  Public
  */
-exports.getInvoiceStats = async (req, res) => {
+exports.getInvoiceById = async (req, res, next) => {
   try {
-    const totalInvoices = await Invoice.countDocuments({ isDelete: false });
-
-    const invoiceByStatus = await Invoice.aggregate([
-      { $match: { isDelete: false } },
-      { $group: { _id: "$payment_status", count: { $sum: 1 } } },
-    ]);
-
-    const totalAmount = await Invoice.aggregate([
-      { $match: { isDelete: false } },
-      {
-        $group: {
-          _id: null,
-          totalAmount: { $sum: "$total_amount" },
-          avgAmount: { $avg: "$total_amount" },
-        },
-      },
-    ]);
-
-    const unpaidAmount = await Invoice.aggregate([
-      { $match: { isDelete: false, payment_status: "unpaid" } },
-      { $group: { _id: null, totalAmount: { $sum: "$total_amount" } } },
-    ]);
-
+    const invoice = await invoiceService.getInvoiceById(req.params.id);
     res.status(200).json({
       success: true,
-      data: {
-        totalInvoices,
-        byStatus: invoiceByStatus,
-        totalAmount: totalAmount[0]?.totalAmount || 0,
-        avgAmount: totalAmount[0]?.avgAmount || 0,
-        unpaidAmount: unpaidAmount[0]?.totalAmount || 0,
-      },
+      data: invoice
     });
   } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: "Error fetching invoice statistics",
-      error: error.message,
-    });
+    next(error);
   }
 };
 
 /**
- * @desc    Create new invoice
- * @route   POST /api/invoices
+ * @route   GET /api/invoices/customer/:customerId
+ * @desc    Get invoices by customer
  * @access  Public
  */
-exports.createInvoice = async (req, res) => {
+exports.getInvoicesByCustomer = async (req, res, next) => {
   try {
-    const {
-      customer_id,
-      order_id,
-      staff_id,
-      items,
-      payment_method,
-      subtotal,
-      discount_amount,
-      tax_amount,
-      notes,
-    } = req.body;
-
-    // Validate required fields
-    if (!customer_id || !items || items.length === 0) {
-      return res.status(400).json({
-        success: false,
-        message: "Please provide customer ID and items",
-      });
-    }
-
-    // Verify customer exists
-    const customer = await Customer.findById(customer_id);
-    if (!customer) {
-      return res.status(404).json({
-        success: false,
-        message: "Customer not found",
-      });
-    }
-
-    // Verify order exists (if provided)
-    if (order_id) {
-      const order = await Order.findById(order_id);
-      if (!order) {
-        return res.status(404).json({
-          success: false,
-          message: "Order not found",
-        });
-      }
-    }
-
-    // Verify staff exists (if provided)
-    if (staff_id) {
-      const staff = await mongoose.model("Staff").findById(staff_id);
-      if (!staff) {
-        return res.status(404).json({
-          success: false,
-          message: "Staff not found",
-        });
-      }
-    }
-
-    // Generate invoice number
-    const invoiceNumber = `INV-${Date.now()}`;
-
-    // Calculate amounts
-    let calculatedSubtotal = subtotal || 0;
-    if (!subtotal) {
-      // Calculate from items if not provided
-      for (const item of items) {
-        calculatedSubtotal += item.line_total;
-      }
-    }
-
-    const calculatedDiscountAmount = discount_amount || 0;
-    const calculatedTaxAmount = tax_amount || calculatedSubtotal * 0.09; // Default 9% tax
-    const totalAmount =
-      calculatedSubtotal - calculatedDiscountAmount + calculatedTaxAmount;
-
-    // Create invoice
-    const invoice = await Invoice.create({
-      invoice_number: invoiceNumber,
-      customer_id,
-      order_id: order_id || null,
-      staff_id: staff_id || null,
-      payment_method: payment_method || "Cash",
-      subtotal: calculatedSubtotal,
-      discount_amount: calculatedDiscountAmount,
-      tax_amount: calculatedTaxAmount,
-      total_amount: totalAmount,
-      payment_status: "unpaid",
-      notes,
-      invoice_date: new Date(),
+    const { invoices, total, page, pages } = await invoiceService.getInvoicesByCustomer(req.params.customerId, req.query);
+    res.status(200).json({
+      success: true,
+      count: invoices.length,
+      total,
+      page,
+      pages,
+      data: invoices
     });
+  } catch (error) {
+    next(error);
+  }
+};
 
-    // Create invoice items
-    for (const item of items) {
-      await InvoiceItem.create({
-        invoice_id: invoice._id,
-        product_id: item.product_id,
-        description: item.description,
-        quantity: item.quantity,
-        unit_price: item.unit_price,
-        line_total: item.line_total,
-      });
-    }
+/**
+ * @route   GET /api/invoices/stats/summary
+ * @desc    Get invoice statistics
+ * @access  Public
+ */
+exports.getInvoiceStats = async (req, res, next) => {
+  try {
+    const stats = await invoiceService.getInvoiceStats();
+    res.status(200).json({
+      success: true,
+      data: stats
+    });
+  } catch (error) {
+    next(error);
+  }
+};
 
-    await invoice.populate([
-      { path: "customer_id" },
-      { path: "order_id" },
-      {
-        path: "staff_id",
-        populate: { path: "account_id", select: "full_name email" },
-      },
-    ]);
-
+/**
+ * @route   POST /api/invoices
+ * @desc    Create new invoice
+ * @access  Public
+ */
+exports.createInvoice = async (req, res, next) => {
+  try {
+    const invoice = await invoiceService.createInvoice(req.body);
     res.status(201).json({
       success: true,
-      message: "Invoice created successfully",
-      data: invoice,
+      message: 'Invoice created successfully',
+      data: invoice
     });
   } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: "Error creating invoice",
-      error: error.message,
-    });
+    next(error);
   }
 };
 
 /**
- * @desc    Update invoice payment status
  * @route   PUT /api/invoices/:id
+ * @desc    Update invoice
  * @access  Public
  */
-exports.updateInvoice = async (req, res) => {
+exports.updateInvoice = async (req, res, next) => {
   try {
-    const invoice = await Invoice.findById(req.params.id);
-
-    if (!invoice) {
-      return res.status(404).json({
-        success: false,
-        message: "Invoice not found",
-      });
-    }
-
-    const { payment_status, payment_method, notes } = req.body;
-
-    // Update payment status
-    if (payment_status) {
-      if (!["unpaid", "paid", "partial", "refunded"].includes(payment_status)) {
-        return res.status(400).json({
-          success: false,
-          message: "Invalid payment status",
-        });
-      }
-      invoice.payment_status = payment_status;
-    }
-
-    // Update payment method
-    if (payment_method) {
-      if (
-        !["Cash", "Card Payment", "Digital Wallet", "E-Wallet"].includes(
-          payment_method
-        )
-      ) {
-        return res.status(400).json({
-          success: false,
-          message: "Invalid payment method",
-        });
-      }
-      invoice.payment_method = payment_method;
-    }
-
-    if (notes !== undefined) invoice.notes = notes;
-
-    await invoice.save();
-    await invoice.populate([{ path: "customer_id" }, { path: "order_id" }]);
-
+    const invoice = await invoiceService.updateInvoice(req.params.id, req.body);
     res.status(200).json({
       success: true,
-      message: "Invoice updated successfully",
-      data: invoice,
+      message: 'Invoice updated successfully',
+      data: invoice
     });
   } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: "Error updating invoice",
-      error: error.message,
-    });
+    next(error);
   }
 };
 
 /**
- * @desc    Mark invoice as paid
  * @route   PATCH /api/invoices/:id/mark-paid
+ * @desc    Mark invoice as paid
  * @access  Public
  */
-exports.markAsPaid = async (req, res) => {
+exports.markAsPaid = async (req, res, next) => {
   try {
-    const invoice = await Invoice.findById(req.params.id);
-
-    if (!invoice) {
-      return res.status(404).json({
-        success: false,
-        message: "Invoice not found",
-      });
-    }
-
-    // Get invoice items to adjust stock
-    const items = await InvoiceItem.find({ invoice_id: invoice._id });
-
-    const warnings = [];
-
-    for (const item of items) {
-      const prodId = item.product_id;
-      const qtySold = item.quantity || 0;
-      if (!prodId || qtySold <= 0) continue;
-
-      try {
-        // Reduce ProductStock records (FIFO by expiry_date)
-        let remaining = qtySold;
-        const productStocks = await mongoose
-          .model("ProductStock")
-          .find({ product_id: prodId, isDelete: false, quantity: { $gt: 0 } })
-          .sort({ expiry_date: 1, last_updated: 1 });
-
-        for (const ps of productStocks) {
-          if (remaining <= 0) break;
-          const deduct = Math.min(ps.quantity, remaining);
-          ps.quantity = Math.max(0, ps.quantity - deduct);
-          ps.last_updated = new Date();
-          await ps.save();
-          remaining -= deduct;
-        }
-
-        // Decrease Product.current_stock by qtySold (ensure non-negative)
-        const product = await Product.findById(prodId);
-        if (product) {
-          product.current_stock = Math.max(
-            0,
-            (product.current_stock || 0) - qtySold
-          );
-          await product.save();
-        } else {
-          warnings.push(`Product ${prodId} not found when adjusting stock`);
-        }
-
-        if (remaining > 0) {
-          warnings.push(
-            `Not enough product stock records for product ${prodId}. Remaining to allocate: ${remaining}`
-          );
-        }
-      } catch (err) {
-        console.error(
-          `Error adjusting stock for product ${item.product_id}:`,
-          err
-        );
-        warnings.push(`Failed to adjust stock for product ${item.product_id}`);
-      }
-    }
-
-    invoice.payment_status = "paid";
-    await invoice.save();
-
-    await invoice.populate([{ path: "customer_id" }, { path: "order_id" }]);
-
+    const { invoice, warnings } = await invoiceService.markAsPaid(req.params.id);
     res.status(200).json({
       success: true,
-      message: "Invoice marked as paid",
+      message: 'Invoice marked as paid',
       data: invoice,
-      warnings,
+      warnings
     });
   } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: "Error marking invoice as paid",
-      error: error.message,
-    });
+    next(error);
   }
 };
 
 /**
- * @desc    Get unpaid invoices
  * @route   GET /api/invoices/filter/unpaid
+ * @desc    Get unpaid invoices
  * @access  Public
  */
-exports.getUnpaidInvoices = async (req, res) => {
+exports.getUnpaidInvoices = async (req, res, next) => {
   try {
-    const { page = 1, limit = 10 } = req.query;
-    const skip = (parseInt(page) - 1) * parseInt(limit);
-
-    const invoices = await Invoice.find({
-      payment_status: "unpaid",
-      isDelete: false,
-    })
-      .populate("customer_id", "account_id membership_type")
-      .populate("order_id", "order_number status")
-      .skip(skip)
-      .limit(parseInt(limit))
-      .sort("-invoice_date");
-
-    const total = await Invoice.countDocuments({
-      payment_status: "unpaid",
-      isDelete: false,
-    });
-
+    const { invoices, total, page, pages } = await invoiceService.getUnpaidInvoices(req.query);
     res.status(200).json({
       success: true,
       count: invoices.length,
       total,
-      page: parseInt(page),
-      pages: Math.ceil(total / parseInt(limit)),
-      data: invoices,
+      page,
+      pages,
+      data: invoices
     });
   } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: "Error fetching unpaid invoices",
-      error: error.message,
-    });
+    next(error);
   }
 };
 
 /**
- * @desc    Delete invoice (soft delete)
  * @route   DELETE /api/invoices/:id
+ * @desc    Delete invoice (soft delete)
  * @access  Public
  */
-exports.deleteInvoice = async (req, res) => {
+exports.deleteInvoice = async (req, res, next) => {
   try {
-    const invoice = await Invoice.findById(req.params.id);
-
-    if (!invoice) {
-      return res.status(404).json({
-        success: false,
-        message: "Invoice not found",
-      });
-    }
-
-    invoice.isDelete = true;
-    await invoice.save();
-
+    const invoice = await invoiceService.deleteInvoice(req.params.id);
     res.status(200).json({
       success: true,
-      message: "Invoice deleted successfully",
-      data: invoice,
+      message: 'Invoice deleted successfully',
+      data: invoice
     });
   } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: "Error deleting invoice",
-      error: error.message,
-    });
+    next(error);
   }
 };
