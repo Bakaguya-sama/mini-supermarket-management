@@ -3143,3 +3143,5 @@
 {"level":"info","message":"Feedback created successfully: fb-1","service":"mini-supermarket-api","timestamp":"2026-05-16 15:12:18"}
 {"level":"info","message":"Order cancelled: 6a0826e2e195303418d9b910","service":"mini-supermarket-api","timestamp":"2026-05-16 15:12:18"}
 {"level":"info","message":"Staff 6a0826e2259d0062564560d1 soft-deleted to preserve historical records","service":"mini-supermarket-api","timestamp":"2026-05-16 15:12:18"}
+{"level":"info","message":"Feedback created successfully: fb-1","service":"mini-supermarket-api","timestamp":"2026-05-16 15:56:23"}
+{"level":"info","message":"Order cancelled: 6a083138d91ac59680cbb48f","service":"mini-supermarket-api","timestamp":"2026-05-16 15:56:24"}

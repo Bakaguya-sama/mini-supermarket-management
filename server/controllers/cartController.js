@@ -666,6 +666,7 @@ async function calculateCartTotals(cartId) {
 
     // Get cart and apply discount if promo exists
     const cart = await Cart.findById(cartId).populate('applied_promo_id');
+    if (!cart) return;
     let discounts = 0;
 
     if (cart.applied_promo_id) {
@@ -673,7 +674,7 @@ async function calculateCartTotals(cartId) {
       const promo = cart.applied_promo_id;
       if (promo.promotion_type === 'percentage') {
         discounts = subtotal * (promo.discount_value / 100);
-      } else if (promo.promotion_type === 'fixed') {
+      } else if (promo.promotion_type === 'fixed' || promo.promotion_type === 'fixed_amount') {
         discounts = promo.discount_value;
       }
       console.log(`🏷️  Promo applied: ${discounts}`);

@@ -43,7 +43,7 @@ test('TC02: GET /api/sections - returns list of sections', async () => {
 
 test('TC03: GET /api/sections/:id - returns section with shelves', async () => {
   const section = await Section.create({ section_name: 'Sec3' });
-  await Shelf.create({ shelf_number: 'S3-1', section: section._id, capacity: 50 });
+  await Shelf.create({ shelf_number: 'S3-1', shelf_name: 'S3', section_number: 3, section: section._id, capacity: 50 });
 
   const res = await request(app).get(`/api/sections/${section._id}`);
   expect(res.status).toBe(200);

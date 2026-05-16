@@ -30,7 +30,7 @@ test('TC01: POST /api/auth/register/customer - registers successfully', async ()
   expect(res.status).toBe(201);
   expect(res.body.success).toBe(true);
   expect(res.body.data.token).toBeDefined();
-  expect(res.body.data.account.role).toBe('customer');
+  expect(res.body.data.user.role).toBe('customer');
 });
 
 test('TC02: POST /api/auth/register/customer - rejects duplicate username', async () => {
@@ -69,12 +69,12 @@ test('TC04: POST /api/auth/login - rejects wrong password', async () => {
   expect(res.body.success).toBe(false);
 });
 
-test('TC05: GET /api/auth/profile - returns 401 without token', async () => {
-  const res = await request(app).get('/api/auth/profile');
+test('TC05: GET /api/auth/me - returns 401 without token', async () => {
+  const res = await request(app).get('/api/auth/me');
   expect(res.status).toBe(401);
 });
 
-test('TC06: GET /api/auth/profile - returns profile with valid token', async () => {
+test('TC06: GET /api/auth/me - returns profile with valid token', async () => {
   const registerRes = await request(app)
     .post('/api/auth/register/customer')
     .send({ username: 'profileuser', email: 'profile@example.com', password: 'pass123', full_name: 'Profile User' });
@@ -83,9 +83,9 @@ test('TC06: GET /api/auth/profile - returns profile with valid token', async () 
   expect(token).toBeDefined();
 
   const res = await request(app)
-    .get('/api/auth/profile')
+    .get('/api/auth/me')
     .set('Authorization', `Bearer ${token}`);
 
   expect(res.status).toBe(200);
-  expect(res.body.data.username).toBe('profileuser');
+  expect(res.body.data.user.username).toBe('profileuser');
 });

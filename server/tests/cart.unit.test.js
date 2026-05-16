@@ -37,9 +37,11 @@ jest.mock('../models', () => ({
     findByIdAndUpdate: jest.fn(),
   },
   CartItem: {
-    find: jest.fn(),
+    find: jest.fn().mockReturnValue({
+      populate: jest.fn().mockResolvedValue([]),
+    }),
     findOne: jest.fn(),
-    findById: jest.fn(),   // controller uses findById, not findByIdAndDelete
+    findById: jest.fn(),
     create: jest.fn(),
   },
   Product: {

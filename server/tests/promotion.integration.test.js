@@ -23,8 +23,8 @@ beforeEach(async () => {
 
 const makePromotion = (overrides = {}) => ({
   name: 'Test Promo',
-  code: 'PROMO123',
-  discount_type: 'percentage',
+  promo_code: 'PROMO123',
+  promotion_type: 'percentage',
   discount_value: 10,
   start_date: new Date(Date.now() - 86400000), // yesterday
   end_date: new Date(Date.now() + 86400000),   // tomorrow
@@ -40,13 +40,13 @@ test('TC01: POST /api/promotions - creates a promotion successfully', async () =
 
   expect(res.status).toBe(201);
   expect(res.body.success).toBe(true);
-  expect(res.body.data.code).toBe('PROMO123');
+  expect(res.body.data.promo_code).toBe('PROMO123');
 });
 
 test('TC02: GET /api/promotions - returns list of promotions', async () => {
   const { Promotion } = require('../models');
-  await Promotion.create(makePromotion({ code: 'LIST1' }));
-  await Promotion.create(makePromotion({ code: 'LIST2' }));
+  await Promotion.create(makePromotion({ promo_code: 'LIST1' }));
+  await Promotion.create(makePromotion({ promo_code: 'LIST2' }));
 
   const res = await request(app).get('/api/promotions');
   expect(res.status).toBe(200);
@@ -55,7 +55,7 @@ test('TC02: GET /api/promotions - returns list of promotions', async () => {
 
 test('TC03: GET /api/promotions/validate - validates a promo code', async () => {
   const { Promotion } = require('../models');
-  await Promotion.create(makePromotion({ code: 'VALIDATE', discount_value: 20 }));
+  await Promotion.create(makePromotion({ promo_code: 'VALIDATE', discount_value: 20 }));
 
   const res = await request(app).get('/api/promotions/validate?code=VALIDATE&subtotal=100000');
   expect(res.status).toBe(200);
@@ -70,7 +70,7 @@ test('TC04: GET /api/promotions/validate - returns 404 for non-existent code', a
 
 test('TC05: DELETE /api/promotions/:id - soft deletes a promotion', async () => {
   const { Promotion } = require('../models');
-  const promo = await Promotion.create(makePromotion({ code: 'DELETE' }));
+  const promo = await Promotion.create(makePromotion({ promo_code: 'DELETE' }));
 
   const res = await request(app).delete(`/api/promotions/${promo._id}`);
   expect(res.status).toBe(200);
@@ -81,12 +81,12 @@ test('TC05: DELETE /api/promotions/:id - soft deletes a promotion', async () => 
 
 test('TC06: GET /api/promotions/applicable - returns promotions for a subtotal', async () => {
   const { Promotion } = require('../models');
-  await Promotion.create(makePromotion({ code: 'APP1', min_purchase_amount: 100000 }));
-  await Promotion.create(makePromotion({ code: 'APP2', min_purchase_amount: 1000 }));
+  await Promotion.create(makePromotion({ promo_code: 'APP1', min_purchase_amount: 100000 }));
+  await Promotion.create(makePromotion({ promo_code: 'APP2', min_purchase_amount: 1000 }));
 
   const res = await request(app).get('/api/promotions/applicable?subtotal=50000');
   expect(res.status).toBe(200);
   // Should only find APP2, not APP1
-  expect(res.body.data.some(p => p.code === 'APP2')).toBe(true);
-  expect(res.body.data.some(p => p.code === 'APP1')).toBe(false);
+  expect(res.body.data.some(p => p.promo_code === 'APP2')).toBe(true);
+  expect(res.body.data.some(p => p.promo_code === 'APP1')).toBe(false);
 });
