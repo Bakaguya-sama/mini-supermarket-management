@@ -6,14 +6,14 @@ const promotionController = require('../controllers/promotionController');
 // Get all promotions (with filters)
 router.get('/', promotionController.getAllPromotions);
 
+// Validate promo code
+router.get('/validate', promotionController.validatePromoCode);
+
 // Get applicable promotions for current cart subtotal
 router.get('/applicable', promotionController.getApplicablePromotions);
 
 // Get promotion by ID
 router.get('/:id', promotionController.getPromotionById);
-
-// Validate promo code
-router.post('/validate', promotionController.validatePromoCode);
 
 // CRUD
 router.post('/', promotionController.createPromotion);

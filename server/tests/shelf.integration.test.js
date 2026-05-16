@@ -26,7 +26,7 @@ test('TC01: POST /api/shelves - creates a shelf successfully', async () => {
   const res = await request(app)
     .post('/api/shelves')
     .send({
-      shelf_number: 'D101',
+      shelf_number: 'D1',
       shelf_name: 'D',
       section_number: 1,
       capacity: 100,

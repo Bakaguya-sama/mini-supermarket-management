@@ -21,7 +21,7 @@ beforeEach(async () => {
 });
 
 test('TC01: POST /api/product-shelves - assigns product to shelf', async () => {
-  const product = await Product.create({ name: 'Bread', unit: 'pcs', price: 10000 });
+  const product = await Product.create({ name: 'Bread', unit: 'pcs', price: 10000, current_stock: 100 });
   const shelf = await Shelf.create({ shelf_number: 'B1', shelf_name: 'B', section_number: 1, capacity: 20 });
 
   const res = await request(app)
@@ -47,7 +47,7 @@ test('TC02: GET /api/product-shelves/product/:id - returns all shelves for a pro
   await ProductShelf.create({ product_id: product._id, shelf_id: shelf1._id, quantity: 5 });
   await ProductShelf.create({ product_id: product._id, shelf_id: shelf2._id, quantity: 10 });
 
-  const res = await request(app).get(`/api/product-shelves/product/${product._id}`);
+  const res = await request(app).get(`/api/product-shelves/product/${product._id}/shelves`);
   expect(res.status).toBe(200);
   expect(res.body.data.length).toBe(2);
 });
@@ -60,7 +60,7 @@ test('TC03: PATCH /api/product-shelves/:id/move - moves quantity between shelves
   const psFrom = await ProductShelf.create({ product_id: product._id, shelf_id: shelfFrom._id, quantity: 20 });
 
   const res = await request(app)
-    .patch(`/api/product-shelves/${psFrom._id}/move`)
+    .put(`/api/product-shelves/${psFrom._id}/move`)
     .send({
       target_shelf_id: shelfTo._id,
       quantity: 15
