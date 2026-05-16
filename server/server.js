@@ -1,6 +1,12 @@
 // server/server.js - UPDATED WITH NEW ROUTES
-// IMPORTANT: MUST BE REQUIRED FIRST TO CAPTURE ALL TRACES
-require('./config/tracer');
+// IMPORTANT: In CI/test we skip heavy telemetry to avoid noisy failures
+if (process.env.NODE_ENV !== 'test') {
+  try {
+    require('./config/tracer');
+  } catch (err) {
+    // Fail-safe: do not crash tests if telemetry packages are missing
+  }
+}
 
 const express = require("express");
 const cors = require("cors");
@@ -15,7 +21,14 @@ const logger = require("./config/logger");
 const { connectRabbitMQ, getChannel } = require("./config/rabbitmq");
 const redisClient = require("./config/redis");
 const { register } = require("./config/monitoring");
-const statusMonitor = require("express-status-monitor");
+let statusMonitor = null;
+if (process.env.NODE_ENV !== 'test') {
+  try {
+    statusMonitor = require('express-status-monitor');
+  } catch (err) {
+    statusMonitor = null;
+  }
+}
 const mongoose = require("mongoose");
 const connectDB = require("./config/database");
 
@@ -23,7 +36,10 @@ const app = express();
 
 // --- Monitoring & Alerting (SAD Availability) ---
 // 1. Dashboard giám sát CPU/RAM tại route /status
-app.use(statusMonitor({ path: '/status' }));
+// Skip status monitor in test environment to avoid optional native deps warnings
+if (process.env.NODE_ENV !== 'test') {
+  app.use(statusMonitor({ path: '/status' }));
+}
 
 
 

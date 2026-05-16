@@ -1,0 +1,16 @@
+### Create invoice
+POST http://localhost:5000/api/invoices
+Content-Type: application/json
+
+{
+  "customer_id": "{{customerId}}",
+  "items": [
+    { "product_id": "{{productId}}", "quantity": 1, "unit_price": 10000 }
+  ]
+}
+
+### Get invoice by id
+GET http://localhost:5000/api/invoices/{{invoiceId}}
+
+### Get all invoices
+GET http://localhost:5000/api/invoices

@@ -13,75 +13,88 @@
 
 'use strict';
 
-const { NodeSDK } = require('@opentelemetry/sdk-node');
-const { Resource } = require('@opentelemetry/resources');
-const { getNodeAutoInstrumentations } = require('@opentelemetry/auto-instrumentations-node');
-const { ConsoleSpanExporter, SimpleSpanProcessor, BatchSpanProcessor, InMemorySpanExporter } = require('@opentelemetry/sdk-trace-node');
-const { OTLPTraceExporter } = require('@opentelemetry/exporter-trace-otlp-http');
+const noopSpan = {
+  setStatus() {},
+  recordException() {},
+  setAttributes() {},
+  end() {},
+};
 
-// Exporter để lưu trace trên RAM, phục vụ UI Demo
-const memoryExporter = new InMemorySpanExporter();
+const noopTracer = {
+  startSpan() {
+    return noopSpan;
+  },
+};
 
-// ─── Resource: định danh service trên Jaeger/Zipkin ───────────────────────
-const resource = new Resource({
-  'service.name': process.env.OTEL_SERVICE_NAME || 'mini-supermarket-api',
-  'service.version': '1.0.0',
-  'deployment.environment': process.env.NODE_ENV || 'development',
-});
+const noopMemoryExporter = {
+  getFinishedSpans() {
+    return [];
+  },
+  reset() {},
+};
 
-// ─── Chọn Exporter theo môi trường ────────────────────────────────────────
-// DEV  : in ra console để xem ngay (dễ học/debug)
-// PROD : gửi tới Jaeger/Zipkin qua OTLP HTTP
-const isDev = (process.env.NODE_ENV !== 'production');
+let tracer = noopTracer;
+let trace = { getTracer: () => noopTracer, getActiveSpan: () => undefined };
+let context = {};
+let SpanStatusCode = { OK: 'OK', ERROR: 'ERROR' };
+let memoryExporter = noopMemoryExporter;
 
-// Sử dụng SimpleSpanProcessor kết hợp với custom Exporter để gửi tới cả Console và Memory
-class MultiExporter {
-  export(spans, resultCallback) {
-    /*
-    if (isDev) {
-      new ConsoleSpanExporter().export(spans, () => { });
+try {
+  const { NodeSDK } = require('@opentelemetry/sdk-node');
+  const { Resource } = require('@opentelemetry/resources');
+  const { getNodeAutoInstrumentations } = require('@opentelemetry/auto-instrumentations-node');
+  const { SimpleSpanProcessor, InMemorySpanExporter } = require('@opentelemetry/sdk-trace-node');
+  const { trace: apiTrace, context: apiContext, SpanStatusCode: apiSpanStatusCode } = require('@opentelemetry/api');
+
+  memoryExporter = new InMemorySpanExporter();
+
+  const resource = new Resource({
+    'service.name': process.env.OTEL_SERVICE_NAME || 'mini-supermarket-api',
+    'service.version': '1.0.0',
+    'deployment.environment': process.env.NODE_ENV || 'development',
+  });
+
+  class MultiExporter {
+    export(spans, resultCallback) {
+      memoryExporter.export(spans, resultCallback);
     }
-    */
-    memoryExporter.export(spans, resultCallback);
+
+    shutdown() {
+      return memoryExporter.shutdown();
+    }
   }
-  shutdown() {
-    return memoryExporter.shutdown();
+
+  const sdk = new NodeSDK({
+    resource,
+    spanProcessor: new SimpleSpanProcessor(new MultiExporter()),
+    instrumentations: [
+      getNodeAutoInstrumentations({
+        '@opentelemetry/instrumentation-http': {
+          ignoreIncomingRequestHook: (req) => {
+            const ignorePaths = ['/metrics', '/api/health', '/status', '/api/telemetry'];
+            return ignorePaths.some((p) => req.url?.startsWith(p));
+          },
+        },
+        '@opentelemetry/instrumentation-fs': { enabled: false },
+        '@opentelemetry/instrumentation-mongodb': { enabled: false },
+        '@opentelemetry/instrumentation-mongoose': { enabled: false },
+        '@opentelemetry/instrumentation-net': { enabled: false },
+      }),
+    ],
+  });
+
+  sdk.start();
+  process.on('SIGTERM', () => sdk.shutdown());
+  process.on('SIGINT', () => sdk.shutdown());
+
+  trace = apiTrace;
+  context = apiContext;
+  SpanStatusCode = apiSpanStatusCode;
+  tracer = trace.getTracer('mini-supermarket-api', '1.0.0');
+} catch (error) {
+  if (process.env.NODE_ENV !== 'test') {
+    console.warn(`Telemetry disabled: ${error.message}`);
   }
 }
-
-const spanProcessor = new SimpleSpanProcessor(new MultiExporter());
-
-// ─── Khởi tạo SDK ─────────────────────────────────────────────────────────
-const sdk = new NodeSDK({
-  resource,
-  spanProcessor,
-  // Auto-instrument Express, Mongoose, HTTP, DNS, Net, ...
-  // Filter bỏ route /metrics và /health để không spam traces
-  instrumentations: [
-    getNodeAutoInstrumentations({
-      '@opentelemetry/instrumentation-http': {
-        ignoreIncomingRequestHook: (req) => {
-          const ignorePaths = ['/metrics', '/api/health', '/status', '/api/telemetry'];
-          return ignorePaths.some((p) => req.url?.startsWith(p));
-        },
-      },
-      '@opentelemetry/instrumentation-fs': { enabled: false }, // tắt fs traces (quá nhiều)
-      '@opentelemetry/instrumentation-mongodb': { enabled: false },
-      '@opentelemetry/instrumentation-mongoose': { enabled: false },
-      '@opentelemetry/instrumentation-net': { enabled: false }, // tắt tcp.connect traces
-    }),
-  ],
-});
-
-// ─── Start SDK trước khi bất kỳ module nào được load ─────────────────────
-sdk.start();
-
-// ─── Graceful shutdown ─────────────────────────────────────────────────────
-process.on('SIGTERM', () => sdk.shutdown());
-process.on('SIGINT', () => sdk.shutdown());
-
-// Export tracer để tạo Custom Spans trong business code
-const { trace, context, SpanStatusCode } = require('@opentelemetry/api');
-const tracer = trace.getTracer('mini-supermarket-api', '1.0.0');
 
 module.exports = { tracer, trace, context, SpanStatusCode, memoryExporter };

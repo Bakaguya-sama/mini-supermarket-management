@@ -26,20 +26,32 @@ const CustomerPortal = () => {
   const [activeView, setActiveView] = useState("shop");
   const [selectedProductId, setSelectedProductId] = useState(null);
   
-  // Demo customer ID (first customer from seed data - will be replaced with real login later)
-  const [customerId, setCustomerId] = useState(null);
+  const [customerId, setCustomerId] = useState(() => localStorage.getItem("customerId") || null);
   const [customerData, setCustomerData] = useState(null);
   const [cartId, setCartId] = useState(null); // Cart ID for backend operations
-  const [customerName, setCustomerName] = useState("Loading...");
-  const [membershipPoints, setMembershipPoints] = useState(0);
+  const [customerName, setCustomerName] = useState(() => localStorage.getItem("userName") || "Loading...");
+  const [membershipPoints, setMembershipPoints] = useState(() => Number(localStorage.getItem("pointsBalance") || 0));
   
   // Cart states (for badge count)
   const [cartItems, setCartItems] = useState([]);
 
-  // Load demo customer ID on mount
+  // Load the signed-in customer when available
   useEffect(() => {
+    const storedCustomerId = localStorage.getItem("customerId");
+    if (storedCustomerId) {
+      setCustomerId(storedCustomerId);
+      loadCustomerProfile(storedCustomerId);
+      return;
+    }
+
     loadDemoCustomer();
   }, []);
+
+  useEffect(() => {
+    if (customerId) {
+      loadCustomerProfile(customerId);
+    }
+  }, [customerId]);
 
   /**
    * Load first customer from database as demo customer
@@ -53,22 +65,39 @@ const CustomerPortal = () => {
       if (response.data && response.data.length > 0) {
         const firstCustomer = response.data[0];
         setCustomerId(firstCustomer._id);
-        setCustomerData(firstCustomer);
-        
-        // Set customer info
-        setCustomerName(firstCustomer.account_id?.full_name || 'Guest Customer');
-        setMembershipPoints(firstCustomer.points_balance || 0);
-        
-        console.log(`✅ Loaded customer: ${firstCustomer.account_id?.full_name}`);
-        console.log(`💎 Points balance: ${firstCustomer.points_balance || 0}`);
-        
-        // Load cart for this customer
-        await loadCustomerCart(firstCustomer._id);
+        await loadCustomerProfile(firstCustomer._id);
       } else {
         console.error('❌ No customers found in database');
       }
     } catch (error) {
       console.error('❌ Error loading demo customer:', error);
+    }
+  };
+
+  const loadCustomerProfile = async (targetCustomerId) => {
+    try {
+      console.log('👤 Loading customer profile:', targetCustomerId);
+      const response = await apiClient.get(`/customers/${targetCustomerId}`);
+
+      const customer = response.data || response;
+      if (!customer) {
+        console.error('❌ Customer profile not found');
+        return;
+      }
+
+      setCustomerData(customer);
+      setCustomerName(customer.account_id?.full_name || localStorage.getItem("userName") || 'Guest Customer');
+      setMembershipPoints(customer.points_balance || Number(localStorage.getItem("pointsBalance") || 0));
+
+      localStorage.setItem("userName", customer.account_id?.full_name || localStorage.getItem("userName") || 'Guest Customer');
+      localStorage.setItem("userEmail", customer.account_id?.email || localStorage.getItem("userEmail") || '');
+      localStorage.setItem("customerId", customer._id);
+      localStorage.setItem("pointsBalance", String(customer.points_balance || 0));
+      localStorage.setItem("membershipType", customer.membership_type || localStorage.getItem("membershipType") || 'Standard');
+
+      await loadCustomerCart(customer._id);
+    } catch (error) {
+      console.error('❌ Error loading customer profile:', error);
     }
   };
 
@@ -193,6 +222,17 @@ const CustomerPortal = () => {
     localStorage.removeItem("userRole");
     localStorage.removeItem("userName");
     localStorage.removeItem("userUsername");
+    localStorage.removeItem("userEmail");
+    localStorage.removeItem("userId");
+    localStorage.removeItem("customerId");
+    localStorage.removeItem("staffId");
+    localStorage.removeItem("position");
+    localStorage.removeItem("isManager");
+    localStorage.removeItem("managerId");
+    localStorage.removeItem("accessLevel");
+    localStorage.removeItem("isSuperuser");
+    localStorage.removeItem("membershipType");
+    localStorage.removeItem("pointsBalance");
     localStorage.removeItem("isLoggedIn");
 
     // Clear cart items
