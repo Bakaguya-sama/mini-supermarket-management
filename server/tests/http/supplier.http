@@ -1,0 +1,15 @@
+### Create supplier
+POST http://localhost:5000/api/suppliers
+Content-Type: application/json
+
+{
+  "name": "Manual Supplier",
+  "email": "sup_manual@example.com",
+  "phone": "0912345678"
+}
+
+### Get suppliers
+GET http://localhost:5000/api/suppliers
+
+### Get supplier by id
+GET http://localhost:5000/api/suppliers/{{supplierId}}

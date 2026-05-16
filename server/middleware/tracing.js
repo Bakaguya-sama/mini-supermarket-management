@@ -13,7 +13,21 @@
 // Cách dùng: import { withSpan, tracing } from '../middleware/tracing'
 // ============================================================
 
-const { tracer, SpanStatusCode } = require('../config/tracer');
+let tracer;
+let SpanStatusCode;
+try {
+  ({ tracer, SpanStatusCode } = require('../config/tracer'));
+} catch (err) {
+  // Fallback no-op tracer for test environments or missing telemetry packages
+  tracer = {
+    startSpan: () => ({
+      setStatus: () => {},
+      recordException: () => {},
+      end: () => {}
+    })
+  };
+  SpanStatusCode = { OK: 1, ERROR: 2 };
+}
 
 // ─────────────────────────────────────────────────────────────────
 // withSpan: helper wrap bất kỳ async fn nào trong 1 named span

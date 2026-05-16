@@ -4,7 +4,7 @@ const { Staff, Account } = require('../models');
 const staffRepository = require('../repositories/StaffRepository');
 const { BadRequestError, NotFoundError, ConflictError } = require('../middleware/errorClasses');
 const logger = require('../config/logger');
-const bcrypt = require('bcrypt');
+const bcrypt = require('bcryptjs');
 
 class StaffService {
   _buildQuery({ position, is_active, employment_type, search }) {

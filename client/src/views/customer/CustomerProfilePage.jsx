@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   FaUser,
   FaEnvelope,
@@ -11,17 +11,41 @@ import SuccessMessage from "../../components/Messages/SuccessMessage";
 import ErrorMessage from "../../components/Messages/ErrorMessage";
 import "./CustomerProfilePage.css";
 
-const CustomerProfilePage = () => {
-  const [formData, setFormData] = useState({
-    firstName: "John",
-    lastName: "Smith",
-    email: "john.smith@example.com",
-    phone: "+1 (555) 123-4567",
-    address: "123 Main Street",
-    city: "New York",
-    state: "NY",
-    zipCode: "10001",
-  });
+const splitFullName = (fullName = "") => {
+  const parts = fullName.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) {
+    return { firstName: "", lastName: "" };
+  }
+
+  if (parts.length === 1) {
+    return { firstName: parts[0], lastName: "" };
+  }
+
+  return {
+    firstName: parts[0],
+    lastName: parts.slice(1).join(" "),
+  };
+};
+
+const buildInitialFormData = (customerData) => {
+  const account = customerData?.account_id || {};
+  const fullName = account.full_name || localStorage.getItem("userName") || "";
+  const nameParts = splitFullName(fullName);
+
+  return {
+    firstName: nameParts.firstName,
+    lastName: nameParts.lastName,
+    email: account.email || localStorage.getItem("userEmail") || "",
+    phone: account.phone || "",
+    address: account.address || "",
+    city: "",
+    state: "",
+    zipCode: "",
+  };
+};
+
+const CustomerProfilePage = ({ customerData: initialCustomerData }) => {
+  const [formData, setFormData] = useState(() => buildInitialFormData(initialCustomerData));
 
   const [showPasswordDialog, setShowPasswordDialog] = useState(false);
   const [passwordData, setPasswordData] = useState({
@@ -31,6 +55,10 @@ const CustomerProfilePage = () => {
   });
   const [successMessage, setSuccessMessage] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
+
+  useEffect(() => {
+    setFormData(buildInitialFormData(initialCustomerData));
+  }, [initialCustomerData]);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -73,6 +101,25 @@ const CustomerProfilePage = () => {
               {formData.firstName} {formData.lastName}
             </h2>
             <p>{formData.email}</p>
+          </div>
+        </div>
+
+        <div className="profile-summary-card">
+          <div className="summary-item">
+            <span>Username</span>
+            <strong>{initialCustomerData?.account_id?.username || localStorage.getItem("userUsername") || "N/A"}</strong>
+          </div>
+          <div className="summary-item">
+            <span>Customer ID</span>
+            <strong>{initialCustomerData?._id || localStorage.getItem("customerId") || "N/A"}</strong>
+          </div>
+          <div className="summary-item">
+            <span>Membership</span>
+            <strong>{initialCustomerData?.membership_type || localStorage.getItem("membershipType") || "Standard"}</strong>
+          </div>
+          <div className="summary-item">
+            <span>Points</span>
+            <strong>{initialCustomerData?.points_balance ?? localStorage.getItem("pointsBalance") ?? 0}</strong>
           </div>
         </div>
 

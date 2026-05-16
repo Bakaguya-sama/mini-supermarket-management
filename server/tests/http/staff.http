@@ -1,0 +1,16 @@
+### Create staff
+POST http://localhost:5000/api/staff
+Content-Type: application/json
+
+{
+  "username": "staff_manual",
+  "email": "staff_manual@example.com",
+  "full_name": "Staff Manual",
+  "position": "Delivery"
+}
+
+### Get all staff
+GET http://localhost:5000/api/staff
+
+### Get staff by id
+GET http://localhost:5000/api/staff/{{staffId}}

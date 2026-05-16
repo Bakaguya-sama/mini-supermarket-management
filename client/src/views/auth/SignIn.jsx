@@ -9,6 +9,37 @@ import apiClient from "../../services/apiClient";
 import "./SignIn.css";
 
 const SignIn = () => {
+  const demoAccounts = {
+    admin: {
+      title: "Demo đặc biệt",
+      items: [{ label: "Manager", username: "admin", password: "admin123" }],
+    },
+    staff: {
+      title: "Tài khoản từ database",
+      items: [
+        { label: "Manager", username: "manager1", password: "password123" },
+        { label: "Manager", username: "manager2", password: "password123" },
+        { label: "Delivery Staff", username: "delivery1", password: "password123" },
+        { label: "Delivery Staff", username: "delivery2", password: "password123" },
+        { label: "Cashier", username: "cashier1", password: "password123" },
+        { label: "Cashier", username: "cashier2", password: "password123" },
+        { label: "Merchandise Supervisor", username: "supervisor1", password: "password123" },
+        { label: "Merchandise Supervisor", username: "supervisor2", password: "password123" },
+        { label: "Warehouse Staff", username: "warehouse1", password: "password123" },
+        { label: "Warehouse Staff", username: "warehouse2", password: "password123" },
+      ],
+    },
+    customer: {
+      title: "Khách hàng",
+      items: [
+        { label: "Customer", username: "customer1", password: "password123" },
+        { label: "Customer", username: "customer2", password: "password123" },
+        { label: "Customer", username: "customer3", password: "password123" },
+        { label: "Customer", username: "customer4", password: "password123" },
+      ],
+    },
+  };
+
   // Load remembered credentials from localStorage
   const getRememberedCredentials = () => {
     const rememberedUsername = localStorage.getItem("rememberedUsername");
@@ -292,36 +323,62 @@ const SignIn = () => {
           )}
         </div>
 
-        {/* Demo Accounts Information */}
-        {/* <div className="demo-accounts">
-          <h4>Demo Accounts:</h4>
+        <div className="demo-accounts">
+          <div className="demo-accounts-header">
+            <div>
+              <h4>Tài khoản demo</h4>
+              <p>Đọc từ seed dữ liệu hiện tại của hệ thống.</p>
+            </div>
+            <span className="demo-badge">
+              {activeTab === "customer" ? "Customer" : "Staff"} mode
+            </span>
+          </div>
 
-          {activeTab === "staff" ? (
-            <div className="accounts-grid">
-              <div className="account-item">
-                <strong>Manager:</strong> admin / admin123
-              </div>
-              <div className="account-item">
-                <strong>Delivery:</strong> delivery / delivery123
-              </div>
-              <div className="account-item">
-                <strong>Merchandise:</strong> merchandise / merchandise123
-              </div>
-              <div className="account-item">
-                <strong>Warehouse:</strong> warehouse / warehouse123
-              </div>
-              <div className="account-item">
-                <strong>Cashier:</strong> cashier / cashier123
-              </div>
+          <div className="demo-group">
+            <div className="demo-group-title">{demoAccounts.admin.title}</div>
+            <div className="accounts-grid compact-grid">
+              {demoAccounts.admin.items.map((account) => (
+                <div className="account-item" key={`${account.username}-${account.password}`}>
+                  <div className="account-meta">
+                    <strong>{account.label}</strong>
+                    <span>{account.username}</span>
+                  </div>
+                  <code>{account.password}</code>
+                </div>
+              ))}
             </div>
-          ) : (
+          </div>
+
+          <div className="demo-group">
+            <div className="demo-group-title">{demoAccounts.staff.title}</div>
             <div className="accounts-grid">
-              <div className="account-item">
-                <strong>Customer:</strong> customer1 / customer123
-              </div>
+              {demoAccounts.staff.items.map((account) => (
+                <div className="account-item" key={account.username}>
+                  <div className="account-meta">
+                    <strong>{account.label}</strong>
+                    <span>{account.username}</span>
+                  </div>
+                  <code>{account.password}</code>
+                </div>
+              ))}
             </div>
-          )}
-        </div> */}
+          </div>
+
+          <div className="demo-group">
+            <div className="demo-group-title">{demoAccounts.customer.title}</div>
+            <div className="accounts-grid">
+              {demoAccounts.customer.items.map((account) => (
+                <div className="account-item" key={account.username}>
+                  <div className="account-meta">
+                    <strong>{account.label}</strong>
+                    <span>{account.username}</span>
+                  </div>
+                  <code>{account.password}</code>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );

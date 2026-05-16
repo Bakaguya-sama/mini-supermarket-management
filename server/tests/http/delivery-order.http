@@ -1,0 +1,12 @@
+### Create delivery order
+POST http://localhost:5000/api/delivery-orders
+Authorization: Bearer {{staffToken}}
+Content-Type: application/json
+
+{
+  "order_id": "{{orderId}}",
+  "staff_id": "{{staffId}}"
+}
+
+### Get delivery order by id
+GET http://localhost:5000/api/delivery-orders/{{deliveryOrderId}}

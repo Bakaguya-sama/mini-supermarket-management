@@ -1,0 +1,17 @@
+### Get all customers
+GET http://localhost:5000/api/customers
+
+### Create customer (admin token required)
+POST http://localhost:5000/api/customers
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "username": "demo_customer",
+  "email": "demo_customer@example.com",
+  "full_name": "Demo Customer",
+  "password": "password123"
+}
+
+### Get customer by id
+GET http://localhost:5000/api/customers/{{customerId}}

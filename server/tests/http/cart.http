@@ -1,0 +1,22 @@
+### Get cart by customer (auto-create)
+GET http://localhost:5000/api/carts/customer/{{customerId}}
+
+### Add item to cart
+POST http://localhost:5000/api/carts/{{cartId}}/items
+Content-Type: application/json
+
+{
+  "product_id": "{{productId}}",
+  "quantity": 2
+}
+
+### Update item quantity
+PUT http://localhost:5000/api/carts/items/{{itemId}}/quantity
+Content-Type: application/json
+
+{
+  "quantity": 3
+}
+
+### Checkout cart
+PATCH http://localhost:5000/api/carts/{{cartId}}/checkout
