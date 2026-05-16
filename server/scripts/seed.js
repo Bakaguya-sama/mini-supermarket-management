@@ -1060,7 +1060,7 @@ async function seedDatabase() {
       {
         name: "Weekend Special - Fresh Produce",
         description: "20% off on all fresh produce this weekend",
-        promotion_type: "percentage",
+        discount_type: "percentage",
         discount_value: 20,
         minimum_purchase_amount: 0,
         promo_code: "WEEKEND20",
@@ -1073,7 +1073,7 @@ async function seedDatabase() {
       {
         name: "Mega Sale - 30% Off",
         description: "30% discount for purchases above $50",
-        promotion_type: "percentage",
+        discount_type: "percentage",
         discount_value: 30,
         minimum_purchase_amount: 50,
         promo_code: "MEGA30",
@@ -1086,7 +1086,7 @@ async function seedDatabase() {
       {
         name: "New Customer Welcome",
         description: "15% off your first purchase",
-        promotion_type: "percentage",
+        discount_type: "percentage",
         discount_value: 15,
         minimum_purchase_amount: 20,
         promo_code: "WELCOME15",
@@ -1099,7 +1099,7 @@ async function seedDatabase() {
       {
         name: "Gold Member Exclusive",
         description: "25% off for Gold members",
-        promotion_type: "percentage",
+        discount_type: "percentage",
         discount_value: 25,
         minimum_purchase_amount: 100,
         promo_code: "GOLD25",
@@ -1112,7 +1112,7 @@ async function seedDatabase() {
       {
         name: "Daily Deals - 10% Off",
         description: "10% off on all items, no minimum",
-        promotion_type: "percentage",
+        discount_type: "percentage",
         discount_value: 10,
         minimum_purchase_amount: 0,
         promo_code: "DAILY10",
@@ -1127,7 +1127,7 @@ async function seedDatabase() {
       {
         name: "Flash Sale - $5 Off",
         description: "Get $5 off your purchase",
-        promotion_type: "fixed",
+        discount_type: "fixed",
         discount_value: 5,
         minimum_purchase_amount: 30,
         promo_code: "FLASH5",
@@ -1140,7 +1140,7 @@ async function seedDatabase() {
       {
         name: "Super Saver - $15 Off",
         description: "Save $15 on orders above $100",
-        promotion_type: "fixed",
+        discount_type: "fixed",
         discount_value: 15,
         minimum_purchase_amount: 100,
         promo_code: "SAVE15",
@@ -1153,7 +1153,7 @@ async function seedDatabase() {
       {
         name: "Loyalty Reward - $10 Off",
         description: "$10 off for loyal customers",
-        promotion_type: "fixed",
+        discount_type: "fixed",
         discount_value: 10,
         minimum_purchase_amount: 50,
         promo_code: "LOYAL10",
@@ -1166,7 +1166,7 @@ async function seedDatabase() {
       {
         name: "Holiday Special - $25 Off",
         description: "Huge $25 discount for big purchases",
-        promotion_type: "fixed",
+        discount_type: "fixed",
         discount_value: 25,
         minimum_purchase_amount: 150,
         promo_code: "HOLIDAY25",
@@ -1179,7 +1179,7 @@ async function seedDatabase() {
       {
         name: "Beverage Bonanza - $3 Off",
         description: "$3 off on beverage purchases above $20",
-        promotion_type: "fixed",
+        discount_type: "fixed",
         discount_value: 3,
         minimum_purchase_amount: 20,
         promo_code: "DRINK3",
@@ -1194,7 +1194,7 @@ async function seedDatabase() {
       {
         name: "Coming Soon - 40% Off",
         description: "Biggest sale of the year - starting tomorrow!",
-        promotion_type: "percentage",
+        discount_type: "percentage",
         discount_value: 40,
         minimum_purchase_amount: 80,
         promo_code: "COMING40",
@@ -1209,7 +1209,7 @@ async function seedDatabase() {
       {
         name: "Black Friday 2024",
         description: "50% off everything - event ended",
-        promotion_type: "percentage",
+        discount_type: "percentage",
         discount_value: 50,
         minimum_purchase_amount: 0,
         promo_code: "BLACK50",
@@ -1222,7 +1222,7 @@ async function seedDatabase() {
       {
         name: "Christmas 2024",
         description: "$20 off - expired",
-        promotion_type: "fixed",
+        discount_type: "fixed",
         discount_value: 20,
         minimum_purchase_amount: 100,
         promo_code: "XMAS20",
@@ -1235,7 +1235,7 @@ async function seedDatabase() {
       {
         name: "Test Inactive Promo",
         description: "This promotion is manually deactivated",
-        promotion_type: "percentage",
+        discount_type: "percentage",
         discount_value: 5,
         minimum_purchase_amount: 10,
         promo_code: "INACTIVE5",

@@ -116,7 +116,7 @@ exports.createOrder = async (req, res, next) => {
       success: true,
       message: 'Order created successfully',
       data: { 
-        order: result.order, 
+        ...result.order.toObject(), 
         invoice: result.invoice,
         pointsEarned: result.pointsEarned
       }

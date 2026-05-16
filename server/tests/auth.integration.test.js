@@ -179,7 +179,7 @@ describe('Auth Integration Tests', () => {
 
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
-      expect(res.body.data.email).toBe('me@example.com');
+      expect(res.body.data.user.email).toBe('me@example.com');
     });
 
     test('should fail without token', async () => {
@@ -213,7 +213,7 @@ describe('Auth Integration Tests', () => {
 
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
-      expect(res.body.data.full_name).toBe('Updated Name');
+      expect(res.body.data.user.full_name).toBe('Updated Name');
     });
   });
 

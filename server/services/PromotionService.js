@@ -56,12 +56,12 @@ class PromotionService {
     }
 
     let discountAmount = 0;
-    if (promotion.promotion_type === 'percentage') {
+    if (promotion.discount_type === 'percentage') {
       discountAmount = (subtotal * promotion.discount_value) / 100;
       if (promotion.max_discount_amount && discountAmount > promotion.max_discount_amount) {
         discountAmount = promotion.max_discount_amount;
       }
-    } else if (promotion.promotion_type === 'fixed_amount') {
+    } else if (promotion.discount_type === 'fixed_amount' || promotion.discount_type === 'fixed') {
       discountAmount = promotion.discount_value;
     }
 

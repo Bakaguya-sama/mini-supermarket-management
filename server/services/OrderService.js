@@ -1,6 +1,6 @@
 // server/services/OrderService.js
 const mongoose = require('mongoose');
-const { Order, OrderItem, Customer, Product, Cart, CartItem, DeliveryOrder, Staff, Invoice, InvoiceItem } = require('../models');
+const { Order, OrderItem, Customer, Product, Cart, CartItem, DeliveryOrder, Staff, Invoice, InvoiceItem, ProductBatch } = require('../models');
 const orderRepository = require('../repositories/OrderRepository');
 const customerRepository = require('../repositories/CustomerRepository');
 const invoiceRepository = require('../repositories/InvoiceRepository');
@@ -165,12 +165,14 @@ class OrderService {
 
     // Validate customer
     if (!customer_id) {
+      logger.warn('Order creation failed: Missing customer_id');
       throw new BadRequestError('Please provide customer ID');
     }
 
     this._validateObjectId(customer_id);
     const customer = await customerRepository.findById(customer_id);
     if (!customer) {
+      logger.warn(`Order creation failed: Customer ${customer_id} not found`);
       throw new NotFoundError('Customer not found');
     }
 
@@ -197,6 +199,7 @@ class OrderService {
     }
 
     if (cartItems.length === 0) {
+      logger.warn(`Order creation failed: Cart ${cart_id || 'active'} is empty`);
       throw new BadRequestError('Cart is empty');
     }
 
