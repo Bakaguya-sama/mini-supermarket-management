@@ -61,7 +61,14 @@ class OrderRepository {
       customer_id: customerId,
       isDelete: false
     })
-      .populate('orderItems', 'quantity unit_price status')
+      .populate({
+        path: 'orderItems',
+        select: 'quantity unit_price status product_id',
+        populate: {
+          path: 'product_id',
+          select: 'name price category sku unit'
+        }
+      })
       .populate('payment_id', 'payment_method status')
       .sort(sort)
       .skip(skip)

@@ -36,10 +36,12 @@ const app = express();
 
 // --- Monitoring & Alerting (SAD Availability) ---
 // 1. Dashboard giám sát CPU/RAM tại route /status
-// Skip status monitor in test environment to avoid optional native deps warnings
-if (process.env.NODE_ENV !== 'test') {
+// Tạm thời vô hiệu hóa statusMonitor vì lib pidusage (phụ thuộc của nó) gọi wmic gây crash trên một số bản Windows.
+/*
+if (process.env.NODE_ENV !== 'test' && statusMonitor) {
   app.use(statusMonitor({ path: '/status' }));
 }
+*/
 
 
 

@@ -76,21 +76,29 @@ const CustomerOrdersPage = ({ customerId }) => {
       const result = await orderService.getOrdersByCustomer(customerId);
 
       if (result.success && result.data) {
-        // Transform backend orders to UI format
-        const formattedOrders = result.data.map((order) => ({
-          id: order.order_number || order._id,
-          _id: order._id,
-          date: order.order_date || order.createdAt,
-          status: order.status,
-          total: order.total_amount,
-          trackingNumber: order.tracking_number || "N/A",
-          deliveryDate: order.delivery_date,
-          items: (order.orderItems || []).map((item) => ({
-            name: item.product_id?.name || "Unknown Product",
-            quantity: item.quantity,
-            price: item.unit_price,
-          })),
-        }));
+        const formattedOrders = result.data.map((order) => {
+          const deliveryStaff = order.delivery?.staff_id?.account_id?.full_name || "Not assigned yet";
+          const cashierStaff = order.invoice?.staff_id?.account_id?.full_name || "System/Not handled";
+          const paymentStatus = order.invoice?.payment_status || "Unpaid";
+          
+          return {
+            id: order.order_number || order._id,
+            _id: order._id,
+            date: order.order_date || order.createdAt,
+            status: order.status,
+            total: order.total_amount,
+            trackingNumber: order.tracking_number || "N/A",
+            deliveryDate: order.delivery_date,
+            deliveryStaff,
+            cashierStaff,
+            paymentStatus,
+            items: (order.orderItems || []).map((item) => ({
+              name: item.product_id?.name || "Unknown Product",
+              quantity: item.quantity,
+              price: item.unit_price,
+            })),
+          };
+        });
 
         setOrders(formattedOrders);
         console.log(`✅ Loaded ${formattedOrders.length} orders`);
@@ -377,6 +385,26 @@ const CustomerOrdersPage = ({ customerId }) => {
                   <div className="info-label">Tracking number</div>
                   <div className="info-value tracking-value">
                     {modalOrder.trackingNumber}
+                  </div>
+                </div>
+                <div className="modal-info-item">
+                  <div className="info-label">Payment Status</div>
+                  <div className="info-value">
+                    <span className="order-status-badge" style={{ backgroundColor: '#f1f5f9', color: '#475569' }}>
+                      {modalOrder.paymentStatus}
+                    </span>
+                  </div>
+                </div>
+                <div className="modal-info-item">
+                  <div className="info-label">Handled By (Cashier)</div>
+                  <div className="info-value">
+                    {modalOrder.cashierStaff}
+                  </div>
+                </div>
+                <div className="modal-info-item">
+                  <div className="info-label">Delivery Staff</div>
+                  <div className="info-value">
+                    {modalOrder.deliveryStaff}
                   </div>
                 </div>
                 <div className="modal-info-item">
