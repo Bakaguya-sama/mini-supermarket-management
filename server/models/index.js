@@ -156,7 +156,7 @@ const shelfSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-shelfSchema.index({ shelf_number: 1 });
+
 
 // Virtual for compatibility with frontend naming
 shelfSchema.virtual("current_capacity").get(function () {
@@ -177,7 +177,7 @@ const sectionSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-sectionSchema.index({ section_name: 1 });
+
 
 // ==================== 8. PRODUCT SHELVES ====================
 // Business Rule: One product CAN be on MULTIPLE shelves at the same time

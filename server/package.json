@@ -12,6 +12,13 @@
     "migrate:batches": "node scripts/convert-stocks-to-batches.js",
     "test": "cross-env NODE_ENV=test jest --runInBand --detectOpenHandles --verbose"
   },
+  "jest": {
+    "testEnvironment": "node",
+    "testTimeout": 30000,
+    "setupFiles": [
+      "<rootDir>/tests/jestSetup.js"
+    ]
+  },
   "keywords": [
     "supermarket",
     "mongodb",

@@ -110,8 +110,18 @@ class OrderService {
       orderRepository.countByCustomerId(customerId)
     ]);
 
+    const populatedOrders = await Promise.all(orders.map(async (order) => {
+      const delivery = await mongoose.model('DeliveryOrder').findOne({ order_id: order._id })
+        .populate({ path: 'staff_id', populate: { path: 'account_id', select: 'full_name' } })
+        .lean();
+      const invoice = await mongoose.model('Invoice').findOne({ order_id: order._id })
+        .populate({ path: 'staff_id', populate: { path: 'account_id', select: 'full_name' } })
+        .lean();
+      return { ...order, delivery, invoice };
+    }));
+
     return {
-      orders,
+      orders: populatedOrders,
       total,
       page: pageNum,
       pages: Math.ceil(total / limitNum)

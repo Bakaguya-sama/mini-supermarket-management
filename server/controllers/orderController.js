@@ -2,6 +2,7 @@
 const orderService = require('../services/OrderService');
 const { traceCheckout } = require('../middleware/tracing');
 const logger = require('../config/logger');
+const redisClient = require('../config/redis');
 
 /**
  * @route   GET /api/orders
@@ -99,6 +100,14 @@ exports.createOrder = async (req, res, next) => {
         promoDiscount: orderResult.promoDiscount,
         pointsRedeemed: orderResult.pointsRedeemed
       });
+
+      // Clear cart cache in Redis to show empty cart in frontend
+      try {
+        if (cart_id) await redisClient.del(`cart:session:${cart_id}`);
+        if (customer_id) await redisClient.del(`cart:session:customer:${customer_id}`);
+      } catch (err) {
+        logger.warn(`Failed to clear cart cache after checkout: ${err.message}`);
+      }
 
       return orderResult;
     });

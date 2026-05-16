@@ -43,10 +43,16 @@ jobs:
           path: client/dist/
           retention-days: 7
 
-  # Job 2: Check server (if you have tests later)
+  # Job 2: Build and test server
   server:
-    name: Check Server
+    name: Build and Test Server
     runs-on: ubuntu-latest
+
+    services:
+      mongodb:
+        image: mongo:6.0
+        ports:
+          - 27017:27017
 
     steps:
       - name: Checkout code
@@ -56,22 +62,24 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: "18"
+          cache: "npm"
+          cache-dependency-path: server/package-lock.json
 
-      - name: Check server files
+      - name: Install server dependencies
         working-directory: ./server
         run: |
-          if [ -f "package.json" ]; then
-            echo "Server package.json found"
-            if [ -f "package-lock.json" ]; then
-              npm ci
-            else
-              npm install
-            fi
+          if [ -f "package-lock.json" ]; then
+            npm ci
           else
-            echo "No server package.json found, skipping"
+            npm install
           fi
 
-      - name: Run server tests (placeholder)
+      - name: Run server tests
         working-directory: ./server
-        run: echo "Server tests will be added here"
-        continue-on-error: true
+        env:
+          NODE_ENV: test
+          MONGODB_URI: mongodb://localhost:27017/mini-supermarket-test
+          JWT_SECRET: ci-test-secret-key-999
+          REDIS_HOST: localhost
+          REDIS_PORT: 6379
+        run: npm test
