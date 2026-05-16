@@ -9,36 +9,36 @@ import apiClient from "../../services/apiClient";
 import "./SignIn.css";
 
 const SignIn = () => {
-  const demoAccounts = {
-    admin: {
-      title: "Demo đặc biệt",
-      items: [{ label: "Manager", username: "admin", password: "demo_admin_pass" }],
-    },
-    staff: {
-      title: "Tài khoản từ database",
-      items: [
-        { label: "Manager", username: "manager1", password: "demo_user_auth" },
-        { label: "Manager", username: "manager2", password: "demo_user_auth" },
-        { label: "Delivery Staff", username: "delivery1", password: "demo_user_auth" },
-        { label: "Delivery Staff", username: "delivery2", password: "demo_user_auth" },
-        { label: "Cashier", username: "cashier1", password: "demo_user_auth" },
-        { label: "Cashier", username: "cashier2", password: "demo_user_auth" },
-        { label: "Merchandise Supervisor", username: "supervisor1", password: "demo_user_auth" },
-        { label: "Merchandise Supervisor", username: "supervisor2", password: "demo_user_auth" },
-        { label: "Warehouse Staff", username: "warehouse1", password: "demo_user_auth" },
-        { label: "Warehouse Staff", username: "warehouse2", password: "demo_user_auth" },
-      ],
-    },
-    customer: {
-      title: "Khách hàng",
-      items: [
-        { label: "Customer", username: "customer1", password: "demo_user_auth" },
-        { label: "Customer", username: "customer2", password: "demo_user_auth" },
-        { label: "Customer", username: "customer3", password: "demo_user_auth" },
-        { label: "Customer", username: "customer4", password: "demo_user_auth" },
-      ],
-    },
-  };
+  // const demoAccounts = {
+  //   admin: {
+  //     title: "Demo đặc biệt",
+  //     items: [{ label: "Manager", username: "admin", password: "demo_admin_pass" }],
+  //   },
+  //   staff: {
+  //     title: "Tài khoản từ database",
+  //     items: [
+  //       { label: "Manager", username: "manager1", password: "demo_user_auth" },
+  //       { label: "Manager", username: "manager2", password: "demo_user_auth" },
+  //       { label: "Delivery Staff", username: "delivery1", password: "demo_user_auth" },
+  //       { label: "Delivery Staff", username: "delivery2", password: "demo_user_auth" },
+  //       { label: "Cashier", username: "cashier1", password: "demo_user_auth" },
+  //       { label: "Cashier", username: "cashier2", password: "demo_user_auth" },
+  //       { label: "Merchandise Supervisor", username: "supervisor1", password: "demo_user_auth" },
+  //       { label: "Merchandise Supervisor", username: "supervisor2", password: "demo_user_auth" },
+  //       { label: "Warehouse Staff", username: "warehouse1", password: "demo_user_auth" },
+  //       { label: "Warehouse Staff", username: "warehouse2", password: "demo_user_auth" },
+  //     ],
+  //   },
+  //   customer: {
+  //     title: "Khách hàng",
+  //     items: [
+  //       { label: "Customer", username: "customer1", password: "demo_user_auth" },
+  //       { label: "Customer", username: "customer2", password: "demo_user_auth" },
+  //       { label: "Customer", username: "customer3", password: "demo_user_auth" },
+  //       { label: "Customer", username: "customer4", password: "demo_user_auth" },
+  //     ],
+  //   },
+  // };
 
   // Load remembered credentials from localStorage
   const getRememberedCredentials = () => {
@@ -108,7 +108,7 @@ const SignIn = () => {
         // Check if user type matches selected tab
         if (user.role === "customer" && activeTab !== "customer") {
           setErrorMessage(
-            "This is a customer account. Please select the Customer tab."
+            "This is a customer account. Please select the Customer tab.",
           );
           return;
         }
@@ -117,7 +117,7 @@ const SignIn = () => {
           activeTab !== "staff"
         ) {
           setErrorMessage(
-            "This is a staff/admin account. Please select the Staff tab."
+            "This is a staff/admin account. Please select the Staff tab.",
           );
           return;
         }
@@ -138,7 +138,7 @@ const SignIn = () => {
           localStorage.setItem("customerId", user.customer_id);
           localStorage.setItem(
             "membershipType",
-            user.membership_type || "basic"
+            user.membership_type || "basic",
           );
           localStorage.setItem("pointsBalance", user.points_balance || 0);
         } else if (user.role === "staff" || user.role === "admin") {
@@ -180,7 +180,7 @@ const SignIn = () => {
           } else {
             // Admin nhưng không phải manager - điều hướng về signin
             setErrorMessage(
-              "Account configuration error. Please contact administrator."
+              "Account configuration error. Please contact administrator.",
             );
             return;
           }
@@ -217,7 +217,7 @@ const SignIn = () => {
           "| Position:",
           user.position,
           "| isManager:",
-          user.is_manager
+          user.is_manager,
         );
         navigate(redirectPath);
       }
@@ -334,11 +334,14 @@ const SignIn = () => {
             </span>
           </div>
 
-          <div className="demo-group">
+          {/* <div className="demo-group">
             <div className="demo-group-title">{demoAccounts.admin.title}</div>
             <div className="accounts-grid compact-grid">
               {demoAccounts.admin.items.map((account) => (
-                <div className="account-item" key={`${account.username}-${account.password}`}>
+                <div
+                  className="account-item"
+                  key={`${account.username}-${account.password}`}
+                >
                   <div className="account-meta">
                     <strong>{account.label}</strong>
                     <span>{account.username}</span>
@@ -365,7 +368,9 @@ const SignIn = () => {
           </div>
 
           <div className="demo-group">
-            <div className="demo-group-title">{demoAccounts.customer.title}</div>
+            <div className="demo-group-title">
+              {demoAccounts.customer.title}
+            </div>
             <div className="accounts-grid">
               {demoAccounts.customer.items.map((account) => (
                 <div className="account-item" key={account.username}>
@@ -377,7 +382,7 @@ const SignIn = () => {
                 </div>
               ))}
             </div>
-          </div>
+          </div> */}
         </div>
       </div>
     </div>
