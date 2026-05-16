@@ -51,7 +51,7 @@ describe('StaffService - Unit Tests', () => {
       Account.findOne.mockResolvedValue({ _id: 'existing-id' });
 
       await expect(staffService.createStaff({
-        username: 'existed', password: 'pass123', email: 'existed@x.com', position: 'Cashier'
+        username: 'existed', password: 'test_auth_key', email: 'existed@x.com', position: 'Cashier'
       })).rejects.toThrow(ConflictError);
     });
   });
