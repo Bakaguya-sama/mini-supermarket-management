@@ -1,0 +1,167 @@
+### Promotion Integration Test - Manual HTTP Testing
+
+@baseUrl = http://localhost:3000/api
+@adminToken = <replace with actual admin token>
+
+### 1. Get All Active Promotions
+GET {{baseUrl}}/promotions
+
+### 2. Get Applicable Promotions (Active & Within Date Range)
+GET {{baseUrl}}/promotions/applicable
+
+### 3. Get Single Promotion
+GET {{baseUrl}}/promotions/{{promotionId}}
+
+### 4. Validate Promo Code
+POST {{baseUrl}}/promotions/validate
+Content-Type: application/json
+
+{
+  "promo_code": "SUMMER20",
+  "total_amount": 500000
+}
+
+### 5. Validate Invalid Promo Code (Should Fail)
+POST {{baseUrl}}/promotions/validate
+Content-Type: application/json
+
+{
+  "promo_code": "INVALID999",
+  "total_amount": 500000
+}
+
+### 6. Validate Expired Promo Code
+POST {{baseUrl}}/promotions/validate
+Content-Type: application/json
+
+{
+  "promo_code": "EXPIRED20",
+  "total_amount": 500000
+}
+
+### 7. Create New Percentage Promotion
+POST {{baseUrl}}/promotions
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "promo_code": "NEWSEASON{{$timestamp}}",
+  "discount_value": 25,
+  "discount_type": "percentage",
+  "start_date": "{{$datetime iso8601}}",
+  "end_date": "{{$datetime offset(30, 'd') iso8601}}",
+  "description": "New Season Discount",
+  "is_active": true
+}
+
+### 8. Create Fixed Amount Promotion
+POST {{baseUrl}}/promotions
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "promo_code": "FIXED100K",
+  "discount_value": 100000,
+  "discount_type": "fixed",
+  "start_date": "{{$datetime iso8601}}",
+  "end_date": "{{$datetime offset(60, 'd') iso8601}}",
+  "description": "Fixed 100k discount",
+  "is_active": true,
+  "min_purchase": 500000
+}
+
+### 9. Create Promotion - Invalid Discount Type (Should Fail)
+POST {{baseUrl}}/promotions
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "promo_code": "INVALID",
+  "discount_value": 30,
+  "discount_type": "invalid_type",
+  "start_date": "{{$datetime iso8601}}",
+  "end_date": "{{$datetime offset(30, 'd') iso8601}}"
+}
+
+### Save Promotion ID for Further Tests
+@promotionId = <replace with actual promotion ID>
+
+### 10. Update Promotion - Change Discount
+PUT {{baseUrl}}/promotions/{{promotionId}}
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "discount_value": 30
+}
+
+### 11. Update Promotion - Extend End Date
+PUT {{baseUrl}}/promotions/{{promotionId}}
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "end_date": "{{$datetime offset(90, 'd') iso8601}}"
+}
+
+### 12. Update Promotion - Disable
+PUT {{baseUrl}}/promotions/{{promotionId}}
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "is_active": false
+}
+
+### 13. Delete Promotion
+DELETE {{baseUrl}}/promotions/{{promotionId}}
+Authorization: Bearer {{adminToken}}
+
+### 14. Test Multiple Promotions
+GET {{baseUrl}}/promotions/applicable
+
+### 15. Create Stack of Test Promotions
+POST {{baseUrl}}/promotions
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "promo_code": "PROMO1",
+  "discount_value": 10,
+  "discount_type": "percentage",
+  "start_date": "{{$datetime iso8601}}",
+  "end_date": "{{$datetime offset(7, 'd') iso8601}}",
+  "is_active": true
+}
+
+###
+POST {{baseUrl}}/promotions
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "promo_code": "PROMO2",
+  "discount_value": 15,
+  "discount_type": "percentage",
+  "start_date": "{{$datetime iso8601}}",
+  "end_date": "{{$datetime offset(14, 'd') iso8601}}",
+  "is_active": true
+}
+
+### 16. Validate Different Amounts
+POST {{baseUrl}}/promotions/validate
+Content-Type: application/json
+
+{
+  "promo_code": "PROMO1",
+  "total_amount": 200000
+}
+
+### 17. Test Minimum Purchase Requirement
+POST {{baseUrl}}/promotions/validate
+Content-Type: application/json
+
+{
+  "promo_code": "FIXED100K",
+  "total_amount": 400000
+}

@@ -1,0 +1,116 @@
+### Section Integration Test - Manual HTTP Testing
+
+@baseUrl = http://localhost:3000/api
+@adminToken = <replace with actual admin token>
+
+### 1. Get All Sections
+GET {{baseUrl}}/sections
+
+### 2. Get Single Section
+GET {{baseUrl}}/sections/{{sectionId}}
+
+### 3. Get Shelves in Section
+GET {{baseUrl}}/sections/{{sectionId}}/shelves
+
+### 4. Create New Section
+POST {{baseUrl}}/sections
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "section_name": "New Section {{$timestamp}}",
+  "location": "Floor 1"
+}
+
+### 5. Create Section - Duplicate Name (Should Fail)
+POST {{baseUrl}}/sections
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "section_name": "Electronics",
+  "location": "Floor 2"
+}
+
+### 6. Create Section - Missing Field (Should Fail)
+POST {{baseUrl}}/sections
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "section_name": "Incomplete Section"
+}
+
+### Save Section ID for Further Tests
+@sectionId = <replace with actual section ID>
+
+### 7. Update Section
+PUT {{baseUrl}}/sections/{{sectionId}}
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "location": "Floor 3"
+}
+
+### 8. Update Section - Change Name
+PUT {{baseUrl}}/sections/{{sectionId}}
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "section_name": "Updated Section Name"
+}
+
+### 9. Delete Section
+DELETE {{baseUrl}}/sections/{{sectionId}}
+Authorization: Bearer {{adminToken}}
+
+### 10. Get Section After Deletion (Should Return 404)
+GET {{baseUrl}}/sections/{{sectionId}}
+
+### 11. Bulk Create Sections for Testing
+POST {{baseUrl}}/sections
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "section_name": "Electronics",
+  "location": "Floor 1 - Main"
+}
+
+###
+POST {{baseUrl}}/sections
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "section_name": "Food & Beverages",
+  "location": "Floor 2 - Climate Controlled"
+}
+
+###
+POST {{baseUrl}}/sections
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "section_name": "Household Items",
+  "location": "Floor 1 - Side"
+}
+
+### 12. Verify All Sections Created
+GET {{baseUrl}}/sections
+
+### 13. Get Specific Section Details
+GET {{baseUrl}}/sections/{{sectionId}}
+
+### 14. Test Case Sensitivity
+POST {{baseUrl}}/sections
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "section_name": "ELECTRONICS",
+  "location": "Floor 3"
+}

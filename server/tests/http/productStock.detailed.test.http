@@ -1,0 +1,160 @@
+### ProductStock Integration Test - Manual HTTP Testing
+
+@baseUrl = http://localhost:3000/api
+@adminToken = <replace with actual admin token>
+@productId = <replace with actual product ID>
+@shelfId = <replace with actual shelf ID>
+@stockId = <replace with actual product stock ID>
+
+### 1. Get Product Stock Statistics
+GET {{baseUrl}}/product-stock/stats
+
+### 2. Get Low Stock Products
+GET {{baseUrl}}/product-stock/low-stock
+
+### 3. Get Stock by Product
+GET {{baseUrl}}/product-stock/product/{{productId}}
+
+### 4. Get Stock by Shelf
+GET {{baseUrl}}/product-stock/shelf/{{shelfId}}
+
+### 5. Create Product Stock Record
+POST {{baseUrl}}/product-stock
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "product_id": "{{productId}}",
+  "shelf_id": "{{shelfId}}",
+  "quantity": 50,
+  "status": "in_stock"
+}
+
+### 6. Create Stock - Low Level
+POST {{baseUrl}}/product-stock
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "product_id": "{{productId}}",
+  "shelf_id": "{{shelfId}}",
+  "quantity": 5,
+  "status": "low_stock",
+  "reorder_point": 10
+}
+
+### 7. Create Stock - Out of Stock
+POST {{baseUrl}}/product-stock
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "product_id": "{{productId2}}",
+  "shelf_id": "{{shelfId2}}",
+  "quantity": 0,
+  "status": "out_of_stock"
+}
+
+### 8. Adjust Stock Quantity - Increase
+PATCH {{baseUrl}}/product-stock/{{stockId}}/adjust
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "quantity_adjustment": 20,
+  "reason": "Received new shipment",
+  "reference": "PO-2024-001"
+}
+
+### 9. Adjust Stock Quantity - Decrease
+PATCH {{baseUrl}}/product-stock/{{stockId}}/adjust
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "quantity_adjustment": -5,
+  "reason": "Inventory correction - Damaged items",
+  "reference": "INV-CORR-001"
+}
+
+### 10. Adjust Stock - Significant Decrease
+PATCH {{baseUrl}}/product-stock/{{stockId}}/adjust
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "quantity_adjustment": -15,
+  "reason": "Customer return handling",
+  "reference": "RETURN-2024-001"
+}
+
+### 11. Bulk Update Stock Status - Mark as Low
+PUT {{baseUrl}}/product-stock/bulk/update-status
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "stock_ids": ["{{stockId1}}", "{{stockId2}}"],
+  "status": "low_stock"
+}
+
+### 12. Bulk Update Stock Status - Mark as In Stock
+PUT {{baseUrl}}/product-stock/bulk/update-status
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "stock_ids": ["{{stockId1}}", "{{stockId2}}", "{{stockId3}}"],
+  "status": "in_stock"
+}
+
+### 13. Get All Stock Records
+GET {{baseUrl}}/product-stock
+
+### 14. Get Low Stock Alert List
+GET {{baseUrl}}/product-stock/low-stock
+
+### 15. Get Stock Statistics for Report
+GET {{baseUrl}}/product-stock/stats
+
+### 16. Get Product Stock with Expiry
+GET {{baseUrl}}/product-stock/product/{{productId}}?include_expiry=true
+
+### 17. Get Shelf Stock Overview
+GET {{baseUrl}}/product-stock/shelf/{{shelfId}}
+
+### 18. Test Stock Movement Tracking
+PATCH {{baseUrl}}/product-stock/{{stockId}}/adjust
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "quantity_adjustment": -2,
+  "reason": "Walk-in customer purchase",
+  "reference": "SALE-2024-001",
+  "notes": "Customer transaction #TXN-001"
+}
+
+### 19. Verify Stock After Adjustment
+GET {{baseUrl}}/product-stock/{{stockId}}
+
+### 20. Test Reorder Point Alert
+GET {{baseUrl}}/product-stock/low-stock?threshold_only=true
+
+### 21. Test Stock Status Workflow
+PUT {{baseUrl}}/product-stock/{{stockId}}
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "status": "out_of_stock",
+  "reorder_priority": "urgent"
+}
+
+### 22. Get Critical Stock Items
+GET {{baseUrl}}/product-stock/critical?min_threshold=5
+
+### 23. Test Multiple Shelf Stock Check
+GET {{baseUrl}}/product-stock/shelf/{{shelfId1}}
+GET {{baseUrl}}/product-stock/shelf/{{shelfId2}}
+GET {{baseUrl}}/product-stock/shelf/{{shelfId3}}
