@@ -1,0 +1,123 @@
+### Shelf Integration Test - Manual HTTP Testing
+
+@baseUrl = http://localhost:3000/api
+@adminToken = <replace with actual admin token>
+@sectionId = <replace with actual section ID>
+
+### 1. Get Shelf Statistics
+GET {{baseUrl}}/shelves/stats
+
+### 2. Get Available Shelves
+GET {{baseUrl}}/shelves/available
+
+### 3. Get Shelves by Category - Electronics
+GET {{baseUrl}}/shelves/category/Electronics
+
+### 4. Get Shelves by Category - Food
+GET {{baseUrl}}/shelves/category/Food
+
+### 5. Get Shelf Capacity
+GET {{baseUrl}}/shelves/{{shelfId}}/capacity
+
+### 6. Create New Shelf
+POST {{baseUrl}}/shelves
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "shelf_number": 101,
+  "section_id": "{{sectionId}}",
+  "category": "Electronics",
+  "capacity": 100,
+  "current_load": 0,
+  "is_full": false
+}
+
+### 7. Create Shelf - Duplicate Number (Should Fail)
+POST {{baseUrl}}/shelves
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "shelf_number": 101,
+  "section_id": "{{sectionId}}",
+  "category": "Food",
+  "capacity": 150,
+  "current_load": 0
+}
+
+### Save Shelf ID for Further Tests
+@shelfId = <replace with actual shelf ID>
+
+### 8. Toggle Shelf Full Status
+PUT {{baseUrl}}/shelves/{{shelfId}}/toggle-full
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{}
+
+### 9. Toggle Shelf Full Status Again
+PUT {{baseUrl}}/shelves/{{shelfId}}/toggle-full
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{}
+
+### 10. Update Shelf - Change Capacity
+PUT {{baseUrl}}/shelves/{{shelfId}}
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "capacity": 120
+}
+
+### 11. Update Shelf - Change Category
+PUT {{baseUrl}}/shelves/{{shelfId}}
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "category": "Premium Electronics"
+}
+
+### 12. Delete Shelf
+DELETE {{baseUrl}}/shelves/{{shelfId}}
+Authorization: Bearer {{adminToken}}
+
+### 13. Bulk Create Shelves
+POST {{baseUrl}}/shelves
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "shelf_number": 201,
+  "section_id": "{{sectionId}}",
+  "category": "Food",
+  "capacity": 150,
+  "current_load": 50,
+  "is_full": false
+}
+
+###
+POST {{baseUrl}}/shelves
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "shelf_number": 202,
+  "section_id": "{{sectionId}}",
+  "category": "Food",
+  "capacity": 150,
+  "current_load": 150,
+  "is_full": true
+}
+
+### 14. Get All Shelves with Current Load
+GET {{baseUrl}}/shelves
+
+### 15. Test Shelf Near Capacity
+GET {{baseUrl}}/shelves/category/Food
+
+### 16. Get Shelf Details
+GET {{baseUrl}}/shelves/{{shelfId}}

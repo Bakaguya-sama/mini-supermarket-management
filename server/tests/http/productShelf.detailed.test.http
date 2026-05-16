@@ -1,0 +1,111 @@
+### ProductShelf Integration Test - Manual HTTP Testing
+
+@baseUrl = http://localhost:3000/api
+@adminToken = <replace with actual admin token>
+@productId = <replace with actual product ID>
+@shelfId = <replace with actual shelf ID>
+@newShelfId = <replace with another shelf ID>
+
+### 1. Get ProductShelf Statistics
+GET {{baseUrl}}/product-shelves/stats
+
+### 2. Get Shelves for a Product
+GET {{baseUrl}}/product-shelves/product/{{productId}}/shelves
+
+### 3. Get Products on a Shelf
+GET {{baseUrl}}/product-shelves/shelf/{{shelfId}}/products
+
+### 4. Get Products Available for Damaged Record
+GET {{baseUrl}}/product-shelves/for-damaged-record
+
+### 5. Assign Product to Shelf - Bulk
+POST {{baseUrl}}/product-shelves/bulk/assign
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "product_ids": ["{{productId}}"],
+  "shelf_id": "{{shelfId}}",
+  "quantity_per_product": 20,
+  "notes": "Initial shelf assignment"
+}
+
+### 6. Assign Multiple Products to Shelf
+POST {{baseUrl}}/product-shelves/bulk/assign
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "product_ids": [
+    "{{productId1}}",
+    "{{productId2}}",
+    "{{productId3}}"
+  ],
+  "shelf_id": "{{shelfId}}",
+  "quantity_per_product": 15
+}
+
+### 7. Move Product to Different Shelf
+PUT {{baseUrl}}/product-shelves/{{productId}}/move
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "from_shelf_id": "{{shelfId}}",
+  "to_shelf_id": "{{newShelfId}}",
+  "quantity": 5,
+  "reason": "Shelf reorganization"
+}
+
+### 8. Move Product - Partial Quantity
+PUT {{baseUrl}}/product-shelves/{{productId}}/move
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "from_shelf_id": "{{shelfId}}",
+  "to_shelf_id": "{{newShelfId}}",
+  "quantity": 3
+}
+
+### 9. Get Product-Shelf Mappings
+GET {{baseUrl}}/product-shelves
+
+### 10. Get All Products on Multiple Shelves
+GET {{baseUrl}}/product-shelves/shelf/{{shelfId1}}/products
+GET {{baseUrl}}/product-shelves/shelf/{{shelfId2}}/products
+
+### 11. Get Shelf Status for Product
+GET {{baseUrl}}/product-shelves/product/{{productId}}/shelves
+
+### 12. Verify Product Placement After Move
+GET {{baseUrl}}/product-shelves/product/{{productId}}/shelves
+
+### 13. Get ProductShelf Statistics with Details
+GET {{baseUrl}}/product-shelves/stats
+
+### 14. Test Moving Product from Full Shelf
+PUT {{baseUrl}}/product-shelves/{{productId}}/move
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "from_shelf_id": "{{fullShelfId}}",
+  "to_shelf_id": "{{availableShelfId}}",
+  "quantity": 10
+}
+
+### 15. Bulk Re-assign Products for Category
+POST {{baseUrl}}/product-shelves/bulk/assign
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "product_ids": ["{{electronicsProductId1}}", "{{electronicsProductId2}}"],
+  "shelf_id": "{{electronicsShelfId}}",
+  "quantity_per_product": 25,
+  "category": "Electronics"
+}
+
+### 16. Get Available Placement for Product
+GET {{baseUrl}}/product-shelves/available-placement?product_id={{productId}}&category=Electronics

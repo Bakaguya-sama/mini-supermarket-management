@@ -1,0 +1,143 @@
+### Auth Integration Test - Manual HTTP Testing
+
+@baseUrl = http://localhost:3000/api
+
+### 1. Register Customer
+POST {{baseUrl}}/auth/register/customer
+Content-Type: application/json
+
+{
+  "username": "newcustomer{{$timestamp}}",
+  "email": "customer{{$timestamp}}@example.com",
+  "password": "SecurePassword123!",
+  "full_name": "New Customer",
+  "phone": "0123456789"
+}
+
+### 2. Register Customer - Duplicate Email (Should Fail)
+POST {{baseUrl}}/auth/register/customer
+Content-Type: application/json
+
+{
+  "username": "customer2",
+  "email": "same@example.com",
+  "password": "password123",
+  "full_name": "Customer Two",
+  "phone": "0987654321"
+}
+
+### 3. Register Customer - Missing Required Field (Should Fail)
+POST {{baseUrl}}/auth/register/customer
+Content-Type: application/json
+
+{
+  "username": "incompletecustomer",
+  "email": "incomplete@example.com"
+}
+
+### 4. Login - Success
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "username": "testuser",
+  "password": "password123"
+}
+
+### 5. Login - Wrong Password (Should Fail)
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "username": "testuser",
+  "password": "wrongpassword"
+}
+
+### 6. Login - Non-existent User (Should Fail)
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "username": "nonexistentuser",
+  "password": "password123"
+}
+
+### Save Login Token for Later Use
+@authToken = <replace with actual token from login response>
+
+### 7. Verify Valid Token
+POST {{baseUrl}}/auth/verify-token
+Content-Type: application/json
+
+{
+  "token": "{{authToken}}"
+}
+
+### 8. Verify Invalid Token (Should Fail)
+POST {{baseUrl}}/auth/verify-token
+Content-Type: application/json
+
+{
+  "token": "invalid.fake.token"
+}
+
+### 9. Get Current User Info
+GET {{baseUrl}}/auth/me
+Authorization: Bearer {{authToken}}
+
+### 10. Get Current User - No Token (Should Fail)
+GET {{baseUrl}}/auth/me
+
+### 11. Update Profile
+PUT {{baseUrl}}/auth/update-profile
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "full_name": "Updated Customer Name",
+  "phone": "9876543210"
+}
+
+### 12. Change Password - Success
+PUT {{baseUrl}}/auth/change-password
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "oldPassword": "password123",
+  "newPassword": "NewSecurePassword456!"
+}
+
+### 13. Change Password - Wrong Old Password (Should Fail)
+PUT {{baseUrl}}/auth/change-password
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "oldPassword": "wrongoldpassword",
+  "newPassword": "NewPassword789!"
+}
+
+### 14. Register Staff Account (Admin Only)
+POST {{baseUrl}}/auth/register/staff
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "username": "newstaff{{$timestamp}}",
+  "email": "staff{{$timestamp}}@example.com",
+  "password": "StaffPassword123!",
+  "full_name": "New Staff Member",
+  "phone": "0111222333",
+  "position": "Delivery",
+  "employment_type": "full_time"
+}
+
+### 15. Test Login with New Credentials (After Password Change)
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "username": "testuser",
+  "password": "NewSecurePassword456!"
+}
