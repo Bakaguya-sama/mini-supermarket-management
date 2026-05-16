@@ -73,10 +73,10 @@ describe('DamagedProduct Integration Tests', () => {
     test('should return damaged products by product id', async () => {
       await DamagedProduct.create({
         product_id: productId,
-        quantity: 5,
-        damage_reason: 'Broken packaging',
+        damaged_quantity: 5,
+        description: 'Broken packaging',
         reported_date: new Date(),
-        status: 'pending'
+        status: 'reported'
       });
 
       const res = await request(app).get(`/api/damaged-products/product/${productId}`);
@@ -90,10 +90,10 @@ describe('DamagedProduct Integration Tests', () => {
     test('should adjust inventory for damaged product', async () => {
       const damaged = await DamagedProduct.create({
         product_id: productId,
-        quantity: 5,
-        damage_reason: 'Expired',
+        damaged_quantity: 5,
+        description: 'Expired',
         reported_date: new Date(),
-        status: 'pending'
+        status: 'reported'
       });
 
       const res = await request(app)
@@ -110,8 +110,8 @@ describe('DamagedProduct Integration Tests', () => {
     test('should get shelves for damaged product', async () => {
       const damaged = await DamagedProduct.create({
         product_id: productId,
-        quantity: 2,
-        damage_reason: 'Water damage',
+        damaged_quantity: 2,
+        description: 'Water damage',
         reported_date: new Date(),
         status: 'resolved'
       });
@@ -129,18 +129,18 @@ describe('DamagedProduct Integration Tests', () => {
     test('should bulk update damaged product status', async () => {
       const damaged1 = await DamagedProduct.create({
         product_id: productId,
-        quantity: 2,
-        damage_reason: 'Scratch',
+        damaged_quantity: 2,
+        description: 'Scratch',
         reported_date: new Date(),
-        status: 'pending'
+        status: 'reported'
       });
 
       const damaged2 = await DamagedProduct.create({
         product_id: productId,
-        quantity: 3,
-        damage_reason: 'Dent',
+        damaged_quantity: 3,
+        description: 'Dent',
         reported_date: new Date(),
-        status: 'pending'
+        status: 'reported'
       });
 
       const res = await request(app)

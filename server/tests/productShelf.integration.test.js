@@ -46,7 +46,7 @@ describe('ProductShelf Integration Tests', () => {
     productId = product._id.toString();
 
     const section = await Section.create({
-      section_name: 'Test Section',
+      section_name: `Test Section ${Math.random().toString(36).substring(2, 7)}`,
       location: 'Floor 1'
     });
 
@@ -71,6 +71,7 @@ describe('ProductShelf Integration Tests', () => {
 
   describe('GET /api/product-shelves/product/:productId/shelves', () => {
     test('should return shelves for a product', async () => {
+      await require('../models').ProductShelf.create({ product_id: productId, shelf_id: shelfId, quantity: 5 });
       const res = await request(app).get(
         `/api/product-shelves/product/${productId}/shelves`
       );
@@ -97,12 +98,11 @@ describe('ProductShelf Integration Tests', () => {
         .post('/api/product-shelves/bulk/assign')
         .set('Authorization', `Bearer ${adminToken}`)
         .send({
-          product_ids: [productId],
           shelf_id: shelfId,
-          quantity_per_product: 10
+          products: [{ product_id: productId, quantity: 10 }]
         });
 
-      expect(res.status).toBe(200);
+      expect(res.status).toBe(201);
       expect(res.body.success).toBe(true);
     });
   });
@@ -115,20 +115,19 @@ describe('ProductShelf Integration Tests', () => {
       });
 
       const newShelf = await Shelf.create({
-        shelf_number: 201,
-        section_id: section._id.toString(),
-        category: 'Electronics',
-        capacity: 80,
-        current_load: 30
+        shelf_number: 'B1',
+        shelf_name: 'B',
+        section_number: 2,
+        capacity: 80
       });
 
+      const ps = await require('../models').ProductShelf.create({ product_id: productId, shelf_id: shelfId, quantity: 20 });
+
       const res = await request(app)
-        .put(`/api/product-shelves/${productId}/move`)
+        .put(`/api/product-shelves/${ps._id.toString()}/move`)
         .set('Authorization', `Bearer ${adminToken}`)
         .send({
-          from_shelf_id: shelfId,
-          to_shelf_id: newShelf._id.toString(),
-          quantity: 5
+          new_shelf_id: newShelf._id.toString()
         });
 
       expect(res.status).toBe(200);

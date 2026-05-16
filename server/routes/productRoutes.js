@@ -1,7 +1,7 @@
-// routes/productRoutes.js
 const express = require('express');
 const router = express.Router();
 const productController = require('../controllers/productController');
+const { authenticate, requireRoles } = require('../middleware/auth');
 
 // @route   GET /api/products
 // @desc    Get all products with filters and pagination
@@ -28,40 +28,43 @@ router.get('/category/:category', productController.getProductsByCategory);
 // @access  Public
 router.get('/:id', productController.getProductById);
 
+// Protected Routes
+router.use(authenticate);
+
 // @route   POST /api/products
 // @desc    Create new product
-// @access  Public
-router.post('/', productController.createProduct);
+// @access  Private (Admin, Manager)
+router.post('/', requireRoles(['admin', 'manager']), productController.createProduct);
 
 // @route   PUT /api/products/:id
 // @desc    Update product
-// @access  Public
-router.put('/:id', productController.updateProduct);
+// @access  Private (Admin, Manager)
+router.put('/:id', requireRoles(['admin', 'manager']), productController.updateProduct);
 
 // @route   DELETE /api/products/:id
-// @desc    Delete product (soft delete - set status to discontinued)
-// @access  Public
-router.delete('/:id', productController.deleteProduct);
+// @desc    Delete product (soft delete)
+// @access  Private (Admin, Manager)
+router.delete('/:id', requireRoles(['admin', 'manager']), productController.deleteProduct);
 
 // @route   DELETE /api/products/:id/permanent
 // @desc    Permanently delete product
-// @access  Public
-router.delete('/:id/permanent', productController.permanentDeleteProduct);
+// @access  Private (Admin)
+router.delete('/:id/permanent', requireRoles(['admin']), productController.permanentDeleteProduct);
 
 // @route   PATCH /api/products/:id/stock
 // @desc    Update product stock
-// @access  Public
-router.patch('/:id/stock', productController.updateProductStock);
+// @access  Private (Admin, Manager)
+router.patch('/:id/stock', requireRoles(['admin', 'manager']), productController.updateProductStock);
 
 // @route   PATCH /api/products/:id/price
 // @desc    Update product price
-// @access  Public
-router.patch('/:id/price', productController.updateProductPrice);
+// @access  Private (Admin, Manager)
+router.patch('/:id/price', requireRoles(['admin', 'manager']), productController.updateProductPrice);
 
 // @route   PATCH /api/products/:id/activate
-// @desc    Activate product (set status to active)
-// @access  Public
-router.patch('/:id/activate', productController.activateProduct);
+// @desc    Activate product
+// @access  Private (Admin, Manager)
+router.patch('/:id/activate', requireRoles(['admin', 'manager']), productController.activateProduct);
 
 // @route   GET /api/products/supplier/:supplierId
 // @desc    Get products by supplier
