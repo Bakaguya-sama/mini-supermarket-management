@@ -22,7 +22,7 @@ beforeEach(async () => {
 
 test('TC01: POST /api/product-shelves - assigns product to shelf', async () => {
   const product = await Product.create({ name: 'Bread', unit: 'pcs', price: 10000 });
-  const shelf = await Shelf.create({ shelf_number: 'B1', capacity: 20 });
+  const shelf = await Shelf.create({ shelf_number: 'B1', shelf_name: 'B', section_number: 1, capacity: 20 });
 
   const res = await request(app)
     .post('/api/product-shelves')
@@ -41,8 +41,8 @@ test('TC01: POST /api/product-shelves - assigns product to shelf', async () => {
 
 test('TC02: GET /api/product-shelves/product/:id - returns all shelves for a product', async () => {
   const product = await Product.create({ name: 'Milk', unit: 'box' });
-  const shelf1 = await Shelf.create({ shelf_number: 'S1' });
-  const shelf2 = await Shelf.create({ shelf_number: 'S2' });
+  const shelf1 = await Shelf.create({ shelf_number: 'S1', shelf_name: 'S', section_number: 1 });
+  const shelf2 = await Shelf.create({ shelf_number: 'S2', shelf_name: 'S', section_number: 1 });
   
   await ProductShelf.create({ product_id: product._id, shelf_id: shelf1._id, quantity: 5 });
   await ProductShelf.create({ product_id: product._id, shelf_id: shelf2._id, quantity: 10 });
@@ -54,8 +54,8 @@ test('TC02: GET /api/product-shelves/product/:id - returns all shelves for a pro
 
 test('TC03: PATCH /api/product-shelves/:id/move - moves quantity between shelves', async () => {
   const product = await Product.create({ name: 'Soda', unit: 'can' });
-  const shelfFrom = await Shelf.create({ shelf_number: 'F1', capacity: 50, current_quantity: 20 });
-  const shelfTo = await Shelf.create({ shelf_number: 'T1', capacity: 50, current_quantity: 0 });
+  const shelfFrom = await Shelf.create({ shelf_number: 'F1', shelf_name: 'F', section_number: 1, capacity: 50, current_quantity: 20 });
+  const shelfTo = await Shelf.create({ shelf_number: 'T1', shelf_name: 'T', section_number: 1, capacity: 50, current_quantity: 0 });
   
   const psFrom = await ProductShelf.create({ product_id: product._id, shelf_id: shelfFrom._id, quantity: 20 });
 
