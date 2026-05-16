@@ -6,7 +6,7 @@ class StaffRepository {
     return await Staff.find(query)
       .populate({
         path: 'account_id',
-        select: 'full_name email phone username -password_hash'
+        select: 'full_name email phone username'
       })
       .sort(sort)
       .skip(skip)
