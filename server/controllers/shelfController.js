@@ -17,6 +17,7 @@ exports.getAllShelves = async (req, res) => {
     // Build query
     const query = { isDelete: false };
     if (category) query.category = category;
+    if (req.query.shelf_name) query.shelf_name = req.query.shelf_name;
     if (isfull !== undefined) query.isfull = isfull === "true";
 
     if (search) {
@@ -204,6 +205,8 @@ exports.createShelf = async (req, res) => {
   try {
     const {
       shelf_number,
+      shelf_name,
+      section_number,
       category,
       note,
       capacity,
@@ -249,12 +252,8 @@ exports.createShelf = async (req, res) => {
       isfull,
       warehouse_id,
       section: sectionDoc?._id || undefined,
-      shelf_name: sectionDoc
-        ? sectionDoc.section_name
-        : shelf_number
-        ? shelf_number[0]
-        : "",
-      section_number: sectionNumber || 1,
+      shelf_name: shelf_name || (sectionDoc ? sectionDoc.section_name : (shelf_number ? shelf_number[0] : "")),
+      section_number: section_number || sectionNumber || 1,
     });
 
     res.status(201).json({

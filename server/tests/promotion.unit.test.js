@@ -31,7 +31,7 @@ describe('PromotionService - Unit Tests', () => {
       future.setDate(future.getDate() + 1);
       
       promotionRepository.findOne.mockResolvedValue({
-        code: 'FUTURE',
+        promo_code: 'FUTURE',
         start_date: future,
         end_date: new Date(future.getTime() + 86400000),
         isDelete: false
@@ -47,10 +47,10 @@ describe('PromotionService - Unit Tests', () => {
       const tomorrow = new Date(now.getTime() + 86400000);
 
       promotionRepository.findOne.mockResolvedValue({
-        code: 'OFF10',
+        promo_code: 'OFF10',
         start_date: yesterday,
         end_date: tomorrow,
-        discount_type: 'percentage',
+        promotion_type: 'percentage',
         discount_value: 10,
         min_purchase_amount: 50000,
         max_discount_amount: 5000,
@@ -66,10 +66,10 @@ describe('PromotionService - Unit Tests', () => {
     it('TC05: should calculate fixed amount discount correctly', async () => {
       const now = new Date();
       promotionRepository.findOne.mockResolvedValue({
-        code: 'FIXED',
+        promo_code: 'FIXED',
         start_date: new Date(now.getTime() - 86400000),
         end_date: new Date(now.getTime() + 86400000),
-        discount_type: 'fixed_amount',
+        promotion_type: 'fixed_amount',
         discount_value: 20000,
         min_purchase_amount: 0,
         isDelete: false
@@ -83,7 +83,7 @@ describe('PromotionService - Unit Tests', () => {
     it('TC06: should throw BadRequestError if subtotal < min_purchase_amount', async () => {
       const now = new Date();
       promotionRepository.findOne.mockResolvedValue({
-        code: 'MIN100',
+        promo_code: 'MIN100',
         start_date: new Date(now.getTime() - 86400000),
         end_date: new Date(now.getTime() + 86400000),
         min_purchase_amount: 100000,

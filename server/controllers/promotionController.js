@@ -21,7 +21,7 @@ exports.getPromotionById = async (req, res, next) => {
 /** @route POST /api/promotions/validate */
 exports.validatePromoCode = async (req, res, next) => {
   try {
-    const { code, subtotal } = req.body;
+    const { code, subtotal } = req.method === 'GET' ? req.query : req.body;
     const data = await promotionService.validatePromoCode(code, subtotal);
     logger.info(`Promo code validated successfully in controller: ${code}`);
     res.json({ success: true, data });
