@@ -45,7 +45,7 @@ jobs:
 
   # Job 2: Build and test server
   server:
-    name: Build and Test Server
+    name: Check Server
     runs-on: ubuntu-latest
 
     services:
