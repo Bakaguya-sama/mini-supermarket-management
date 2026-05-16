@@ -36,8 +36,8 @@ async function teardownDB() {
 }
 
 async function clearCollections() {
-  const cols = [Account, Customer, Staff, Product, Cart, CartItem, Order];
-  await Promise.all(cols.map(m => m.deleteMany({})));
+  const modelNames = Object.keys(models);
+  await Promise.all(modelNames.map(name => models[name].deleteMany({})));
 }
 
 function getApp() {
@@ -59,6 +59,8 @@ function makeTokenForAccount(account) {
   return jwt.sign({ id: account._id.toString() }, JWT_SECRET, { expiresIn: '1h' });
 }
 
+const models = require('../models');
+
 module.exports = {
   setupDB,
   teardownDB,
@@ -66,5 +68,5 @@ module.exports = {
   getApp,
   createAccount,
   makeTokenForAccount,
-  models: { Account, Customer, Staff, Product, Cart, CartItem, Order }
+  models
 };
