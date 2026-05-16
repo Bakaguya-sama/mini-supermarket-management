@@ -21,7 +21,7 @@ beforeEach(async () => {
 test('TC01: POST /api/staff - creates staff with valid data', async () => {
   const res = await request(app)
     .post('/api/staff')
-    .send({ username: 'staff_new', email: 'staff_new@example.com', full_name: 'Staff New', position: 'Delivery', password: 'password123' });
+    .send({ username: 'staff_new', email: 'staff_new@example.com', full_name: 'Staff New', position: 'Delivery', password: 'test_user_auth_123' });
 
   expect(res.status).toBe(201);
   expect(res.body.success).toBe(true);
