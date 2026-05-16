@@ -29,6 +29,7 @@ describe('Promotion Integration Tests', () => {
     test('should return all promotions', async () => {
       await Promotion.create([
         {
+          name: 'Summer Sale',
           promo_code: 'SUMMER20',
           discount_value: 20,
           discount_type: 'percentage',
@@ -37,6 +38,7 @@ describe('Promotion Integration Tests', () => {
           is_active: true
         },
         {
+          name: 'Welcome Gift',
           promo_code: 'WELCOME10',
           discount_value: 100000,
           discount_type: 'fixed',
@@ -57,6 +59,7 @@ describe('Promotion Integration Tests', () => {
   describe('GET /api/promotions/applicable', () => {
     test('should return applicable promotions', async () => {
       await Promotion.create({
+        name: 'Active Promo',
         promo_code: 'ACTIVE',
         discount_value: 15,
         discount_type: 'percentage',
@@ -75,6 +78,7 @@ describe('Promotion Integration Tests', () => {
   describe('GET /api/promotions/:id', () => {
     test('should return a single promotion', async () => {
       const promo = await Promotion.create({
+        name: 'Single Promo',
         promo_code: 'SINGLE',
         discount_value: 25,
         discount_type: 'percentage',
@@ -94,6 +98,7 @@ describe('Promotion Integration Tests', () => {
   describe('POST /api/promotions/validate', () => {
     test('should validate applicable promo code', async () => {
       await Promotion.create({
+        name: 'Valid Promo',
         promo_code: 'VALID20',
         discount_value: 20,
         discount_type: 'percentage',
@@ -104,7 +109,7 @@ describe('Promotion Integration Tests', () => {
 
       const res = await request(app)
         .post('/api/promotions/validate')
-        .send({ promo_code: 'VALID20', total_amount: 500000 });
+        .send({ promo_code: 'VALID20', subtotal: 500000 });
 
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
@@ -112,6 +117,7 @@ describe('Promotion Integration Tests', () => {
 
     test('should reject expired promo code', async () => {
       await Promotion.create({
+        name: 'Expired Promo',
         promo_code: 'EXPIRED',
         discount_value: 20,
         discount_type: 'percentage',
@@ -122,7 +128,7 @@ describe('Promotion Integration Tests', () => {
 
       const res = await request(app)
         .post('/api/promotions/validate')
-        .send({ promo_code: 'EXPIRED', total_amount: 500000 });
+        .send({ promo_code: 'EXPIRED', subtotal: 500000 });
 
       expect([400, 404]).toContain(res.status);
     });
@@ -131,6 +137,7 @@ describe('Promotion Integration Tests', () => {
   describe('POST /api/promotions', () => {
     test('should create new promotion', async () => {
       const payload = {
+        name: 'New Promotion',
         promo_code: 'NEW50',
         discount_value: 50,
         discount_type: 'percentage',
@@ -153,6 +160,7 @@ describe('Promotion Integration Tests', () => {
   describe('PUT /api/promotions/:id', () => {
     test('should update promotion', async () => {
       const promo = await Promotion.create({
+        name: 'Update Promo',
         promo_code: 'UPDATE',
         discount_value: 10,
         discount_type: 'percentage',
@@ -174,6 +182,7 @@ describe('Promotion Integration Tests', () => {
   describe('DELETE /api/promotions/:id', () => {
     test('should delete promotion', async () => {
       const promo = await Promotion.create({
+        name: 'Delete Promo',
         promo_code: 'DELETE',
         discount_value: 30,
         discount_type: 'percentage',

@@ -21,7 +21,7 @@ test('TC01: POST /api/orders creates order from cart successfully', async () => 
   const acc = await Account.create({ username: 'ord1', email: 'ord1@example.com', role: 'customer', full_name: 'Ord1' });
   const customer = await models.Customer.create({ account_id: acc._id });
 
-  const product = await Product.create({ name: 'Soap', unit: 'pcs', price: 5000 });
+  const product = await Product.create({ name: 'Soap', unit: 'pcs', price: 5000, current_stock: 10 });
   const cart = await Cart.create({ customer_id: customer._id, subtotal: 5000, total: 5000 });
   const cartItem = await CartItem.create({ cart_id: cart._id, product_id: product._id, quantity: 1, unit_price: 5000, line_total: 5000 });
   cart.cartItems.push(cartItem._id);

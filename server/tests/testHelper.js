@@ -38,8 +38,13 @@ async function teardownDB() {
 
 async function clearCollections() {
   const modelNames = Object.keys(models);
+  console.log(`🧹 Clearing ${modelNames.length} collections: ${modelNames.join(', ')}`);
   for (const name of modelNames) {
-    await models[name].deleteMany({});
+    try {
+      await models[name].deleteMany({});
+    } catch (err) {
+      console.error(`❌ Failed to clear collection ${name}:`, err.message);
+    }
   }
 }
 

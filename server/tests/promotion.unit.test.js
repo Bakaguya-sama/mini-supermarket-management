@@ -50,7 +50,7 @@ describe('PromotionService - Unit Tests', () => {
         promo_code: 'OFF10',
         start_date: yesterday,
         end_date: tomorrow,
-        promotion_type: 'percentage',
+        discount_type: 'percentage',
         discount_value: 10,
         minimum_purchase_amount: 50000,
         max_discount_amount: 5000,
@@ -69,7 +69,7 @@ describe('PromotionService - Unit Tests', () => {
         promo_code: 'FIXED',
         start_date: new Date(now.getTime() - 86400000),
         end_date: new Date(now.getTime() + 86400000),
-        promotion_type: 'fixed_amount',
+        discount_type: 'fixed_amount',
         discount_value: 20000,
         minimum_purchase_amount: 0,
         isDelete: false

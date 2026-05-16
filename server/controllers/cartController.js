@@ -672,9 +672,9 @@ async function calculateCartTotals(cartId) {
     if (cart.applied_promo_id) {
       // Calculate discount based on promo type
       const promo = cart.applied_promo_id;
-      if (promo.promotion_type === 'percentage') {
+      if (promo.discount_type === 'percentage') {
         discounts = subtotal * (promo.discount_value / 100);
-      } else if (promo.promotion_type === 'fixed' || promo.promotion_type === 'fixed_amount') {
+      } else if (promo.discount_type === 'fixed' || promo.discount_type === 'fixed_amount') {
         discounts = promo.discount_value;
       }
       console.log(`🏷️  Promo applied: ${discounts}`);
