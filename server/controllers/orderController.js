@@ -1,6 +1,8 @@
+// server/controllers/orderController.js
 const orderService = require('../services/OrderService');
-const logger = require('../config/logger');
 const { traceCheckout } = require('../middleware/tracing');
+const logger = require('../config/logger');
+const redisClient = require('../config/redis');
 
 /**
  * @route   GET /api/orders
@@ -78,8 +80,6 @@ exports.getOrderStats = async (req, res, next) => {
   }
 };
 
-const redisClient = require('../config/redis');
-
 /**
  * @route   POST /api/orders
  * @desc    Create new order from cart
@@ -88,37 +88,38 @@ const redisClient = require('../config/redis');
 exports.createOrder = async (req, res, next) => {
   try {
     const { customer_id, cart_id } = req.body;
-    
-    const order = await traceCheckout(
-      customer_id,
-      cart_id,
-      async ({ setOrderAttributes }) => {
-        const newOrder = await orderService.createOrder(req.body);
-        
-        // Record telemetry metrics
-        setOrderAttributes({
-          itemCount: newOrder.items?.length || 0,
-          totalAmount: newOrder.total_amount || 0,
-          promoDiscount: newOrder.discount_amount || 0,
-          pointsRedeemed: newOrder.points_redeemed || 0
-        });
-        
-        // Xóa cache cart trong Redis để frontend hiển thị giỏ hàng trống
-        try {
-          if (cart_id) await redisClient.del(`cart:session:${cart_id}`);
-          if (customer_id) await redisClient.del(`cart:session:customer:${customer_id}`);
-        } catch (err) {
-          logger.warn(`Failed to clear cart cache after checkout: ${err.message}`);
-        }
-        
-        return newOrder;
+
+    // Wrap with Business Tracing
+    const result = await traceCheckout(customer_id, cart_id, async ({ setOrderAttributes }) => {
+      const orderResult = await orderService.createOrder(req.body);
+      
+      // Update trace attributes
+      setOrderAttributes({
+        itemCount: orderResult.itemCount,
+        totalAmount: orderResult.totalAmount,
+        promoDiscount: orderResult.promoDiscount,
+        pointsRedeemed: orderResult.pointsRedeemed
+      });
+
+      // Clear cart cache in Redis to show empty cart in frontend
+      try {
+        if (cart_id) await redisClient.del(`cart:session:${cart_id}`);
+        if (customer_id) await redisClient.del(`cart:session:customer:${customer_id}`);
+      } catch (err) {
+        logger.warn(`Failed to clear cart cache after checkout: ${err.message}`);
       }
-    );
+
+      return orderResult;
+    });
 
     res.status(201).json({
       success: true,
       message: 'Order created successfully',
-      data: order
+      data: { 
+        ...result.order.toObject(), 
+        invoice: result.invoice,
+        pointsEarned: result.pointsEarned
+      }
     });
   } catch (error) {
     next(error);

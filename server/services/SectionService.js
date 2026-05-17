@@ -68,7 +68,7 @@ class SectionService {
       isDelete: false,
     });
     
-    return { ...section, shelves };
+    return { ...section.toObject(), shelves };
   }
 
   async createSection(data) {

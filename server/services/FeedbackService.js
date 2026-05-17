@@ -1,6 +1,6 @@
 // server/services/FeedbackService.js
 const mongoose = require('mongoose');
-const { Customer, Staff } = require('../models');
+const { Customer, Staff, Order, OrderFeedback } = require('../models');
 const feedbackRepository = require('../repositories/FeedbackRepository');
 const customerRepository = require('../repositories/CustomerRepository');
 const staffRepository = require('../repositories/StaffRepository');
@@ -8,6 +8,11 @@ const { BadRequestError, NotFoundError } = require('../middleware/errorClasses')
 const logger = require('../config/logger');
 
 class FeedbackService {
+  _sanitizeText(value) {
+    if (typeof value !== 'string') return value;
+    return value.replace(/<[^>]*>/g, '').replace(/javascript:/gi, '').trim();
+  }
+
   _buildQuery({ category, status, customer_id }) {
     const query = { isDelete: false };
     if (category) query.category = category;
@@ -33,10 +38,14 @@ class FeedbackService {
   }
 
   async createFeedback(data) {
-    const { category, subject, detail, customer_id, rating, sentiment } = data;
+    const { category, subject, detail, customer_id, rating, sentiment, order_id } = data;
+
+    // Sanitize input
+    const sanitizedSubject = this._sanitizeText(subject);
+    const sanitizedDetail = this._sanitizeText(detail);
 
     // Validate required fields
-    if (!category || !subject || !customer_id) {
+    if (!category || !sanitizedSubject || !customer_id) {
       throw new BadRequestError('Please provide category, subject, and customer_id');
     }
 
@@ -55,26 +64,57 @@ class FeedbackService {
       throw new NotFoundError('Customer not found');
     }
 
+    // Validate order rating when order_id is provided
+    if (order_id && rating) {
+      this._validateObjectId(order_id);
+
+      const order = await Order.findById(order_id);
+      if (!order) {
+        throw new NotFoundError('Order not found');
+      }
+
+      if (order.status !== 'delivered') {
+        throw new BadRequestError('Order must be delivered before rating');
+      }
+
+      if (order.customer_id?.toString() !== customer_id.toString()) {
+        throw new BadRequestError('Order does not belong to this customer');
+      }
+    }
+
     // Create feedback
     const feedback = await feedbackRepository.create({
       category,
-      subject,
-      detail,
+      subject: sanitizedSubject,
+      detail: sanitizedDetail,
       customer_id,
-      rating: rating || null,
+      rating: order_id ? null : (rating || null),
       sentiment: sentiment || null,
       status: 'open',
       isDelete: false
     });
 
+    // Handle order feedback
+    if (order_id && rating) {
+      await OrderFeedback.create({
+        order_id,
+        customer_id,
+        feedback_id: feedback._id,
+        rating,
+        comment: sanitizedDetail || undefined
+      });
+    }
+
     // Populate feedback data
     const populatedFeedback = await feedbackRepository.findById(feedback._id);
 
     // Award bonus points for detailed feedback (>100 characters)
-    if (detail && detail.length > 100) {
+    let bonusPoints = 0;
+    if (sanitizedDetail && sanitizedDetail.length > 100) {
       await customerRepository.findByIdAndUpdate(customer_id, {
         $inc: { points_balance: 50 }
       });
+      bonusPoints = 50;
       logger.info(`Awarded 50 bonus points to customer ${customer_id} for detailed feedback`);
     }
 
@@ -82,7 +122,7 @@ class FeedbackService {
 
     return {
       feedback: populatedFeedback,
-      bonusPoints: detail && detail.length > 100 ? 50 : 0
+      bonusPoints
     };
   }
 

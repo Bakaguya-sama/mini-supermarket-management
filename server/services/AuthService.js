@@ -31,6 +31,14 @@ class AuthService {
   async registerCustomer(data) {
     const { username, email, password } = data;
 
+    if (!username || !email || !password) {
+      throw new BadRequestError('Username, email and password are required');
+    }
+
+    if (password.length < 6) {
+      throw new BadRequestError('Password must be at least 6 characters');
+    }
+
     // Check existing
     const existingUsername = await accountRepository.findByUsername(username);
     if (existingUsername) throw new BadRequestError('Username already exists');

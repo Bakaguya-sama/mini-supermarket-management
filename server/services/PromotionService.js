@@ -51,17 +51,17 @@ class PromotionService {
     if (new Date(promotion.start_date) > now) throw new BadRequestError('Mã khuyến mãi chưa bắt đầu áp dụng');
     if (new Date(promotion.end_date) < now) throw new BadRequestError('Mã khuyến mãi đã hết hạn');
 
-    if (subtotal !== undefined && promotion.min_purchase_amount > 0 && subtotal < promotion.min_purchase_amount) {
-      throw new BadRequestError(`Đơn hàng cần đạt tối thiểu ${promotion.min_purchase_amount} để áp dụng mã này`);
+    if (subtotal !== undefined && promotion.minimum_purchase_amount > 0 && subtotal < promotion.minimum_purchase_amount) {
+      throw new BadRequestError(`Đơn hàng cần đạt tối thiểu ${promotion.minimum_purchase_amount} để áp dụng mã này`);
     }
 
     let discountAmount = 0;
-    if (promotion.promotion_type === 'percentage') {
+    if (promotion.discount_type === 'percentage') {
       discountAmount = (subtotal * promotion.discount_value) / 100;
       if (promotion.max_discount_amount && discountAmount > promotion.max_discount_amount) {
         discountAmount = promotion.max_discount_amount;
       }
-    } else if (promotion.promotion_type === 'fixed_amount') {
+    } else if (promotion.discount_type === 'fixed_amount' || promotion.discount_type === 'fixed') {
       discountAmount = promotion.discount_value;
     }
 
@@ -82,7 +82,7 @@ class PromotionService {
     };
     
     if (subtotal !== undefined) {
-      query.min_purchase_amount = { $lte: Number(subtotal) };
+      query.minimum_purchase_amount = { $lte: Number(subtotal) };
     }
 
     return await promotionRepository.findAll(query);

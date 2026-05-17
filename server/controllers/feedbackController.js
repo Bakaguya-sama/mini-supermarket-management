@@ -14,7 +14,8 @@ exports.createFeedback = async (req, res, next) => {
       success: true,
       message: 'Feedback submitted successfully',
       data: feedback,
-      bonusPoints
+      bonusPoints,
+      reference_code: feedback._id
     });
   } catch (error) {
     next(error);

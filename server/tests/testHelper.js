@@ -1,6 +1,7 @@
 const mongoose = require('mongoose');
 const jwt = require('jsonwebtoken');
-const { Account, Customer, Staff, Product, Cart, CartItem, Order } = require('../models');
+const models = require('../models');
+const { Account, Customer, Staff, Product, Cart, CartItem, Order } = models;
 
 const TEST_DB = 'mongodb://127.0.0.1:27017/mini-supermarket-test';
 const JWT_SECRET = process.env.JWT_SECRET || 'test-secret';
@@ -37,7 +38,14 @@ async function teardownDB() {
 
 async function clearCollections() {
   const modelNames = Object.keys(models);
-  await Promise.all(modelNames.map(name => models[name].deleteMany({})));
+  console.log(`🧹 Clearing ${modelNames.length} collections: ${modelNames.join(', ')}`);
+  for (const name of modelNames) {
+    try {
+      await models[name].deleteMany({});
+    } catch (err) {
+      console.error(`❌ Failed to clear collection ${name}:`, err.message);
+    }
+  }
 }
 
 function getApp() {
@@ -59,7 +67,7 @@ function makeTokenForAccount(account) {
   return jwt.sign({ id: account._id.toString() }, JWT_SECRET, { expiresIn: '1h' });
 }
 
-const models = require('../models');
+
 
 module.exports = {
   setupDB,

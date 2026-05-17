@@ -217,7 +217,7 @@ const promotionSchema = new mongoose.Schema(
   {
     name: { type: String, required: true },
     description: { type: String },
-    promotion_type: { type: String, required: true },
+    discount_type: { type: String, required: true, enum: ["percentage", "fixed", "fixed_amount"] },
     discount_value: { type: Number },
     minimum_purchase_amount: { type: Number },
     promo_code: { type: String, unique: true, sparse: true },

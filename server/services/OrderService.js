@@ -1,6 +1,6 @@
 // server/services/OrderService.js
 const mongoose = require('mongoose');
-const { Order, OrderItem, Customer, Product, Cart, CartItem, DeliveryOrder, Staff, Invoice, InvoiceItem } = require('../models');
+const { Order, OrderItem, Customer, Product, Cart, CartItem, DeliveryOrder, Staff, Invoice, InvoiceItem, ProductBatch } = require('../models');
 const orderRepository = require('../repositories/OrderRepository');
 const customerRepository = require('../repositories/CustomerRepository');
 const invoiceRepository = require('../repositories/InvoiceRepository');
@@ -165,12 +165,14 @@ class OrderService {
 
     // Validate customer
     if (!customer_id) {
+      logger.warn('Order creation failed: Missing customer_id');
       throw new BadRequestError('Please provide customer ID');
     }
 
     this._validateObjectId(customer_id);
     const customer = await customerRepository.findById(customer_id);
     if (!customer) {
+      logger.warn(`Order creation failed: Customer ${customer_id} not found`);
       throw new NotFoundError('Customer not found');
     }
 
@@ -197,6 +199,7 @@ class OrderService {
     }
 
     if (cartItems.length === 0) {
+      logger.warn(`Order creation failed: Cart ${cart_id || 'active'} is empty`);
       throw new BadRequestError('Cart is empty');
     }
 
@@ -236,13 +239,60 @@ class OrderService {
     // UC21.3: Generate order identifiers
     const totalOrders = await orderRepository.countDocuments({ isDelete: false });
     const orderSequence = totalOrders + 1;
-    const orderNumber = `ORD-${Date.now()}`;
+    const orderNumber = `ORD-${Date.now()}-${Math.random().toString(36).substring(2, 7).toUpperCase()}`;
     const trackingNumber = `TRK-${String(orderSequence).padStart(6, '0')}`;
 
     logger.info(`Creating order ${orderNumber} with tracking ${trackingNumber}`);
 
-    // UC21.3: Create order (ACID transaction start)
+    // UC21.3: Create order (ACID transaction-like start)
     try {
+      // 1. ATOMIC STOCK DECREMENT (FIFO batches)
+      // Note: In a real production DB, this should be inside a MongoDB session transaction.
+      // Here we implement manual rollback logic if needed, or assume atomic updateOne.
+      
+      for (const item of cartItems) {
+        const qty = item.quantity;
+        const productId = item.product_id._id || item.product_id;
+
+        // A. Check and deduct from main Product current_stock
+        const productUpdate = await Product.updateOne(
+          { _id: productId, current_stock: { $gte: qty }, isDelete: false },
+          { $inc: { current_stock: -qty } }
+        );
+
+        if (productUpdate.modifiedCount === 0) {
+          throw new BadRequestError(`Product ${item.product_id.name || productId} is out of stock or insufficient quantity.`);
+        }
+
+        // B. Deduct from specific Batches using FIFO (earliest expiry first)
+        const batches = await ProductBatch.find({
+          product_id: productId,
+          quantity: { $gt: 0 },
+          isDelete: false
+        }).sort({ expiry_date: 1 });
+
+        let remainingToDeduct = qty;
+        for (const batch of batches) {
+          if (remainingToDeduct <= 0) break;
+
+          const deductQty = Math.min(batch.quantity, remainingToDeduct);
+          
+          const updateResult = await ProductBatch.updateOne(
+            { _id: batch._id, quantity: { $gte: deductQty } }, 
+            { $inc: { quantity: -deductQty } }
+          );
+
+          if (updateResult.modifiedCount > 0) {
+            remainingToDeduct -= deductQty;
+          }
+        }
+        
+        // If we have batches but couldn't deduct enough (data inconsistency), we log it
+        if (remainingToDeduct > 0 && batches.length > 0) {
+          logger.warn(`Batch inventory mismatch for product: ${productId}. Required: ${qty}, Remaining: ${remainingToDeduct}`);
+        }
+      }
+
       const order = await orderRepository.create({
         order_number: orderNumber,
         customer_id,
@@ -258,7 +308,7 @@ class OrderService {
       // Create order items
       const orderItemsData = cartItems.map(item => ({
         order_id: order._id,
-        product_id: item.product_id._id,
+        product_id: item.product_id._id || item.product_id,
         quantity: item.quantity,
         unit_price: item.unit_price,
         status: 'pending'
@@ -325,6 +375,7 @@ class OrderService {
       logger.info(`Updated customer total spent: ${customer.total_spent}`);
 
       // UC21.3: Create invoice for order (auto-generated on checkout)
+      let invoice = null;
       try {
         const invoiceNumber = `INV-${Date.now()}-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
         const invoiceSubtotal = totalAmount;
@@ -332,7 +383,7 @@ class OrderService {
         const invoiceTaxAmount = invoiceSubtotal * 0.09; // 9% tax
         const invoiceTotalAmount = actualAmountPaid + invoiceTaxAmount;
 
-        const invoice = await Invoice.create({
+        invoice = await Invoice.create({
           invoice_number: invoiceNumber,
           customer_id,
           order_id: order._id,
@@ -348,7 +399,7 @@ class OrderService {
         // Create invoice items
         const invoiceItemsData = cartItems.map(item => ({
           invoice_id: invoice._id,
-          product_id: item.product_id._id,
+          product_id: item.product_id._id || item.product_id,
           description: item.product_id?.name || '',
           quantity: item.quantity,
           unit_price: item.unit_price,
@@ -359,15 +410,25 @@ class OrderService {
         logger.info(`Invoice created: ${invoice._id}`);
       } catch (err) {
         logger.error(`Failed to create invoice: ${err.message}`);
-        // Don't fail order creation if invoice fails, but log warning
-        logger.warn(`Order ${orderNumber} created but invoice creation failed`);
+        // Don't fail order creation if invoice fails
       }
 
-      // UC21.3: Return populated order
+      // Return populated order and invoice info
       const populatedOrder = await orderRepository.findById(order._id);
-      return populatedOrder;
+      
+      // We return both so the controller can format the response
+      return {
+        order: populatedOrder,
+        invoice,
+        pointsRedeemed,
+        pointsEarned,
+        totalAmount,
+        promoDiscount,
+        itemCount: cartItems.length
+      };
     } catch (err) {
       logger.error(`Order creation failed: ${err.message}`);
+      if (err instanceof BadRequestError) throw err;
       throw new ConflictError(`Order creation failed: ${err.message}`);
     }
   }

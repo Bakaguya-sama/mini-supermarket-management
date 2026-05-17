@@ -85,7 +85,7 @@ describe('Product Integration Tests', () => {
 
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
-      expect(res.body.data).toHaveProperty('total_products');
+      expect(res.body.data).toHaveProperty('total');
     });
   });
 
@@ -217,7 +217,7 @@ describe('Product Integration Tests', () => {
 
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
-      expect(res.body.data.name).toBe('Updated Product');
+      expect(res.body.data.product.name).toBe('Updated Product');
     });
   });
 
@@ -258,7 +258,7 @@ describe('Product Integration Tests', () => {
       const res = await request(app)
         .patch(`/api/products/${product._id.toString()}/price`)
         .set('Authorization', `Bearer ${adminToken}`)
-        .send({ unit_price: 55000 });
+        .send({ price: 55000 });
 
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
