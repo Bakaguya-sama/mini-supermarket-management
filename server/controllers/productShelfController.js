@@ -76,7 +76,11 @@ exports.updateProductShelf = async (req, res, next) => {
 /** @route PUT /api/product-shelves/:id/move */
 exports.moveProductToShelf = async (req, res, next) => {
   try {
-    const { mapping, fromShelf, toShelf, quantity } = await productShelfService.moveProductToShelf(req.params.id, req.body.new_shelf_id);
+    // Accept either `to_shelf_id` or `new_shelf_id` from clients/tests
+    const newShelfId = req.body.to_shelf_id ?? req.body.new_shelf_id;
+    const fromShelfId = req.body.from_shelf_id;
+    const moveQuantity = req.body.quantity ?? req.body.qty ?? req.body.amount;
+    const { mapping, fromShelf, toShelf, quantity } = await productShelfService.moveProductToShelf(req.params.id, newShelfId, fromShelfId, moveQuantity);
     logger.info(`Product shelf moved successfully in controller: ${req.params.id}`);
     res.status(200).json({ success: true, message: `Successfully moved ${quantity} units from ${fromShelf} to ${toShelf}`, data: mapping });
   } catch (error) { next(error); }
@@ -94,10 +98,16 @@ exports.deleteProductShelf = async (req, res, next) => {
 /** @route POST /api/product-shelves/bulk/assign */
 exports.bulkAssignToShelf = async (req, res, next) => {
   try {
-    const { shelf_id, products } = req.body;
+    // Accept legacy shape: { product_ids: [...], quantity_per_product }
+    let { shelf_id, products } = req.body;
+    if ((!products || !products.length) && Array.isArray(req.body.product_ids)) {
+      const qty = req.body.quantity_per_product ?? req.body.quantity ?? 0;
+      products = req.body.product_ids.map(pid => ({ product_id: pid, quantity: qty }));
+      shelf_id = shelf_id ?? req.body.shelf_id;
+    }
     const results = await productShelfService.bulkAssignToShelf(shelf_id, products);
     logger.info(`Bulk assigned successfully in controller. Success: ${results.success.length}, Errors: ${results.errors.length}`);
-    res.status(results.errors.length > 0 ? 207 : 201).json({
+    res.status(results.errors.length > 0 ? 207 : 200).json({
       success: results.errors.length === 0,
       message: `Successfully assigned ${results.success.length} product(s). ${results.errors.length} error(s).`,
       data: results

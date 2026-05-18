@@ -71,7 +71,9 @@ exports.updateProductStock = async (req, res, next) => {
 /** @route PUT /api/product-stocks/:id/adjust */
 exports.adjustStockQuantity = async (req, res, next) => {
   try {
-    const { adjustment, reason } = req.body;
+    // Accept either `adjustment` or legacy `quantity_adjustment` from tests/clients
+    const adjustment = req.body.adjustment ?? req.body.quantity_adjustment;
+    const reason = req.body.reason;
     const data = await productStockService.adjustStockQuantity(req.params.id, adjustment, reason);
     logger.info(`Product stock adjusted successfully in controller: ${req.params.id}`);
     res.status(200).json({ success: true, message: 'Stock quantity adjusted successfully', data });
@@ -90,7 +92,9 @@ exports.deleteProductStock = async (req, res, next) => {
 /** @route PUT /api/product-stocks/bulk/update-status */
 exports.bulkUpdateStatus = async (req, res, next) => {
   try {
-    const { ids, status } = req.body;
+    // Accept either `ids` or legacy `stock_ids` from tests/clients
+    const ids = req.body.ids ?? req.body.stock_ids;
+    const status = req.body.status;
     const data = await productStockService.bulkUpdateStatus(ids, status);
     logger.info(`Product stocks bulk updated successfully in controller. Modified: ${data.modified}`);
     res.status(200).json({ success: true, message: `Updated ${data.modified} product stock record(s)`, data });
