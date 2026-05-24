@@ -48,6 +48,26 @@ async function writeCartCache(cart, customerId) {
  * @route   GET /api/carts/customer/:customerId
  * @access  Public
  */
+/**
+ * @openapi
+ * /api/carts/customer/{customerId}:
+ *   get:
+ *     tags: [cart]
+ *     summary: get Cart By Customer
+ *     operationId: getCartByCustomer
+ *     parameters:
+ *       - in: path
+ *         name: customerId
+ *         required: true
+ *         schema:
+ *           type: string
+ *           pattern: '^[0-9a-fA-F]{24}$'
+ *     responses:
+ *       200:
+ *         description: Thành công
+ *       400:
+ *         description: Dữ liệu không hợp lệ
+ */
 exports.getCartByCustomer = async (req, res) => {
   try {
     console.log(`🛒 Fetching cart for customer: ${req.params.customerId}`);
@@ -112,6 +132,19 @@ exports.getCartByCustomer = async (req, res) => {
  * @route   GET /api/carts
  * @access  Public
  */
+/**
+ * @openapi
+ * /api/carts/:
+ *   get:
+ *     tags: [cart]
+ *     summary: get All Carts
+ *     operationId: getAllCarts
+ *     responses:
+ *       200:
+ *         description: Thành công
+ *       400:
+ *         description: Dữ liệu không hợp lệ
+ */
 exports.getAllCarts = async (req, res) => {
   try {
     const { page = 1, limit = 10, status, search, minAmount, maxAmount } = req.query;
@@ -158,6 +191,26 @@ exports.getAllCarts = async (req, res) => {
  * @route   GET /api/carts/:id
  * @access  Public
  */
+/**
+ * @openapi
+ * /api/carts/{id}:
+ *   get:
+ *     tags: [cart]
+ *     summary: get Cart By Id
+ *     operationId: getCartById
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           pattern: '^[0-9a-fA-F]{24}$'
+ *     responses:
+ *       200:
+ *         description: Thành công
+ *       400:
+ *         description: Dữ liệu không hợp lệ
+ */
 exports.getCartById = async (req, res) => {
   try {
     const cart = await Cart.findById(req.params.id)
@@ -192,6 +245,32 @@ exports.getCartById = async (req, res) => {
  * @desc    Add item to cart
  * @route   POST /api/carts/:cartId/items
  * @access  Public
+ */
+/**
+ * @openapi
+ * /api/carts/{cartId}/items:
+ *   post:
+ *     tags: [cart]
+ *     summary: add Item To Cart
+ *     operationId: addItemToCart
+ *     parameters:
+ *       - in: path
+ *         name: cartId
+ *         required: true
+ *         schema:
+ *           type: string
+ *           pattern: '^[0-9a-fA-F]{24}$'
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *     responses:
+ *       201:
+ *         description: Tạo thành công
+ *       400:
+ *         description: Dữ liệu không hợp lệ
  */
 exports.addItemToCart = async (req, res) => {
   try {
@@ -286,6 +365,32 @@ exports.addItemToCart = async (req, res) => {
  * @route   PUT /api/carts/items/:itemId/quantity
  * @access  Public
  */
+/**
+ * @openapi
+ * /api/carts/items/{itemId}/quantity:
+ *   put:
+ *     tags: [cart]
+ *     summary: update Item Quantity
+ *     operationId: updateItemQuantity
+ *     parameters:
+ *       - in: path
+ *         name: itemId
+ *         required: true
+ *         schema:
+ *           type: string
+ *           pattern: '^[0-9a-fA-F]{24}$'
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *     responses:
+ *       200:
+ *         description: Thành công
+ *       400:
+ *         description: Dữ liệu không hợp lệ
+ */
 exports.updateItemQuantity = async (req, res) => {
   try {
     const { quantity } = req.body;
@@ -356,6 +461,32 @@ exports.updateItemQuantity = async (req, res) => {
  * @route   DELETE /api/carts/items/:itemId
  * @access  Public
  */
+/**
+ * @openapi
+ * /api/carts/items/{itemId}:
+ *   delete:
+ *     tags: [cart]
+ *     summary: remove Item From Cart
+ *     operationId: removeItemFromCart
+ *     parameters:
+ *       - in: path
+ *         name: itemId
+ *         required: true
+ *         schema:
+ *           type: string
+ *           pattern: '^[0-9a-fA-F]{24}$'
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *     responses:
+ *       200:
+ *         description: Thành công
+ *       400:
+ *         description: Dữ liệu không hợp lệ
+ */
 exports.removeItemFromCart = async (req, res) => {
   try {
     const cartItem = await CartItem.findById(req.params.itemId);
@@ -410,6 +541,32 @@ exports.removeItemFromCart = async (req, res) => {
  * @route   POST /api/carts/:cartId/apply-promo
  * @access  Public
  */
+/**
+ * @openapi
+ * /api/carts/{cartId}/apply-promo:
+ *   post:
+ *     tags: [cart]
+ *     summary: apply Promo
+ *     operationId: applyPromo
+ *     parameters:
+ *       - in: path
+ *         name: cartId
+ *         required: true
+ *         schema:
+ *           type: string
+ *           pattern: '^[0-9a-fA-F]{24}$'
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *     responses:
+ *       201:
+ *         description: Tạo thành công
+ *       400:
+ *         description: Dữ liệu không hợp lệ
+ */
 exports.applyPromo = async (req, res) => {
   try {
     const { promo_id } = req.body;
@@ -463,6 +620,32 @@ exports.applyPromo = async (req, res) => {
  * @route   DELETE /api/carts/:cartId/remove-promo
  * @access  Public
  */
+/**
+ * @openapi
+ * /api/carts/{cartId}/remove-promo:
+ *   delete:
+ *     tags: [cart]
+ *     summary: remove Promo
+ *     operationId: removePromo
+ *     parameters:
+ *       - in: path
+ *         name: cartId
+ *         required: true
+ *         schema:
+ *           type: string
+ *           pattern: '^[0-9a-fA-F]{24}$'
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *     responses:
+ *       200:
+ *         description: Thành công
+ *       400:
+ *         description: Dữ liệu không hợp lệ
+ */
 exports.removePromo = async (req, res) => {
   try {
     const cart = await Cart.findById(req.params.cartId);
@@ -505,6 +688,32 @@ exports.removePromo = async (req, res) => {
  * @desc    Clear cart (remove all items)
  * @route   DELETE /api/carts/:cartId/clear
  * @access  Public
+ */
+/**
+ * @openapi
+ * /api/carts/{cartId}/clear:
+ *   delete:
+ *     tags: [cart]
+ *     summary: clear Cart
+ *     operationId: clearCart
+ *     parameters:
+ *       - in: path
+ *         name: cartId
+ *         required: true
+ *         schema:
+ *           type: string
+ *           pattern: '^[0-9a-fA-F]{24}$'
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *     responses:
+ *       200:
+ *         description: Thành công
+ *       400:
+ *         description: Dữ liệu không hợp lệ
  */
 exports.clearCart = async (req, res) => {
   try {
@@ -551,6 +760,19 @@ exports.clearCart = async (req, res) => {
  * @route   GET /api/carts/stats
  * @access  Public
  */
+/**
+ * @openapi
+ * /api/carts/stats:
+ *   get:
+ *     tags: [cart]
+ *     summary: get Cart Stats
+ *     operationId: getCartStats
+ *     responses:
+ *       200:
+ *         description: Thành công
+ *       400:
+ *         description: Dữ liệu không hợp lệ
+ */
 exports.getCartStats = async (req, res) => {
   try {
     const totalCarts = await Cart.countDocuments();
@@ -586,6 +808,32 @@ exports.getCartStats = async (req, res) => {
  * @desc    Checkout cart (transition to checked_out)
  * @route   PATCH /api/carts/:cartId/checkout
  * @access  Public
+ */
+/**
+ * @openapi
+ * /api/carts/{cartId}/checkout:
+ *   patch:
+ *     tags: [cart]
+ *     summary: checkout Cart
+ *     operationId: checkoutCart
+ *     parameters:
+ *       - in: path
+ *         name: cartId
+ *         required: true
+ *         schema:
+ *           type: string
+ *           pattern: '^[0-9a-fA-F]{24}$'
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *     responses:
+ *       200:
+ *         description: Thành công
+ *       400:
+ *         description: Dữ liệu không hợp lệ
  */
 exports.checkoutCart = async (req, res) => {
   try {
@@ -694,3 +942,4 @@ async function calculateCartTotals(cartId) {
     console.error('❌ Error calculating cart totals:', error);
   }
 }
+

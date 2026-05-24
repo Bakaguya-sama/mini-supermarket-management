@@ -1,0 +1,123 @@
+openapi: 3.0.0
+info:
+  title: Mini Supermarket API
+  version: 1.0.0
+  description: API cho hệ thống quản lý siêu thị mini
+servers:
+  - url: 'http://localhost:5000'
+components:
+  schemas:
+    IdParam:
+      type: string
+      pattern: '^[0-9a-fA-F]{24}$'
+    PaginationQuery:
+      type: object
+      properties:
+        page:
+          type: integer
+          minimum: 1
+          default: 1
+        limit:
+          type: integer
+          minimum: 1
+          maximum: 100
+          default: 10
+    ErrorResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        message:
+          type: string
+          example: Validation failed
+paths:
+  /api/damaged-products/stats:
+    get:
+      tags:
+        - damagedProduct
+      summary: get Damaged Product Stats
+      operationId: getDamagedProductStats
+      responses:
+        '200':
+          description: Thành công
+        '400':
+          description: Dữ liệu không hợp lệ
+  '/api/damaged-products/product/{productId}':
+    get:
+      tags:
+        - damagedProduct
+      summary: get Damaged Products By Product Id
+      operationId: getDamagedProductsByProductId
+      parameters:
+        - in: path
+          name: productId
+          required: true
+          schema:
+            type: string
+            pattern: '^[0-9a-fA-F]{24}$'
+      responses:
+        '200':
+          description: Thành công
+        '400':
+          description: Dữ liệu không hợp lệ
+  '/api/damaged-products/{id}/adjust-inventory':
+    put:
+      tags:
+        - damagedProduct
+      summary: adjust Inventory For Damaged
+      operationId: adjustInventoryForDamaged
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            pattern: '^[0-9a-fA-F]{24}$'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: Thành công
+        '400':
+          description: Dữ liệu không hợp lệ
+  '/api/damaged-products/{id}/shelves':
+    get:
+      tags:
+        - damagedProduct
+      summary: get Damaged Product Shelves
+      operationId: getDamagedProductShelves
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            pattern: '^[0-9a-fA-F]{24}$'
+      responses:
+        '200':
+          description: Thành công
+        '400':
+          description: Dữ liệu không hợp lệ
+  /api/damaged-products/bulk/update-status:
+    put:
+      tags:
+        - damagedProduct
+      summary: bulk Update Status
+      operationId: bulkUpdateStatus
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: Thành công
+        '400':
+          description: Dữ liệu không hợp lệ
+tags: []

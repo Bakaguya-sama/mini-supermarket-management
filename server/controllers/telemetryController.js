@@ -1,5 +1,18 @@
 const { memoryExporter } = require('../config/tracer');
 
+/**
+ * @openapi
+ * /api/telemetry/traces:
+ *   get:
+ *     tags: [telemetry]
+ *     summary: get Traces
+ *     operationId: getTraces
+ *     responses:
+ *       200:
+ *         description: Thành công
+ *       400:
+ *         description: Dữ liệu không hợp lệ
+ */
 exports.getTraces = async (req, res) => {
   try {
     // Lấy tất cả Spans đã hoàn thành
@@ -39,6 +52,25 @@ exports.getTraces = async (req, res) => {
   }
 };
 
+/**
+ * @openapi
+ * /api/telemetry/traces:
+ *   delete:
+ *     tags: [telemetry]
+ *     summary: clear Traces
+ *     operationId: clearTraces
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *     responses:
+ *       200:
+ *         description: Thành công
+ *       400:
+ *         description: Dữ liệu không hợp lệ
+ */
 exports.clearTraces = async (req, res) => {
   try {
     memoryExporter.reset();
@@ -47,3 +79,4 @@ exports.clearTraces = async (req, res) => {
     res.status(500).json({ success: false, message: error.message });
   }
 };
+

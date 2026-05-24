@@ -78,6 +78,10 @@ const Layout = ({ children }) => {
       return "report";
     }
 
+    if (path.startsWith("/openapi-test-monitor")) {
+      return "openapi-test-monitor";
+    }
+
     //Section & Shelf
     if (path.startsWith("/shelves")) return "shelves";
 

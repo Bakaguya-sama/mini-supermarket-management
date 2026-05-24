@@ -9,6 +9,19 @@ const redisClient = require('../config/redis');
  * @desc    Get all orders with filters and pagination
  * @access  Public
  */
+/**
+ * @openapi
+ * /api/orders/:
+ *   get:
+ *     tags: [order]
+ *     summary: get All Orders
+ *     operationId: getAllOrders
+ *     responses:
+ *       200:
+ *         description: Thành công
+ *       400:
+ *         description: Dữ liệu không hợp lệ
+ */
 exports.getAllOrders = async (req, res, next) => {
   try {
     const { orders, total, page, pages } = await orderService.getAllOrders(req.query);
@@ -30,6 +43,26 @@ exports.getAllOrders = async (req, res, next) => {
  * @desc    Get order by ID
  * @access  Public
  */
+/**
+ * @openapi
+ * /api/orders/{id}:
+ *   get:
+ *     tags: [order]
+ *     summary: get Order By Id
+ *     operationId: getOrderById
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           pattern: '^[0-9a-fA-F]{24}$'
+ *     responses:
+ *       200:
+ *         description: Thành công
+ *       400:
+ *         description: Dữ liệu không hợp lệ
+ */
 exports.getOrderById = async (req, res, next) => {
   try {
     const order = await orderService.getOrderById(req.params.id);
@@ -46,6 +79,26 @@ exports.getOrderById = async (req, res, next) => {
  * @route   GET /api/orders/customer/:customerId
  * @desc    Get orders by customer
  * @access  Public
+ */
+/**
+ * @openapi
+ * /api/orders/customer/{customerId}:
+ *   get:
+ *     tags: [order]
+ *     summary: get Orders By Customer
+ *     operationId: getOrdersByCustomer
+ *     parameters:
+ *       - in: path
+ *         name: customerId
+ *         required: true
+ *         schema:
+ *           type: string
+ *           pattern: '^[0-9a-fA-F]{24}$'
+ *     responses:
+ *       200:
+ *         description: Thành công
+ *       400:
+ *         description: Dữ liệu không hợp lệ
  */
 exports.getOrdersByCustomer = async (req, res, next) => {
   try {
@@ -68,6 +121,19 @@ exports.getOrdersByCustomer = async (req, res, next) => {
  * @desc    Get order statistics
  * @access  Public
  */
+/**
+ * @openapi
+ * /api/orders/stats:
+ *   get:
+ *     tags: [order]
+ *     summary: get Order Stats
+ *     operationId: getOrderStats
+ *     responses:
+ *       200:
+ *         description: Thành công
+ *       400:
+ *         description: Dữ liệu không hợp lệ
+ */
 exports.getOrderStats = async (req, res, next) => {
   try {
     const stats = await orderService.getOrderStats();
@@ -84,6 +150,25 @@ exports.getOrderStats = async (req, res, next) => {
  * @route   POST /api/orders
  * @desc    Create new order from cart
  * @access  Public
+ */
+/**
+ * @openapi
+ * /api/orders/:
+ *   post:
+ *     tags: [order]
+ *     summary: create Order
+ *     operationId: createOrder
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *     responses:
+ *       201:
+ *         description: Tạo thành công
+ *       400:
+ *         description: Dữ liệu không hợp lệ
  */
 exports.createOrder = async (req, res, next) => {
   try {
@@ -131,6 +216,32 @@ exports.createOrder = async (req, res, next) => {
  * @desc    Update order
  * @access  Public
  */
+/**
+ * @openapi
+ * /api/orders/{id}:
+ *   put:
+ *     tags: [order]
+ *     summary: update Order
+ *     operationId: updateOrder
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           pattern: '^[0-9a-fA-F]{24}$'
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *     responses:
+ *       200:
+ *         description: Thành công
+ *       400:
+ *         description: Dữ liệu không hợp lệ
+ */
 exports.updateOrder = async (req, res, next) => {
   try {
     const order = await orderService.updateOrder(req.params.id, req.body);
@@ -148,6 +259,38 @@ exports.updateOrder = async (req, res, next) => {
  * @route   PATCH /api/orders/:id/items/:itemId/status
  * @desc    Update order item status
  * @access  Public
+ */
+/**
+ * @openapi
+ * /api/orders/{id}/items/{itemId}/status:
+ *   patch:
+ *     tags: [order]
+ *     summary: update Order Item Status
+ *     operationId: updateOrderItemStatus
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           pattern: '^[0-9a-fA-F]{24}$'
+ *       - in: path
+ *         name: itemId
+ *         required: true
+ *         schema:
+ *           type: string
+ *           pattern: '^[0-9a-fA-F]{24}$'
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *     responses:
+ *       200:
+ *         description: Thành công
+ *       400:
+ *         description: Dữ liệu không hợp lệ
  */
 exports.updateOrderItemStatus = async (req, res, next) => {
   try {
@@ -169,6 +312,32 @@ exports.updateOrderItemStatus = async (req, res, next) => {
  * @desc    Cancel order
  * @access  Public
  */
+/**
+ * @openapi
+ * /api/orders/{id}/cancel:
+ *   patch:
+ *     tags: [order]
+ *     summary: cancel Order
+ *     operationId: cancelOrder
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           pattern: '^[0-9a-fA-F]{24}$'
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *     responses:
+ *       200:
+ *         description: Thành công
+ *       400:
+ *         description: Dữ liệu không hợp lệ
+ */
 exports.cancelOrder = async (req, res, next) => {
   try {
     const order = await orderService.cancelOrder(req.params.id);
@@ -187,6 +356,32 @@ exports.cancelOrder = async (req, res, next) => {
  * @desc    Delete order (soft delete)
  * @access  Public
  */
+/**
+ * @openapi
+ * /api/orders/{id}:
+ *   delete:
+ *     tags: [order]
+ *     summary: delete Order
+ *     operationId: deleteOrder
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           pattern: '^[0-9a-fA-F]{24}$'
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *     responses:
+ *       200:
+ *         description: Thành công
+ *       400:
+ *         description: Dữ liệu không hợp lệ
+ */
 exports.deleteOrder = async (req, res, next) => {
   try {
     const order = await orderService.deleteOrder(req.params.id);
@@ -199,3 +394,4 @@ exports.deleteOrder = async (req, res, next) => {
     next(error);
   }
 };
+

@@ -59,6 +59,19 @@ exports.getAllShelves = async (req, res) => {
 
 // @desc    Get shelf statistics
 // @route   GET /api/shelves/stats
+/**
+ * @openapi
+ * /api/shelves/stats:
+ *   get:
+ *     tags: [shelf]
+ *     summary: get Shelf Stats
+ *     operationId: getShelfStats
+ *     responses:
+ *       200:
+ *         description: Thành công
+ *       400:
+ *         description: Dữ liệu không hợp lệ
+ */
 exports.getShelfStats = async (req, res) => {
   try {
     const totalShelves = await Shelf.countDocuments({ isDelete: false });
@@ -149,6 +162,25 @@ exports.getShelfById = async (req, res) => {
 
 // @desc    Get shelves by category
 // @route   GET /api/shelves/category/:category
+/**
+ * @openapi
+ * /api/shelves/category/{category}:
+ *   get:
+ *     tags: [shelf]
+ *     summary: get Shelves By Category
+ *     operationId: getShelvesByCategory
+ *     parameters:
+ *       - in: path
+ *         name: category
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Thành công
+ *       400:
+ *         description: Dữ liệu không hợp lệ
+ */
 exports.getShelvesByCategory = async (req, res) => {
   try {
     const shelves = await Shelf.find({
@@ -174,6 +206,19 @@ exports.getShelvesByCategory = async (req, res) => {
 
 // @desc    Get available shelves (not full)
 // @route   GET /api/shelves/available
+/**
+ * @openapi
+ * /api/shelves/available:
+ *   get:
+ *     tags: [shelf]
+ *     summary: get Available Shelves
+ *     operationId: getAvailableShelves
+ *     responses:
+ *       200:
+ *         description: Thành công
+ *       400:
+ *         description: Dữ liệu không hợp lệ
+ */
 exports.getAvailableShelves = async (req, res) => {
   try {
     const { category } = req.query;
@@ -356,6 +401,32 @@ exports.updateShelf = async (req, res) => {
 
 // @desc    Toggle shelf full status
 // @route   PUT /api/shelves/:id/toggle-full
+/**
+ * @openapi
+ * /api/shelves/{id}/toggle-full:
+ *   put:
+ *     tags: [shelf]
+ *     summary: toggle Shelf Full
+ *     operationId: toggleShelfFull
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           pattern: '^[0-9a-fA-F]{24}$'
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *     responses:
+ *       200:
+ *         description: Thành công
+ *       400:
+ *         description: Dữ liệu không hợp lệ
+ */
 exports.toggleShelfFull = async (req, res) => {
   try {
     const shelf = await Shelf.findById(req.params.id);
@@ -428,6 +499,26 @@ exports.deleteShelf = async (req, res) => {
 
 // @desc    Get shelf capacity info
 // @route   GET /api/shelves/:id/capacity
+/**
+ * @openapi
+ * /api/shelves/{id}/capacity:
+ *   get:
+ *     tags: [shelf]
+ *     summary: get Shelf Capacity
+ *     operationId: getShelfCapacity
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           pattern: '^[0-9a-fA-F]{24}$'
+ *     responses:
+ *       200:
+ *         description: Thành công
+ *       400:
+ *         description: Dữ liệu không hợp lệ
+ */
 exports.getShelfCapacity = async (req, res) => {
   try {
     const shelf = await Shelf.findById(req.params.id);
@@ -479,3 +570,4 @@ exports.getShelfCapacity = async (req, res) => {
     });
   }
 };
+

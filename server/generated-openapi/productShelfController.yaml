@@ -1,0 +1,134 @@
+openapi: 3.0.0
+info:
+  title: Mini Supermarket API
+  version: 1.0.0
+  description: API cho hệ thống quản lý siêu thị mini
+servers:
+  - url: 'http://localhost:5000'
+components:
+  schemas:
+    IdParam:
+      type: string
+      pattern: '^[0-9a-fA-F]{24}$'
+    PaginationQuery:
+      type: object
+      properties:
+        page:
+          type: integer
+          minimum: 1
+          default: 1
+        limit:
+          type: integer
+          minimum: 1
+          maximum: 100
+          default: 10
+    ErrorResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        message:
+          type: string
+          example: Validation failed
+paths:
+  /api/product-shelves/stats:
+    get:
+      tags:
+        - productShelf
+      summary: get Product Shelf Stats
+      operationId: getProductShelfStats
+      responses:
+        '200':
+          description: Thành công
+        '400':
+          description: Dữ liệu không hợp lệ
+  '/api/product-shelves/product/{productId}/shelves':
+    get:
+      tags:
+        - productShelf
+      summary: get Shelves By Product
+      operationId: getShelvesByProduct
+      parameters:
+        - in: path
+          name: productId
+          required: true
+          schema:
+            type: string
+            pattern: '^[0-9a-fA-F]{24}$'
+      responses:
+        '200':
+          description: Thành công
+        '400':
+          description: Dữ liệu không hợp lệ
+  '/api/product-shelves/shelf/{shelfId}/products':
+    get:
+      tags:
+        - productShelf
+      summary: get Products By Shelf
+      operationId: getProductsByShelf
+      parameters:
+        - in: path
+          name: shelfId
+          required: true
+          schema:
+            type: string
+            pattern: '^[0-9a-fA-F]{24}$'
+      responses:
+        '200':
+          description: Thành công
+        '400':
+          description: Dữ liệu không hợp lệ
+  '/api/product-shelves/{id}/move':
+    put:
+      tags:
+        - productShelf
+      summary: move Product To Shelf
+      operationId: moveProductToShelf
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            pattern: '^[0-9a-fA-F]{24}$'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: Thành công
+        '400':
+          description: Dữ liệu không hợp lệ
+  /api/product-shelves/bulk/assign:
+    post:
+      tags:
+        - productShelf
+      summary: bulk Assign To Shelf
+      operationId: bulkAssignToShelf
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '201':
+          description: Tạo thành công
+        '400':
+          description: Dữ liệu không hợp lệ
+  /api/product-shelves/for-damaged-record:
+    get:
+      tags:
+        - productShelf
+      summary: get Products For Damaged Record
+      operationId: getProductsForDamagedRecord
+      responses:
+        '200':
+          description: Thành công
+        '400':
+          description: Dữ liệu không hợp lệ
+tags: []

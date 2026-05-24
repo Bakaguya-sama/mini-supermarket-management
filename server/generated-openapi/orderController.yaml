@@ -1,0 +1,209 @@
+openapi: 3.0.0
+info:
+  title: Mini Supermarket API
+  version: 1.0.0
+  description: API cho hệ thống quản lý siêu thị mini
+servers:
+  - url: 'http://localhost:5000'
+components:
+  schemas:
+    IdParam:
+      type: string
+      pattern: '^[0-9a-fA-F]{24}$'
+    PaginationQuery:
+      type: object
+      properties:
+        page:
+          type: integer
+          minimum: 1
+          default: 1
+        limit:
+          type: integer
+          minimum: 1
+          maximum: 100
+          default: 10
+    ErrorResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        message:
+          type: string
+          example: Validation failed
+paths:
+  /api/orders/:
+    get:
+      tags:
+        - order
+      summary: get All Orders
+      operationId: getAllOrders
+      responses:
+        '200':
+          description: Thành công
+        '400':
+          description: Dữ liệu không hợp lệ
+    post:
+      tags:
+        - order
+      summary: create Order
+      operationId: createOrder
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '201':
+          description: Tạo thành công
+        '400':
+          description: Dữ liệu không hợp lệ
+  '/api/orders/{id}':
+    get:
+      tags:
+        - order
+      summary: get Order By Id
+      operationId: getOrderById
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            pattern: '^[0-9a-fA-F]{24}$'
+      responses:
+        '200':
+          description: Thành công
+        '400':
+          description: Dữ liệu không hợp lệ
+    put:
+      tags:
+        - order
+      summary: update Order
+      operationId: updateOrder
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            pattern: '^[0-9a-fA-F]{24}$'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: Thành công
+        '400':
+          description: Dữ liệu không hợp lệ
+    delete:
+      tags:
+        - order
+      summary: delete Order
+      operationId: deleteOrder
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            pattern: '^[0-9a-fA-F]{24}$'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: Thành công
+        '400':
+          description: Dữ liệu không hợp lệ
+  '/api/orders/customer/{customerId}':
+    get:
+      tags:
+        - order
+      summary: get Orders By Customer
+      operationId: getOrdersByCustomer
+      parameters:
+        - in: path
+          name: customerId
+          required: true
+          schema:
+            type: string
+            pattern: '^[0-9a-fA-F]{24}$'
+      responses:
+        '200':
+          description: Thành công
+        '400':
+          description: Dữ liệu không hợp lệ
+  /api/orders/stats:
+    get:
+      tags:
+        - order
+      summary: get Order Stats
+      operationId: getOrderStats
+      responses:
+        '200':
+          description: Thành công
+        '400':
+          description: Dữ liệu không hợp lệ
+  '/api/orders/{id}/items/{itemId}/status':
+    patch:
+      tags:
+        - order
+      summary: update Order Item Status
+      operationId: updateOrderItemStatus
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            pattern: '^[0-9a-fA-F]{24}$'
+        - in: path
+          name: itemId
+          required: true
+          schema:
+            type: string
+            pattern: '^[0-9a-fA-F]{24}$'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: Thành công
+        '400':
+          description: Dữ liệu không hợp lệ
+  '/api/orders/{id}/cancel':
+    patch:
+      tags:
+        - order
+      summary: cancel Order
+      operationId: cancelOrder
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            pattern: '^[0-9a-fA-F]{24}$'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: Thành công
+        '400':
+          description: Dữ liệu không hợp lệ
+tags: []

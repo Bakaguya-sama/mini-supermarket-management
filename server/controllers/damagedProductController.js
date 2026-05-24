@@ -11,6 +11,19 @@ exports.getAllDamagedProducts = async (req, res, next) => {
 };
 
 /** @route GET /api/damaged-products/stats */
+/**
+ * @openapi
+ * /api/damaged-products/stats:
+ *   get:
+ *     tags: [damagedProduct]
+ *     summary: get Damaged Product Stats
+ *     operationId: getDamagedProductStats
+ *     responses:
+ *       200:
+ *         description: Thành công
+ *       400:
+ *         description: Dữ liệu không hợp lệ
+ */
 exports.getDamagedProductStats = async (req, res, next) => {
   try {
     const data = await damagedProductService.getDamagedProductStats();
@@ -27,6 +40,26 @@ exports.getDamagedProductById = async (req, res, next) => {
 };
 
 /** @route GET /api/damaged-products/product/:productId */
+/**
+ * @openapi
+ * /api/damaged-products/product/{productId}:
+ *   get:
+ *     tags: [damagedProduct]
+ *     summary: get Damaged Products By Product Id
+ *     operationId: getDamagedProductsByProductId
+ *     parameters:
+ *       - in: path
+ *         name: productId
+ *         required: true
+ *         schema:
+ *           type: string
+ *           pattern: '^[0-9a-fA-F]{24}$'
+ *     responses:
+ *       200:
+ *         description: Thành công
+ *       400:
+ *         description: Dữ liệu không hợp lệ
+ */
 exports.getDamagedProductsByProductId = async (req, res, next) => {
   try {
     const data = await damagedProductService.getDamagedProductsByProductId(req.params.productId);
@@ -59,6 +92,32 @@ exports.updateDamagedProduct = async (req, res, next) => {
 };
 
 /** @route PUT /api/damaged-products/:id/adjust-inventory */
+/**
+ * @openapi
+ * /api/damaged-products/{id}/adjust-inventory:
+ *   put:
+ *     tags: [damagedProduct]
+ *     summary: adjust Inventory For Damaged
+ *     operationId: adjustInventoryForDamaged
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           pattern: '^[0-9a-fA-F]{24}$'
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *     responses:
+ *       200:
+ *         description: Thành công
+ *       400:
+ *         description: Dữ liệu không hợp lệ
+ */
 exports.adjustInventoryForDamaged = async (req, res, next) => {
   try {
     const data = await damagedProductService.adjustInventoryForDamaged(req.params.id);
@@ -77,6 +136,26 @@ exports.deleteDamagedProduct = async (req, res, next) => {
 };
 
 /** @route GET /api/damaged-products/:id/shelves */
+/**
+ * @openapi
+ * /api/damaged-products/{id}/shelves:
+ *   get:
+ *     tags: [damagedProduct]
+ *     summary: get Damaged Product Shelves
+ *     operationId: getDamagedProductShelves
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           pattern: '^[0-9a-fA-F]{24}$'
+ *     responses:
+ *       200:
+ *         description: Thành công
+ *       400:
+ *         description: Dữ liệu không hợp lệ
+ */
 exports.getDamagedProductShelves = async (req, res, next) => {
   try {
     const data = await damagedProductService.getDamagedProductShelves(req.params.id);
@@ -85,6 +164,25 @@ exports.getDamagedProductShelves = async (req, res, next) => {
 };
 
 /** @route PUT /api/damaged-products/bulk/update-status */
+/**
+ * @openapi
+ * /api/damaged-products/bulk/update-status:
+ *   put:
+ *     tags: [damagedProduct]
+ *     summary: bulk Update Status
+ *     operationId: bulkUpdateStatus
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *     responses:
+ *       200:
+ *         description: Thành công
+ *       400:
+ *         description: Dữ liệu không hợp lệ
+ */
 exports.bulkUpdateStatus = async (req, res, next) => {
   try {
     const result = await damagedProductService.bulkUpdateStatus(req.body.ids, req.body.status);
@@ -92,3 +190,4 @@ exports.bulkUpdateStatus = async (req, res, next) => {
     res.status(200).json({ success: true, message: `Updated ${result.modifiedCount} damaged product(s)`, data: { matched: result.matchedCount, modified: result.modifiedCount } });
   } catch (error) { next(error); }
 };
+

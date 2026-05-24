@@ -16,6 +16,7 @@ import {
   FaClipboardList,
   FaHistory,
   FaFileInvoice,
+  FaFlask,
 } from "react-icons/fa";
 import { MdBrokenImage, MdShelves } from "react-icons/md";
 import { FaUserGroup } from "react-icons/fa6";
@@ -231,6 +232,12 @@ const Sidebar = ({ activeItem, onItemClick, userRole = "manager" }) => {
             label: "System Monitor",
             icon: <MdShelves />,
             path: "/system-monitor",
+          },
+          {
+            id: "openapi-test-monitor",
+            label: "API Test Monitor",
+            icon: <FaFlask />,
+            path: "/openapi-test-monitor",
           },
           {
             id: "profile",

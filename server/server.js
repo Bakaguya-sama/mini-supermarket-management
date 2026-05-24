@@ -193,6 +193,7 @@ app.use("/api/product-batches", require("./routes/productBatchRoutes"));
 app.use("/api/promotions", require("./routes/promotionRoutes"));
 app.use("/api/feedbacks", require("./routes/feedbackRoutes"));
 app.use("/api/telemetry", require("./routes/telemetryRoutes")); // API Demo Telemetry
+app.use("/api/test-generation", require("./routes/testGenerationMonitorRoutes"));
 
 // Global Error Handling Middleware
 const errorHandler = require("./middleware/errorHandler");

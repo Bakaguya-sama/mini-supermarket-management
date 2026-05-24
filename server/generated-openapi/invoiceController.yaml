@@ -1,0 +1,190 @@
+openapi: 3.0.0
+info:
+  title: Mini Supermarket API
+  version: 1.0.0
+  description: API cho hệ thống quản lý siêu thị mini
+servers:
+  - url: 'http://localhost:5000'
+components:
+  schemas:
+    IdParam:
+      type: string
+      pattern: '^[0-9a-fA-F]{24}$'
+    PaginationQuery:
+      type: object
+      properties:
+        page:
+          type: integer
+          minimum: 1
+          default: 1
+        limit:
+          type: integer
+          minimum: 1
+          maximum: 100
+          default: 10
+    ErrorResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        message:
+          type: string
+          example: Validation failed
+paths:
+  /api/invoices/:
+    get:
+      tags:
+        - invoice
+      summary: get All Invoices
+      operationId: getAllInvoices
+      responses:
+        '200':
+          description: Thành công
+        '400':
+          description: Dữ liệu không hợp lệ
+    post:
+      tags:
+        - invoice
+      summary: create Invoice
+      operationId: createInvoice
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '201':
+          description: Tạo thành công
+        '400':
+          description: Dữ liệu không hợp lệ
+  '/api/invoices/{id}':
+    get:
+      tags:
+        - invoice
+      summary: get Invoice By Id
+      operationId: getInvoiceById
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            pattern: '^[0-9a-fA-F]{24}$'
+      responses:
+        '200':
+          description: Thành công
+        '400':
+          description: Dữ liệu không hợp lệ
+    put:
+      tags:
+        - invoice
+      summary: update Invoice
+      operationId: updateInvoice
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            pattern: '^[0-9a-fA-F]{24}$'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: Thành công
+        '400':
+          description: Dữ liệu không hợp lệ
+    delete:
+      tags:
+        - invoice
+      summary: delete Invoice
+      operationId: deleteInvoice
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            pattern: '^[0-9a-fA-F]{24}$'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: Thành công
+        '400':
+          description: Dữ liệu không hợp lệ
+  '/api/invoices/customer/{customerId}':
+    get:
+      tags:
+        - invoice
+      summary: get Invoices By Customer
+      operationId: getInvoicesByCustomer
+      parameters:
+        - in: path
+          name: customerId
+          required: true
+          schema:
+            type: string
+            pattern: '^[0-9a-fA-F]{24}$'
+      responses:
+        '200':
+          description: Thành công
+        '400':
+          description: Dữ liệu không hợp lệ
+  /api/invoices/stats:
+    get:
+      tags:
+        - invoice
+      summary: get Invoice Stats
+      operationId: getInvoiceStats
+      responses:
+        '200':
+          description: Thành công
+        '400':
+          description: Dữ liệu không hợp lệ
+  '/api/invoices/{id}/mark-paid':
+    patch:
+      tags:
+        - invoice
+      summary: mark As Paid
+      operationId: markAsPaid
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            pattern: '^[0-9a-fA-F]{24}$'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: Thành công
+        '400':
+          description: Dữ liệu không hợp lệ
+  /api/invoices/filter/unpaid:
+    get:
+      tags:
+        - invoice
+      summary: get Unpaid Invoices
+      operationId: getUnpaidInvoices
+      responses:
+        '200':
+          description: Thành công
+        '400':
+          description: Dữ liệu không hợp lệ
+tags: []

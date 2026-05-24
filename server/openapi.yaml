@@ -1,0 +1,2694 @@
+openapi: 3.0.0
+info:
+  title: Mini Supermarket API
+  version: 1.0.0
+  description: API cho hệ thống quản lý siêu thị mini
+servers:
+  - url: 'http://localhost:5000'
+components:
+  schemas:
+    IdParam:
+      type: string
+      pattern: '^[0-9a-fA-F]{24}$'
+    PaginationQuery:
+      type: object
+      properties:
+        page:
+          type: integer
+          minimum: 1
+          default: 1
+        limit:
+          type: integer
+          minimum: 1
+          maximum: 100
+          default: 10
+    ErrorResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        message:
+          type: string
+          example: Validation failed
+paths:
+  /api/auth/register/customer:
+    post:
+      tags:
+        - auth
+      summary: register Customer
+      operationId: registerCustomer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '201':
+          description: Tạo thành công
+        '400':
+          description: Dữ liệu không hợp lệ
+  /api/auth/register/staff:
+    post:
+      tags:
+        - auth
+      summary: register Staff
+      operationId: registerStaff
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '201':
+          description: Tạo thành công
+        '400':
+          description: Dữ liệu không hợp lệ
+  /api/auth/login:
+    post:
+      tags:
+        - auth
+      summary: login
+      operationId: login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '201':
+          description: Tạo thành công
+        '400':
+          description: Dữ liệu không hợp lệ
+  /api/auth/me:
+    get:
+      tags:
+        - auth
+      summary: get Me
+      operationId: getMe
+      responses:
+        '200':
+          description: Thành công
+        '400':
+          description: Dữ liệu không hợp lệ
+  /api/auth/update-profile:
+    put:
+      tags:
+        - auth
+      summary: update Profile
+      operationId: updateProfile
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: Thành công
+        '400':
+          description: Dữ liệu không hợp lệ
+  /api/auth/change-password:
+    put:
+      tags:
+        - auth
+      summary: change Password
+      operationId: changePassword
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: Thành công
+        '400':
+          description: Dữ liệu không hợp lệ
+  /api/auth/verify-token:
+    post:
+      tags:
+        - auth
+      summary: verify Token
+      operationId: verifyToken
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '201':
+          description: Tạo thành công
+        '400':
+          description: Dữ liệu không hợp lệ
+  '/api/carts/customer/{customerId}':
+    get:
+      tags:
+        - cart
+      summary: get Cart By Customer
+      operationId: getCartByCustomer
+      parameters:
+        - in: path
+          name: customerId
+          required: true
+          schema:
+            type: string
+            pattern: '^[0-9a-fA-F]{24}$'
+      responses:
+        '200':
+          description: Thành công
+        '400':
+          description: Dữ liệu không hợp lệ
+  /api/carts/:
+    get:
+      tags:
+        - cart
+      summary: get All Carts
+      operationId: getAllCarts
+      responses:
+        '200':
+          description: Thành công
+        '400':
+          description: Dữ liệu không hợp lệ
+  '/api/carts/{id}':
+    get:
+      tags:
+        - cart
+      summary: get Cart By Id
+      operationId: getCartById
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            pattern: '^[0-9a-fA-F]{24}$'
+      responses:
+        '200':
+          description: Thành công
+        '400':
+          description: Dữ liệu không hợp lệ
+  '/api/carts/{cartId}/items':
+    post:
+      tags:
+        - cart
+      summary: add Item To Cart
+      operationId: addItemToCart
+      parameters:
+        - in: path
+          name: cartId
+          required: true
+          schema:
+            type: string
+            pattern: '^[0-9a-fA-F]{24}$'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '201':
+          description: Tạo thành công
+        '400':
+          description: Dữ liệu không hợp lệ
+  '/api/carts/items/{itemId}/quantity':
+    put:
+      tags:
+        - cart
+      summary: update Item Quantity
+      operationId: updateItemQuantity
+      parameters:
+        - in: path
+          name: itemId
+          required: true
+          schema:
+            type: string
+            pattern: '^[0-9a-fA-F]{24}$'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: Thành công
+        '400':
+          description: Dữ liệu không hợp lệ
+  '/api/carts/items/{itemId}':
+    delete:
+      tags:
+        - cart
+      summary: remove Item From Cart
+      operationId: removeItemFromCart
+      parameters:
+        - in: path
+          name: itemId
+          required: true
+          schema:
+            type: string
+            pattern: '^[0-9a-fA-F]{24}$'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: Thành công
+        '400':
+          description: Dữ liệu không hợp lệ
+  '/api/carts/{cartId}/apply-promo':
+    post:
+      tags:
+        - cart
+      summary: apply Promo
+      operationId: applyPromo
+      parameters:
+        - in: path
+          name: cartId
+          required: true
+          schema:
+            type: string
+            pattern: '^[0-9a-fA-F]{24}$'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '201':
+          description: Tạo thành công
+        '400':
+          description: Dữ liệu không hợp lệ
+  '/api/carts/{cartId}/remove-promo':
+    delete:
+      tags:
+        - cart
+      summary: remove Promo
+      operationId: removePromo
+      parameters:
+        - in: path
+          name: cartId
+          required: true
+          schema:
+            type: string
+            pattern: '^[0-9a-fA-F]{24}$'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: Thành công
+        '400':
+          description: Dữ liệu không hợp lệ
+  '/api/carts/{cartId}/clear':
+    delete:
+      tags:
+        - cart
+      summary: clear Cart
+      operationId: clearCart
+      parameters:
+        - in: path
+          name: cartId
+          required: true
+          schema:
+            type: string
+            pattern: '^[0-9a-fA-F]{24}$'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: Thành công
+        '400':
+          description: Dữ liệu không hợp lệ
+  /api/carts/stats:
+    get:
+      tags:
+        - cart
+      summary: get Cart Stats
+      operationId: getCartStats
+      responses:
+        '200':
+          description: Thành công
+        '400':
+          description: Dữ liệu không hợp lệ
+  '/api/carts/{cartId}/checkout':
+    patch:
+      tags:
+        - cart
+      summary: checkout Cart
+      operationId: checkoutCart
+      parameters:
+        - in: path
+          name: cartId
+          required: true
+          schema:
+            type: string
+            pattern: '^[0-9a-fA-F]{24}$'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: Thành công
+        '400':
+          description: Dữ liệu không hợp lệ
+  /api/customers:
+    get:
+      tags:
+        - customer
+      summary: Get all customers with pagination and filtering
+      operationId: getAllCustomers
+      parameters:
+        - in: query
+          name: page
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+          description: Page number (1-indexed)
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 10
+          description: Records per page
+        - in: query
+          name: status
+          schema:
+            type: string
+            enum:
+              - active
+              - inactive
+              - pending
+          description: Customer status filter
+      responses:
+        '200':
+          description: Successfully retrieved customers
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  count:
+                    type: integer
+                  total:
+                    type: integer
+                  page:
+                    type: integer
+                  pages:
+                    type: integer
+                  data:
+                    type: array
+        '400':
+          description: Invalid query parameters
+    post:
+      tags:
+        - customer
+      summary: Create a new customer
+      operationId: createCustomer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  minLength: 2
+                  maxLength: 100
+                  example: Nguyen Van A
+                email:
+                  type: string
+                  format: email
+                  example: customer@example.com
+                phone:
+                  type: string
+                  pattern: '^[0-9]{10}$'
+                  example: 0912345678
+                address:
+                  type: string
+                  minLength: 5
+                  maxLength: 500
+                  example: 123 Main St
+                membershipType:
+                  type: string
+                  enum:
+                    - Standard
+                    - Gold
+                    - Silver
+                  example: Standard
+                age:
+                  type: integer
+                  minimum: 18
+                  maximum: 120
+                  example: 30
+                status:
+                  type: string
+                  enum:
+                    - active
+                    - inactive
+                    - pending
+                  default: active
+              required:
+                - name
+                - email
+                - phone
+      responses:
+        '201':
+          description: Customer created successfully
+        '400':
+          description: Invalid customer data
+        '422':
+          description: Validation error
+  '/api/customers/{id}':
+    get:
+      tags:
+        - customer
+      summary: Get customer by ID
+      operationId: getCustomerById
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            pattern: '^[0-9a-fA-F]{24}$'
+            example: 507f1f77bcf86cd799439011
+          description: MongoDB customer ID
+      responses:
+        '200':
+          description: Customer found
+        '400':
+          description: Invalid customer ID format
+        '404':
+          description: Customer not found
+    put:
+      tags:
+        - customer
+      summary: Update customer details
+      operationId: updateCustomer
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            pattern: '^[0-9a-fA-F]{24}$'
+            example: 507f1f77bcf86cd799439011
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  minLength: 2
+                  maxLength: 100
+                email:
+                  type: string
+                  format: email
+                phone:
+                  type: string
+                  pattern: '^[0-9]{10}$'
+                address:
+                  type: string
+                  minLength: 5
+                  maxLength: 500
+                membershipType:
+                  type: string
+                  enum:
+                    - Standard
+                    - Gold
+                    - Silver
+                age:
+                  type: integer
+                  minimum: 18
+                  maximum: 120
+                status:
+                  type: string
+                  enum:
+                    - active
+                    - inactive
+                    - pending
+      responses:
+        '200':
+          description: Customer updated successfully
+        '400':
+          description: Invalid customer data
+        '404':
+          description: Customer not found
+        '422':
+          description: Validation error
+    delete:
+      tags:
+        - customer
+      summary: Delete customer
+      operationId: deleteCustomer
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            pattern: '^[0-9a-fA-F]{24}$'
+            example: 507f1f77bcf86cd799439011
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                reason:
+                  type: string
+                  minLength: 5
+                  maxLength: 500
+                  example: Customer requested deletion
+      responses:
+        '200':
+          description: Customer deleted successfully
+        '400':
+          description: Invalid customer ID
+        '404':
+          description: Customer not found
+  '/api/customers/account/{accountId}':
+    get:
+      tags:
+        - customer
+      summary: Get customer by account ID
+      operationId: getCustomerByAccount
+      parameters:
+        - in: path
+          name: accountId
+          required: true
+          schema:
+            type: string
+            pattern: '^[0-9a-fA-F]{24}$'
+            example: 507f1f77bcf86cd799439011
+          description: MongoDB account ID
+      responses:
+        '200':
+          description: Customer found by account
+        '400':
+          description: Invalid account ID format
+        '404':
+          description: Customer not found
+  /api/customers/stats:
+    get:
+      tags:
+        - customer
+      summary: Get customer statistics
+      operationId: getCustomerStats
+      responses:
+        '200':
+          description: Customer statistics retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: object
+                    properties:
+                      totalCustomers:
+                        type: integer
+                        minimum: 0
+                      activeCustomers:
+                        type: integer
+                        minimum: 0
+                      totalSpent:
+                        type: number
+                        minimum: 0
+        '400':
+          description: Error retrieving statistics
+  '/api/customers/{id}/points':
+    patch:
+      tags:
+        - customer
+      summary: Update customer points
+      operationId: updatePoints
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            pattern: '^[0-9a-fA-F]{24}$'
+            example: 507f1f77bcf86cd799439011
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                pointsToAdd:
+                  type: integer
+                  minimum: -10000
+                  maximum: 10000
+                  example: 100
+              required:
+                - pointsToAdd
+      responses:
+        '200':
+          description: Points updated successfully
+        '400':
+          description: Invalid points value
+        '404':
+          description: Customer not found
+        '422':
+          description: Validation error
+  '/api/customers/{id}/spent':
+    patch:
+      tags:
+        - customer
+      summary: Update total spent amount
+      operationId: updateTotalSpent
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            pattern: '^[0-9a-fA-F]{24}$'
+            example: 507f1f77bcf86cd799439011
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                amount:
+                  type: number
+                  minimum: 0
+                  maximum: 999999999
+                  example: 150.5
+              required:
+                - amount
+      responses:
+        '200':
+          description: Total spent updated successfully
+        '400':
+          description: Invalid amount
+        '404':
+          description: Customer not found
+        '422':
+          description: Validation error
+  '/api/customers/{id}/orders':
+    get:
+      tags:
+        - customer
+      summary: Get customer orders
+      operationId: getCustomerOrders
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            pattern: '^[0-9a-fA-F]{24}$'
+            example: 507f1f77bcf86cd799439011
+        - in: query
+          name: page
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 10
+        - in: query
+          name: status
+          schema:
+            type: string
+            enum:
+              - pending
+              - completed
+              - cancelled
+      responses:
+        '200':
+          description: Customer orders retrieved
+        '400':
+          description: Invalid query parameters
+        '404':
+          description: Customer not found
+  /api/damaged-products/stats:
+    get:
+      tags:
+        - damagedProduct
+      summary: get Damaged Product Stats
+      operationId: getDamagedProductStats
+      responses:
+        '200':
+          description: Thành công
+        '400':
+          description: Dữ liệu không hợp lệ
+  '/api/damaged-products/product/{productId}':
+    get:
+      tags:
+        - damagedProduct
+      summary: get Damaged Products By Product Id
+      operationId: getDamagedProductsByProductId
+      parameters:
+        - in: path
+          name: productId
+          required: true
+          schema:
+            type: string
+            pattern: '^[0-9a-fA-F]{24}$'
+      responses:
+        '200':
+          description: Thành công
+        '400':
+          description: Dữ liệu không hợp lệ
+  '/api/damaged-products/{id}/adjust-inventory':
+    put:
+      tags:
+        - damagedProduct
+      summary: adjust Inventory For Damaged
+      operationId: adjustInventoryForDamaged
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            pattern: '^[0-9a-fA-F]{24}$'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: Thành công
+        '400':
+          description: Dữ liệu không hợp lệ
+  '/api/damaged-products/{id}/shelves':
+    get:
+      tags:
+        - damagedProduct
+      summary: get Damaged Product Shelves
+      operationId: getDamagedProductShelves
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            pattern: '^[0-9a-fA-F]{24}$'
+      responses:
+        '200':
+          description: Thành công
+        '400':
+          description: Dữ liệu không hợp lệ
+  /api/damaged-products/bulk/update-status:
+    put:
+      tags:
+        - damagedProduct
+      summary: bulk Update Status
+      operationId: bulkUpdateStatus
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: Thành công
+        '400':
+          description: Dữ liệu không hợp lệ
+  /api/delivery-orders/:
+    get:
+      tags:
+        - deliveryOrder
+      summary: get All Delivery Orders
+      operationId: getAllDeliveryOrders
+      responses:
+        '200':
+          description: Thành công
+        '400':
+          description: Dữ liệu không hợp lệ
+    post:
+      tags:
+        - deliveryOrder
+      summary: create Delivery Order
+      operationId: createDeliveryOrder
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '201':
+          description: Tạo thành công
+        '400':
+          description: Dữ liệu không hợp lệ
+  '/api/delivery-orders/{id}':
+    get:
+      tags:
+        - deliveryOrder
+      summary: get Delivery Order By Id
+      operationId: getDeliveryOrderById
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            pattern: '^[0-9a-fA-F]{24}$'
+      responses:
+        '200':
+          description: Thành công
+        '400':
+          description: Dữ liệu không hợp lệ
+    put:
+      tags:
+        - deliveryOrder
+      summary: update Delivery Order
+      operationId: updateDeliveryOrder
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            pattern: '^[0-9a-fA-F]{24}$'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: Thành công
+        '400':
+          description: Dữ liệu không hợp lệ
+    delete:
+      tags:
+        - deliveryOrder
+      summary: delete Delivery Order
+      operationId: deleteDeliveryOrder
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            pattern: '^[0-9a-fA-F]{24}$'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: Thành công
+        '400':
+          description: Dữ liệu không hợp lệ
+  '/api/delivery-orders/staff/{staffId}':
+    get:
+      tags:
+        - deliveryOrder
+      summary: get Deliveries By Staff
+      operationId: getDeliveriesByStaff
+      parameters:
+        - in: path
+          name: staffId
+          required: true
+          schema:
+            type: string
+            pattern: '^[0-9a-fA-F]{24}$'
+      responses:
+        '200':
+          description: Thành công
+        '400':
+          description: Dữ liệu không hợp lệ
+  /api/delivery-orders/stats:
+    get:
+      tags:
+        - deliveryOrder
+      summary: get Delivery Stats
+      operationId: getDeliveryStats
+      responses:
+        '200':
+          description: Thành công
+        '400':
+          description: Dữ liệu không hợp lệ
+  '/api/delivery-orders/{id}/reassign':
+    patch:
+      tags:
+        - deliveryOrder
+      summary: reassign Delivery
+      operationId: reassignDelivery
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            pattern: '^[0-9a-fA-F]{24}$'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: Thành công
+        '400':
+          description: Dữ liệu không hợp lệ
+  /api/feedbacks/:
+    post:
+      tags:
+        - feedback
+      summary: create Feedback
+      operationId: createFeedback
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - category
+                - subject
+                - customer_id
+              properties:
+                category:
+                  type: string
+                  enum:
+                    - complaint
+                    - suggestion
+                    - praise
+                subject:
+                  type: string
+                  example: Product quality issue
+                detail:
+                  type: string
+                  example: The product arrived damaged and the packaging was open.
+                customer_id:
+                  type: string
+                  pattern: '^[0-9a-fA-F]{24}$'
+                rating:
+                  type: integer
+                  minimum: 1
+                  maximum: 5
+                sentiment:
+                  type: string
+                  example: negative
+                order_id:
+                  type: string
+                  pattern: '^[0-9a-fA-F]{24}$'
+      responses:
+        '201':
+          description: Tạo thành công
+        '400':
+          description: Dữ liệu không hợp lệ
+    get:
+      tags:
+        - feedback
+      summary: get All Feedbacks
+      operationId: getAllFeedbacks
+      responses:
+        '200':
+          description: Thành công
+        '400':
+          description: Dữ liệu không hợp lệ
+  '/api/feedbacks/customer/{customerId}':
+    get:
+      tags:
+        - feedback
+      summary: get Customer Feedbacks
+      operationId: getCustomerFeedbacks
+      parameters:
+        - in: path
+          name: customerId
+          required: true
+          schema:
+            type: string
+            pattern: '^[0-9a-fA-F]{24}$'
+      responses:
+        '200':
+          description: Thành công
+        '400':
+          description: Dữ liệu không hợp lệ
+  '/api/feedbacks/{id}':
+    get:
+      tags:
+        - feedback
+      summary: get Feedback By Id
+      operationId: getFeedbackById
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            pattern: '^[0-9a-fA-F]{24}$'
+      responses:
+        '200':
+          description: Thành công
+        '400':
+          description: Dữ liệu không hợp lệ
+    put:
+      tags:
+        - feedback
+      summary: update Feedback Status
+      operationId: updateFeedbackStatus
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            pattern: '^[0-9a-fA-F]{24}$'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - status
+              properties:
+                status:
+                  type: string
+                  enum:
+                    - open
+                    - in_progress
+                    - resolved
+                    - closed
+                assigned_to_staff_id:
+                  type: string
+                  pattern: '^[0-9a-fA-F]{24}$'
+      responses:
+        '200':
+          description: Thành công
+        '400':
+          description: Dữ liệu không hợp lệ
+    delete:
+      tags:
+        - feedback
+      summary: delete Feedback
+      operationId: deleteFeedback
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            pattern: '^[0-9a-fA-F]{24}$'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: Thành công
+        '400':
+          description: Dữ liệu không hợp lệ
+  /api/feedbacks/stats/summary:
+    get:
+      tags:
+        - feedback
+      summary: get Feedback Stats
+      operationId: getFeedbackStats
+      responses:
+        '200':
+          description: Thành công
+        '400':
+          description: Dữ liệu không hợp lệ
+  /api/invoices/:
+    get:
+      tags:
+        - invoice
+      summary: get All Invoices
+      operationId: getAllInvoices
+      responses:
+        '200':
+          description: Thành công
+        '400':
+          description: Dữ liệu không hợp lệ
+    post:
+      tags:
+        - invoice
+      summary: create Invoice
+      operationId: createInvoice
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '201':
+          description: Tạo thành công
+        '400':
+          description: Dữ liệu không hợp lệ
+  '/api/invoices/{id}':
+    get:
+      tags:
+        - invoice
+      summary: get Invoice By Id
+      operationId: getInvoiceById
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            pattern: '^[0-9a-fA-F]{24}$'
+      responses:
+        '200':
+          description: Thành công
+        '400':
+          description: Dữ liệu không hợp lệ
+    put:
+      tags:
+        - invoice
+      summary: update Invoice
+      operationId: updateInvoice
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            pattern: '^[0-9a-fA-F]{24}$'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: Thành công
+        '400':
+          description: Dữ liệu không hợp lệ
+    delete:
+      tags:
+        - invoice
+      summary: delete Invoice
+      operationId: deleteInvoice
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            pattern: '^[0-9a-fA-F]{24}$'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: Thành công
+        '400':
+          description: Dữ liệu không hợp lệ
+  '/api/invoices/customer/{customerId}':
+    get:
+      tags:
+        - invoice
+      summary: get Invoices By Customer
+      operationId: getInvoicesByCustomer
+      parameters:
+        - in: path
+          name: customerId
+          required: true
+          schema:
+            type: string
+            pattern: '^[0-9a-fA-F]{24}$'
+      responses:
+        '200':
+          description: Thành công
+        '400':
+          description: Dữ liệu không hợp lệ
+  /api/invoices/stats:
+    get:
+      tags:
+        - invoice
+      summary: get Invoice Stats
+      operationId: getInvoiceStats
+      responses:
+        '200':
+          description: Thành công
+        '400':
+          description: Dữ liệu không hợp lệ
+  '/api/invoices/{id}/mark-paid':
+    patch:
+      tags:
+        - invoice
+      summary: mark As Paid
+      operationId: markAsPaid
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            pattern: '^[0-9a-fA-F]{24}$'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: Thành công
+        '400':
+          description: Dữ liệu không hợp lệ
+  /api/invoices/filter/unpaid:
+    get:
+      tags:
+        - invoice
+      summary: get Unpaid Invoices
+      operationId: getUnpaidInvoices
+      responses:
+        '200':
+          description: Thành công
+        '400':
+          description: Dữ liệu không hợp lệ
+  /api/orders/:
+    get:
+      tags:
+        - order
+      summary: get All Orders
+      operationId: getAllOrders
+      responses:
+        '200':
+          description: Thành công
+        '400':
+          description: Dữ liệu không hợp lệ
+    post:
+      tags:
+        - order
+      summary: create Order
+      operationId: createOrder
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '201':
+          description: Tạo thành công
+        '400':
+          description: Dữ liệu không hợp lệ
+  '/api/orders/{id}':
+    get:
+      tags:
+        - order
+      summary: get Order By Id
+      operationId: getOrderById
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            pattern: '^[0-9a-fA-F]{24}$'
+      responses:
+        '200':
+          description: Thành công
+        '400':
+          description: Dữ liệu không hợp lệ
+    put:
+      tags:
+        - order
+      summary: update Order
+      operationId: updateOrder
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            pattern: '^[0-9a-fA-F]{24}$'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: Thành công
+        '400':
+          description: Dữ liệu không hợp lệ
+    delete:
+      tags:
+        - order
+      summary: delete Order
+      operationId: deleteOrder
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            pattern: '^[0-9a-fA-F]{24}$'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: Thành công
+        '400':
+          description: Dữ liệu không hợp lệ
+  '/api/orders/customer/{customerId}':
+    get:
+      tags:
+        - order
+      summary: get Orders By Customer
+      operationId: getOrdersByCustomer
+      parameters:
+        - in: path
+          name: customerId
+          required: true
+          schema:
+            type: string
+            pattern: '^[0-9a-fA-F]{24}$'
+      responses:
+        '200':
+          description: Thành công
+        '400':
+          description: Dữ liệu không hợp lệ
+  /api/orders/stats:
+    get:
+      tags:
+        - order
+      summary: get Order Stats
+      operationId: getOrderStats
+      responses:
+        '200':
+          description: Thành công
+        '400':
+          description: Dữ liệu không hợp lệ
+  '/api/orders/{id}/items/{itemId}/status':
+    patch:
+      tags:
+        - order
+      summary: update Order Item Status
+      operationId: updateOrderItemStatus
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            pattern: '^[0-9a-fA-F]{24}$'
+        - in: path
+          name: itemId
+          required: true
+          schema:
+            type: string
+            pattern: '^[0-9a-fA-F]{24}$'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: Thành công
+        '400':
+          description: Dữ liệu không hợp lệ
+  '/api/orders/{id}/cancel':
+    patch:
+      tags:
+        - order
+      summary: cancel Order
+      operationId: cancelOrder
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            pattern: '^[0-9a-fA-F]{24}$'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: Thành công
+        '400':
+          description: Dữ liệu không hợp lệ
+  '/api/product-batches/product/{productId}':
+    get:
+      tags:
+        - productBatch
+      summary: get Batches By Product
+      operationId: getBatchesByProduct
+      parameters:
+        - in: path
+          name: productId
+          required: true
+          schema:
+            type: string
+            pattern: '^[0-9a-fA-F]{24}$'
+      responses:
+        '200':
+          description: Thành công
+        '400':
+          description: Dữ liệu không hợp lệ
+  '/api/product-batches/{id}/adjust':
+    put:
+      tags:
+        - productBatch
+      summary: adjust Batch Quantity
+      operationId: adjustBatchQuantity
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            pattern: '^[0-9a-fA-F]{24}$'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: Thành công
+        '400':
+          description: Dữ liệu không hợp lệ
+  /api/products:
+    get:
+      tags:
+        - product
+      summary: Get all products with pagination and filtering
+      operationId: getAllProducts
+      parameters:
+        - in: query
+          name: page
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 10
+        - in: query
+          name: status
+          schema:
+            type: string
+            enum:
+              - active
+              - inactive
+        - in: query
+          name: category
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Products retrieved successfully
+        '400':
+          description: Invalid query parameters
+  /api/products/stats:
+    get:
+      tags:
+        - product
+      summary: Get product statistics and aggregates
+      operationId: getProductStats
+      responses:
+        '200':
+          description: Statistics retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: object
+        '400':
+          description: Error retrieving statistics
+  /api/products/low-stock:
+    get:
+      tags:
+        - product
+      summary: get Low Stock Products
+      operationId: getLowStockProducts
+      responses:
+        '200':
+          description: Thành công
+        '400':
+          description: Dữ liệu không hợp lệ
+  '/api/products/category/{category}':
+    get:
+      tags:
+        - product
+      summary: get Products By Category
+      operationId: getProductsByCategory
+      parameters:
+        - in: path
+          name: category
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Thành công
+        '400':
+          description: Dữ liệu không hợp lệ
+  '/api/products/supplier/{supplierId}':
+    get:
+      tags:
+        - product
+      summary: get Products By Supplier
+      operationId: getProductsBySupplier
+      parameters:
+        - in: path
+          name: supplierId
+          required: true
+          schema:
+            type: string
+            pattern: '^[0-9a-fA-F]{24}$'
+      responses:
+        '200':
+          description: Thành công
+        '400':
+          description: Dữ liệu không hợp lệ
+  '/api/products/{id}':
+    get:
+      tags:
+        - product
+      summary: get Product By Id
+      operationId: getProductById
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            pattern: '^[0-9a-fA-F]{24}$'
+      responses:
+        '200':
+          description: Thành công
+        '400':
+          description: Dữ liệu không hợp lệ
+    put:
+      tags:
+        - product
+      summary: update Product
+      operationId: updateProduct
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            pattern: '^[0-9a-fA-F]{24}$'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: Thành công
+        '400':
+          description: Dữ liệu không hợp lệ
+    delete:
+      tags:
+        - product
+      summary: delete Product
+      operationId: deleteProduct
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            pattern: '^[0-9a-fA-F]{24}$'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: Thành công
+        '400':
+          description: Dữ liệu không hợp lệ
+  /api/products/:
+    post:
+      tags:
+        - product
+      summary: create Product
+      operationId: createProduct
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '201':
+          description: Tạo thành công
+        '400':
+          description: Dữ liệu không hợp lệ
+  '/api/products/{id}/permanent':
+    delete:
+      tags:
+        - product
+      summary: permanent Delete Product
+      operationId: permanentDeleteProduct
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            pattern: '^[0-9a-fA-F]{24}$'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: Thành công
+        '400':
+          description: Dữ liệu không hợp lệ
+  '/api/products/{id}/stock':
+    patch:
+      tags:
+        - product
+      summary: update Product Stock
+      operationId: updateProductStock
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            pattern: '^[0-9a-fA-F]{24}$'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: Thành công
+        '400':
+          description: Dữ liệu không hợp lệ
+  '/api/products/{id}/price':
+    patch:
+      tags:
+        - product
+      summary: update Product Price
+      operationId: updateProductPrice
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            pattern: '^[0-9a-fA-F]{24}$'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: Thành công
+        '400':
+          description: Dữ liệu không hợp lệ
+  '/api/products/{id}/activate':
+    patch:
+      tags:
+        - product
+      summary: activate Product
+      operationId: activateProduct
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            pattern: '^[0-9a-fA-F]{24}$'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: Thành công
+        '400':
+          description: Dữ liệu không hợp lệ
+  /api/product-shelves/stats:
+    get:
+      tags:
+        - productShelf
+      summary: get Product Shelf Stats
+      operationId: getProductShelfStats
+      responses:
+        '200':
+          description: Thành công
+        '400':
+          description: Dữ liệu không hợp lệ
+  '/api/product-shelves/product/{productId}/shelves':
+    get:
+      tags:
+        - productShelf
+      summary: get Shelves By Product
+      operationId: getShelvesByProduct
+      parameters:
+        - in: path
+          name: productId
+          required: true
+          schema:
+            type: string
+            pattern: '^[0-9a-fA-F]{24}$'
+      responses:
+        '200':
+          description: Thành công
+        '400':
+          description: Dữ liệu không hợp lệ
+  '/api/product-shelves/shelf/{shelfId}/products':
+    get:
+      tags:
+        - productShelf
+      summary: get Products By Shelf
+      operationId: getProductsByShelf
+      parameters:
+        - in: path
+          name: shelfId
+          required: true
+          schema:
+            type: string
+            pattern: '^[0-9a-fA-F]{24}$'
+      responses:
+        '200':
+          description: Thành công
+        '400':
+          description: Dữ liệu không hợp lệ
+  '/api/product-shelves/{id}/move':
+    put:
+      tags:
+        - productShelf
+      summary: move Product To Shelf
+      operationId: moveProductToShelf
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            pattern: '^[0-9a-fA-F]{24}$'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: Thành công
+        '400':
+          description: Dữ liệu không hợp lệ
+  /api/product-shelves/bulk/assign:
+    post:
+      tags:
+        - productShelf
+      summary: bulk Assign To Shelf
+      operationId: bulkAssignToShelf
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '201':
+          description: Tạo thành công
+        '400':
+          description: Dữ liệu không hợp lệ
+  /api/product-shelves/for-damaged-record:
+    get:
+      tags:
+        - productShelf
+      summary: get Products For Damaged Record
+      operationId: getProductsForDamagedRecord
+      responses:
+        '200':
+          description: Thành công
+        '400':
+          description: Dữ liệu không hợp lệ
+  /api/product-stocks/stats:
+    get:
+      tags:
+        - productStock
+      summary: get Product Stock Stats
+      operationId: getProductStockStats
+      responses:
+        '200':
+          description: Thành công
+        '400':
+          description: Dữ liệu không hợp lệ
+  '/api/product-stocks/product/{productId}':
+    get:
+      tags:
+        - productStock
+      summary: get Stock By Product
+      operationId: getStockByProduct
+      parameters:
+        - in: path
+          name: productId
+          required: true
+          schema:
+            type: string
+            pattern: '^[0-9a-fA-F]{24}$'
+      responses:
+        '200':
+          description: Thành công
+        '400':
+          description: Dữ liệu không hợp lệ
+  '/api/product-stocks/shelf/{shelfId}':
+    get:
+      tags:
+        - productStock
+      summary: get Stock By Shelf
+      operationId: getStockByShelf
+      parameters:
+        - in: path
+          name: shelfId
+          required: true
+          schema:
+            type: string
+            pattern: '^[0-9a-fA-F]{24}$'
+      responses:
+        '200':
+          description: Thành công
+        '400':
+          description: Dữ liệu không hợp lệ
+  /api/product-stocks/low-stock:
+    get:
+      tags:
+        - productStock
+      summary: get Low Stock Products
+      operationId: getLowStockProducts
+      responses:
+        '200':
+          description: Thành công
+        '400':
+          description: Dữ liệu không hợp lệ
+  '/api/product-stocks/{id}/adjust':
+    put:
+      tags:
+        - productStock
+      summary: adjust Stock Quantity
+      operationId: adjustStockQuantity
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            pattern: '^[0-9a-fA-F]{24}$'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: Thành công
+        '400':
+          description: Dữ liệu không hợp lệ
+  /api/product-stocks/bulk/update-status:
+    put:
+      tags:
+        - productStock
+      summary: bulk Update Status
+      operationId: bulkUpdateStatus
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: Thành công
+        '400':
+          description: Dữ liệu không hợp lệ
+  /api/promotions/:
+    get:
+      tags:
+        - promotion
+      summary: get All Promotions
+      operationId: getAllPromotions
+      responses:
+        '200':
+          description: Thành công
+        '400':
+          description: Dữ liệu không hợp lệ
+    post:
+      tags:
+        - promotion
+      summary: create Promotion
+      operationId: createPromotion
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '201':
+          description: Tạo thành công
+        '400':
+          description: Dữ liệu không hợp lệ
+  '/api/promotions/{id}':
+    get:
+      tags:
+        - promotion
+      summary: get Promotion By Id
+      operationId: getPromotionById
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            pattern: '^[0-9a-fA-F]{24}$'
+      responses:
+        '200':
+          description: Thành công
+        '400':
+          description: Dữ liệu không hợp lệ
+    put:
+      tags:
+        - promotion
+      summary: update Promotion
+      operationId: updatePromotion
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            pattern: '^[0-9a-fA-F]{24}$'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: Thành công
+        '400':
+          description: Dữ liệu không hợp lệ
+    delete:
+      tags:
+        - promotion
+      summary: delete Promotion
+      operationId: deletePromotion
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            pattern: '^[0-9a-fA-F]{24}$'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: Thành công
+        '400':
+          description: Dữ liệu không hợp lệ
+  /api/promotions/validate:
+    post:
+      tags:
+        - promotion
+      summary: validate Promo Code
+      operationId: validatePromoCode
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '201':
+          description: Tạo thành công
+        '400':
+          description: Dữ liệu không hợp lệ
+  /api/promotions/applicable:
+    get:
+      tags:
+        - promotion
+      summary: get Applicable Promotions
+      operationId: getApplicablePromotions
+      responses:
+        '200':
+          description: Thành công
+        '400':
+          description: Dữ liệu không hợp lệ
+  /api/sections/:
+    get:
+      tags:
+        - section
+      summary: get All Sections
+      operationId: getAllSections
+      responses:
+        '200':
+          description: Thành công
+        '400':
+          description: Dữ liệu không hợp lệ
+    post:
+      tags:
+        - section
+      summary: create Section
+      operationId: createSection
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '201':
+          description: Tạo thành công
+        '400':
+          description: Dữ liệu không hợp lệ
+  '/api/sections/{id}':
+    get:
+      tags:
+        - section
+      summary: get Section By Id
+      operationId: getSectionById
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            pattern: '^[0-9a-fA-F]{24}$'
+      responses:
+        '200':
+          description: Thành công
+        '400':
+          description: Dữ liệu không hợp lệ
+    put:
+      tags:
+        - section
+      summary: update Section
+      operationId: updateSection
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            pattern: '^[0-9a-fA-F]{24}$'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: Thành công
+        '400':
+          description: Dữ liệu không hợp lệ
+    delete:
+      tags:
+        - section
+      summary: delete Section
+      operationId: deleteSection
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            pattern: '^[0-9a-fA-F]{24}$'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: Thành công
+        '400':
+          description: Dữ liệu không hợp lệ
+  '/api/sections/{id}/shelves':
+    get:
+      tags:
+        - section
+      summary: get Shelves In Section
+      operationId: getShelvesInSection
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            pattern: '^[0-9a-fA-F]{24}$'
+      responses:
+        '200':
+          description: Thành công
+        '400':
+          description: Dữ liệu không hợp lệ
+  /api/shelves/stats:
+    get:
+      tags:
+        - shelf
+      summary: get Shelf Stats
+      operationId: getShelfStats
+      responses:
+        '200':
+          description: Thành công
+        '400':
+          description: Dữ liệu không hợp lệ
+  '/api/shelves/category/{category}':
+    get:
+      tags:
+        - shelf
+      summary: get Shelves By Category
+      operationId: getShelvesByCategory
+      parameters:
+        - in: path
+          name: category
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Thành công
+        '400':
+          description: Dữ liệu không hợp lệ
+  /api/shelves/available:
+    get:
+      tags:
+        - shelf
+      summary: get Available Shelves
+      operationId: getAvailableShelves
+      responses:
+        '200':
+          description: Thành công
+        '400':
+          description: Dữ liệu không hợp lệ
+  '/api/shelves/{id}/toggle-full':
+    put:
+      tags:
+        - shelf
+      summary: toggle Shelf Full
+      operationId: toggleShelfFull
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            pattern: '^[0-9a-fA-F]{24}$'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: Thành công
+        '400':
+          description: Dữ liệu không hợp lệ
+  '/api/shelves/{id}/capacity':
+    get:
+      tags:
+        - shelf
+      summary: get Shelf Capacity
+      operationId: getShelfCapacity
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            pattern: '^[0-9a-fA-F]{24}$'
+      responses:
+        '200':
+          description: Thành công
+        '400':
+          description: Dữ liệu không hợp lệ
+  /api/staff/:
+    get:
+      tags:
+        - staff
+      summary: get All Staff
+      operationId: getAllStaff
+      responses:
+        '200':
+          description: Thành công
+        '400':
+          description: Dữ liệu không hợp lệ
+    post:
+      tags:
+        - staff
+      summary: create Staff
+      operationId: createStaff
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '201':
+          description: Tạo thành công
+        '400':
+          description: Dữ liệu không hợp lệ
+  /api/staff/stats:
+    get:
+      tags:
+        - staff
+      summary: get Staff Stats
+      operationId: getStaffStats
+      responses:
+        '200':
+          description: Thành công
+        '400':
+          description: Dữ liệu không hợp lệ
+  '/api/staff/{id}':
+    get:
+      tags:
+        - staff
+      summary: get Staff By Id
+      operationId: getStaffById
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            pattern: '^[0-9a-fA-F]{24}$'
+      responses:
+        '200':
+          description: Thành công
+        '400':
+          description: Dữ liệu không hợp lệ
+    put:
+      tags:
+        - staff
+      summary: update Staff
+      operationId: updateStaff
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            pattern: '^[0-9a-fA-F]{24}$'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: Thành công
+        '400':
+          description: Dữ liệu không hợp lệ
+    delete:
+      tags:
+        - staff
+      summary: delete Staff
+      operationId: deleteStaff
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            pattern: '^[0-9a-fA-F]{24}$'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: Thành công
+        '400':
+          description: Dữ liệu không hợp lệ
+  '/api/staff/{id}/permanent':
+    delete:
+      tags:
+        - staff
+      summary: permanent Delete Staff
+      operationId: permanentDeleteStaff
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            pattern: '^[0-9a-fA-F]{24}$'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: Thành công
+        '400':
+          description: Dữ liệu không hợp lệ
+  '/api/staff/{id}/activate':
+    patch:
+      tags:
+        - staff
+      summary: activate Staff
+      operationId: activateStaff
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            pattern: '^[0-9a-fA-F]{24}$'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: Thành công
+        '400':
+          description: Dữ liệu không hợp lệ
+  '/api/staff/account/{accountId}':
+    get:
+      tags:
+        - staff
+      summary: get Staff By Account Id
+      operationId: getStaffByAccountId
+      parameters:
+        - in: path
+          name: accountId
+          required: true
+          schema:
+            type: string
+            pattern: '^[0-9a-fA-F]{24}$'
+      responses:
+        '200':
+          description: Thành công
+        '400':
+          description: Dữ liệu không hợp lệ
+  /api/suppliers/:
+    get:
+      tags:
+        - supplier
+      summary: get All Suppliers
+      operationId: getAllSuppliers
+      responses:
+        '200':
+          description: Thành công
+        '400':
+          description: Dữ liệu không hợp lệ
+    post:
+      tags:
+        - supplier
+      summary: create Supplier
+      operationId: createSupplier
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '201':
+          description: Tạo thành công
+        '400':
+          description: Dữ liệu không hợp lệ
+  /api/suppliers/stats:
+    get:
+      tags:
+        - supplier
+      summary: get Supplier Stats
+      operationId: getSupplierStats
+      responses:
+        '200':
+          description: Thành công
+        '400':
+          description: Dữ liệu không hợp lệ
+  /api/suppliers/active:
+    get:
+      tags:
+        - supplier
+      summary: get Active Suppliers
+      operationId: getActiveSuppliers
+      responses:
+        '200':
+          description: Thành công
+        '400':
+          description: Dữ liệu không hợp lệ
+  '/api/suppliers/{id}':
+    get:
+      tags:
+        - supplier
+      summary: get Supplier By Id
+      operationId: getSupplierById
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            pattern: '^[0-9a-fA-F]{24}$'
+      responses:
+        '200':
+          description: Thành công
+        '400':
+          description: Dữ liệu không hợp lệ
+    put:
+      tags:
+        - supplier
+      summary: update Supplier
+      operationId: updateSupplier
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            pattern: '^[0-9a-fA-F]{24}$'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: Thành công
+        '400':
+          description: Dữ liệu không hợp lệ
+    delete:
+      tags:
+        - supplier
+      summary: delete Supplier
+      operationId: deleteSupplier
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            pattern: '^[0-9a-fA-F]{24}$'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: Thành công
+        '400':
+          description: Dữ liệu không hợp lệ
+  '/api/suppliers/{id}/products':
+    get:
+      tags:
+        - supplier
+      summary: get Supplier Products
+      operationId: getSupplierProducts
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            pattern: '^[0-9a-fA-F]{24}$'
+      responses:
+        '200':
+          description: Thành công
+        '400':
+          description: Dữ liệu không hợp lệ
+  '/api/suppliers/{id}/permanent':
+    delete:
+      tags:
+        - supplier
+      summary: permanent Delete Supplier
+      operationId: permanentDeleteSupplier
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            pattern: '^[0-9a-fA-F]{24}$'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: Thành công
+        '400':
+          description: Dữ liệu không hợp lệ
+  '/api/suppliers/{id}/activate':
+    patch:
+      tags:
+        - supplier
+      summary: activate Supplier
+      operationId: activateSupplier
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            pattern: '^[0-9a-fA-F]{24}$'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: Thành công
+        '400':
+          description: Dữ liệu không hợp lệ
+  /api/telemetry/traces:
+    get:
+      tags:
+        - telemetry
+      summary: get Traces
+      operationId: getTraces
+      responses:
+        '200':
+          description: Thành công
+        '400':
+          description: Dữ liệu không hợp lệ
+    delete:
+      tags:
+        - telemetry
+      summary: clear Traces
+      operationId: clearTraces
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: Thành công
+        '400':
+          description: Dữ liệu không hợp lệ
+tags: []

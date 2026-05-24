@@ -10,7 +10,12 @@
     "seed:clear": "node scripts/seed.js --clear",
     "backfill:expiry": "node scripts/backfill-expiry-dates.js",
     "migrate:batches": "node scripts/convert-stocks-to-batches.js",
-    "test": "cross-env NODE_ENV=test jest --runInBand --detectOpenHandles --verbose"
+    "test": "cross-env NODE_ENV=test jest --runInBand --detectOpenHandles --verbose",
+    "generate:all-controller-tests": "node test-generator/all/index.js",
+    "test:all-controller-generated": "cross-env NODE_ENV=test jest --runInBand --verbose test-generator/generated-tests-all",
+    "generate:openapi": "node swaggerDef.js",
+    "generate:openapi-tests": "node test-generator/index.js",
+    "test:openapi-generated": "cross-env NODE_ENV=test jest --runInBand --verbose --json --outputFile=generated-tests/openapi-results.json --silent generated-tests/openapi-generated"
   },
   "jest": {
     "testEnvironment": "node",
@@ -63,6 +68,8 @@
     "cross-env": "^7.0.3",
     "jest": "^29.7.0",
     "nodemon": "^3.0.2",
-    "supertest": "^6.3.4"
+    "supertest": "^6.3.4",
+    "js-yaml": "^4.1.1",
+    "swagger-jsdoc": "^6.2.8"
   }
 }
