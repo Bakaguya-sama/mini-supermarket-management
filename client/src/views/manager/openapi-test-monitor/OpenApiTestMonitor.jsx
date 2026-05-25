@@ -24,6 +24,7 @@ import {
   triggerTestGeneration,
   triggerTestExecution,
   cancelTestTask,
+  clearAllTestData,
 } from "../../../services/generatedTestMonitorService";
 import "./OpenApiTestMonitor.css";
 
@@ -76,12 +77,28 @@ const OpenApiTestMonitor = () => {
   const [showTerminal, setShowTerminal] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
   const [failuresList, setFailuresList] = useState([]);
-  const [hasRunInSession, setHasRunInSession] = useState(false);
+  const [hasRunInSession, setHasRunInSession] = useState(() => sessionStorage.getItem("hasRunInSession") === "true");
   const [displaySuites, setDisplaySuites] = useState([]);
   const [displayHistory, setDisplayHistory] = useState([]);
-  const [isSuitesCleared, setIsSuitesCleared] = useState(false);
-  const [isHistoryCleared, setIsHistoryCleared] = useState(false);
-  const [isMetadataCleared, setIsMetadataCleared] = useState(false);
+  const [isSuitesCleared, setIsSuitesCleared] = useState(() => sessionStorage.getItem("isSuitesCleared") === "true");
+  const [isHistoryCleared, setIsHistoryCleared] = useState(() => sessionStorage.getItem("isHistoryCleared") === "true");
+  const [isMetadataCleared, setIsMetadataCleared] = useState(() => sessionStorage.getItem("isMetadataCleared") === "true");
+
+  useEffect(() => {
+    sessionStorage.setItem("isSuitesCleared", isSuitesCleared);
+  }, [isSuitesCleared]);
+
+  useEffect(() => {
+    sessionStorage.setItem("isHistoryCleared", isHistoryCleared);
+  }, [isHistoryCleared]);
+
+  useEffect(() => {
+    sessionStorage.setItem("isMetadataCleared", isMetadataCleared);
+  }, [isMetadataCleared]);
+
+  useEffect(() => {
+    sessionStorage.setItem("hasRunInSession", hasRunInSession);
+  }, [hasRunInSession]);
 
   const terminalEndRef = useRef(null);
 
@@ -250,6 +267,27 @@ const OpenApiTestMonitor = () => {
   const handleClearFailures = () => {
     setFailuresList([]);
     setHasRunInSession(false);
+  };
+
+  const handleClearAll = async () => {
+    try {
+      setActionLoading(true);
+      await clearAllTestData();
+      setIsSuitesCleared(true);
+      setIsHistoryCleared(true);
+      setIsMetadataCleared(true);
+      setFailuresList([]);
+      setHasRunInSession(false);
+      await loadReport(true);
+    } catch (err) {
+      setError(
+        err?.response?.data?.message ||
+          err?.message ||
+          "Lỗi khi xóa cứng toàn bộ dữ liệu kiểm thử.",
+      );
+    } finally {
+      setActionLoading(false);
+    }
   };
 
   const getActiveGenerationStep = () => {
@@ -439,8 +477,23 @@ const OpenApiTestMonitor = () => {
           <div className="test-monitor-hero__panel">
             <div className="hero-panel__header">
               <div>
-                <span className="hero-panel__label">Current run</span>
-                <strong>
+                <span
+                  className="hero-panel__label"
+                  style={{
+                    color: "#f8f8f8ff",
+                    fontWeight: "normal",
+                    fontSize: "14px",
+                  }}
+                >
+                  Current run
+                </span>
+                <strong
+                  style={{
+                    color: "#f8f8f8ff",
+                    fontWeight: "normal",
+                    fontSize: "14px",
+                  }}
+                >
                   {report?.available && !isSuitesCleared && !isMetadataCleared
                     ? "Live snapshot from openapi-results.json"
                     : "Awaiting first run"}
@@ -455,13 +508,8 @@ const OpenApiTestMonitor = () => {
                     <button
                       type="button"
                       className="btn btn--secondary"
-                      onClick={() => {
-                        setIsSuitesCleared(true);
-                        setIsHistoryCleared(true);
-                        setIsMetadataCleared(true);
-                        setFailuresList([]);
-                        setHasRunInSession(false);
-                      }}
+                      onClick={handleClearAll}
+                      disabled={actionLoading}
                       style={{
                         borderRadius: "14px",
                         padding: "12px 18px",
@@ -771,8 +819,25 @@ const OpenApiTestMonitor = () => {
           <div className="panel panel--wide">
             <div className="panel__header">
               <div>
-                <span className="panel__eyebrow">Generated suites</span>
-                <h2>Pass rate theo controller</h2>
+                <span
+                  className="panel__eyebrow"
+                  style={{
+                    color: "#f8f8f8ff",
+                    fontWeight: "normal",
+                    fontSize: "14px",
+                  }}
+                >
+                  Generated suites
+                </span>
+                <h2
+                  style={{
+                    color: "#f8f8f8ff",
+                    fontWeight: "normal",
+                    fontSize: "14px",
+                  }}
+                >
+                  Pass rate theo controller
+                </h2>
               </div>
               <div
                 style={{ display: "flex", alignItems: "center", gap: "8px" }}
@@ -855,8 +920,23 @@ const OpenApiTestMonitor = () => {
           <div className="panel">
             <div className="panel__header">
               <div>
-                <span className="panel__eyebrow">Selected suite</span>
-                <h2>
+                <span
+                  className="panel__eyebrow"
+                  style={{
+                    color: "#f8f8f8ff",
+                    fontWeight: "normal",
+                    fontSize: "14px",
+                  }}
+                >
+                  Selected suite
+                </span>
+                <h2
+                  style={{
+                    color: "#f8f8f8ff",
+                    fontWeight: "normal",
+                    fontSize: "14px",
+                  }}
+                >
                   {selectedSuiteData?.controllerName || "No suite selected"}
                 </h2>
               </div>

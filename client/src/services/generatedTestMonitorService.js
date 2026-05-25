@@ -15,3 +15,7 @@ export const triggerTestExecution = () => {
 export const cancelTestTask = (type) => {
   return apiClient.post("/test-generation/cancel", { type });
 };
+
+export const clearAllTestData = () => {
+  return apiClient.post("/test-generation/clear");
+};

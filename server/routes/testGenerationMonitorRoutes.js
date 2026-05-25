@@ -6,5 +6,6 @@ router.get('/openapi', testGenerationMonitorController.getOpenApiGeneratedTestSu
 router.post('/generate', testGenerationMonitorController.generateTests);
 router.post('/run', testGenerationMonitorController.runTests);
 router.post('/cancel', testGenerationMonitorController.cancelTask);
+router.post('/clear', testGenerationMonitorController.clearAllData);
 
 module.exports = router;

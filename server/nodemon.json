@@ -1,0 +1,8 @@
+{
+  "ignore": [
+    "generated-openapi/**/*",
+    "generated-tests/**/*",
+    "openapi.yaml",
+    ".openapi-task-state.json"
+  ]
+}

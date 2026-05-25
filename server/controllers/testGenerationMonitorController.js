@@ -55,7 +55,9 @@ function loadTaskStatus() {
 loadTaskStatus();
 
 function appendLogs(taskType, data) {
-  const text = data.toString();
+  let text = data.toString();
+  // Strip ANSI escape codes
+  text = text.replace(/\x1B\[[0-9;]*[a-zA-Z]/g, '');
   taskStatus[taskType].logs += text;
   if (taskStatus[taskType].logs.length > 200000) {
     taskStatus[taskType].logs = taskStatus[taskType].logs.slice(-100000);
@@ -419,5 +421,60 @@ exports.cancelTask = (req, res) => {
     return res.status(200).json({ success: true, message: 'Đã hủy tác vụ thành công.' });
   } catch (error) {
     return res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+exports.clearAllData = (req, res) => {
+  if (activeProcesses.generation || activeProcesses.execution) {
+    return res.status(400).json({
+      success: false,
+      message: 'Không thể xóa dữ liệu khi có tác vụ đang chạy.'
+    });
+  }
+
+  try {
+    if (fs.existsSync(resultsFilePath)) {
+      fs.unlinkSync(resultsFilePath);
+    }
+
+    if (fs.existsSync(stateFilePath)) {
+      fs.unlinkSync(stateFilePath);
+    }
+
+    if (fs.existsSync(generatedOpenApiDir)) {
+      const files = fs.readdirSync(generatedOpenApiDir);
+      for (const file of files) {
+        const p = path.join(generatedOpenApiDir, file);
+        if (fs.statSync(p).isFile()) {
+          fs.unlinkSync(p);
+        }
+      }
+    }
+
+    if (fs.existsSync(generatedTestsDir)) {
+      const files = fs.readdirSync(generatedTestsDir);
+      for (const file of files) {
+        const p = path.join(generatedTestsDir, file);
+        if (fs.statSync(p).isFile()) {
+          fs.unlinkSync(p);
+        }
+      }
+    }
+
+    taskStatus = {
+      generation: { status: 'idle', logs: '', lastRun: null, error: null },
+      execution: { status: 'idle', logs: '', lastRun: null, error: null },
+      executionHistory: []
+    };
+
+    return res.status(200).json({
+      success: true,
+      message: 'Đã xóa toàn bộ dữ liệu kiểm thử và kết quả.'
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: 'Lỗi khi xóa dữ liệu: ' + error.message
+    });
   }
 };
