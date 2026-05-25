@@ -112,24 +112,28 @@ const CustomerMembershipPage = ({ customerId, customerData: initialCustomerData,
 
         if (promotionsResult.success && promotionsResult.data) {
           // Transform backend promotions to UI format
-          const formattedPromotions = promotionsResult.data.map(promo => ({
-            id: promo._id,
-            title: promo.name,
-            description: promo.description,
-            discount: promo.promotion_type === 'percentage' 
-              ? `${promo.discount_value}% OFF` 
-              : `$${promo.discount_value} OFF`,
-            category: promo.applicable_to_category || 'All Products',
-            validUntil: new Date(promo.end_date).toLocaleDateString('en-US', { 
-              month: 'short', 
-              day: 'numeric', 
-              year: 'numeric' 
-            }),
-            code: promo.promo_code,
-            type: promo.promotion_type,
-            value: promo.discount_value,
-            minPurchase: promo.minimum_purchase_amount
-          }));
+          const formattedPromotions = promotionsResult.data.map(promo => {
+            const promoType = promo.discount_type || promo.promotion_type || 'percentage';
+            const value = promo.discount_value || 0;
+            return {
+              id: promo._id,
+              title: promo.name,
+              description: promo.description,
+              discount: promoType === 'percentage' 
+                ? `${value}% OFF` 
+                : `$${value} OFF`,
+              category: promo.applicable_to_category || 'All Products',
+              validUntil: new Date(promo.end_date || Date.now()).toLocaleDateString('en-US', { 
+                month: 'short', 
+                day: 'numeric', 
+                year: 'numeric' 
+              }),
+              code: promo.promo_code,
+              type: promoType,
+              value: value,
+              minPurchase: promo.minimum_purchase_amount || 0
+            };
+          });
 
           setActivePromotions(formattedPromotions);
           console.log(`✅ Loaded ${formattedPromotions.length} active promotions`);

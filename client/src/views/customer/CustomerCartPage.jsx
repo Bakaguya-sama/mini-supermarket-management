@@ -115,22 +115,31 @@ const CustomerCartPage = ({
 
       if (result.success && result.data) {
         // Transform backend promotions to UI format
-        const formattedPromotions = result.data.map((promo) => ({
-          id: promo.id,
-          code: promo.code,
-          discount: promo.type === "percentage" ? promo.discountValue / 100 : 0,
-          discountAmount: promo.discountAmount, // Calculated discount in dollars
-          description: promo.description,
-          type: promo.type, // 'percentage' or 'fixed'
-          discountValue: promo.discountValue,
-          minOrder: promo.minPurchase,
-          validUntil: new Date(promo.endDate).toLocaleDateString("en-US", {
-            month: "short",
-            day: "numeric",
-            year: "numeric",
-          }),
-          terms: promo.terms,
-        }));
+        const formattedPromotions = result.data.map((promo) => {
+          const type = promo.discount_type || promo.type || "percentage";
+          const discountValue = promo.discount_value !== undefined ? promo.discount_value : (promo.discountValue || 0);
+          const minOrder = promo.minimum_purchase_amount !== undefined ? promo.minimum_purchase_amount : (promo.minPurchase || 0);
+          const endDate = promo.end_date || promo.endDate || Date.now();
+          const code = promo.promo_code || promo.code || "PROMO";
+          const id = promo._id || promo.id;
+
+          return {
+            id,
+            code,
+            discount: type === "percentage" ? discountValue / 100 : 0,
+            discountAmount: promo.discountAmount || 0,
+            description: promo.description || promo.name || "",
+            type,
+            discountValue,
+            minOrder,
+            validUntil: new Date(endDate).toLocaleDateString("en-US", {
+              month: "short",
+              day: "numeric",
+              year: "numeric",
+            }),
+            terms: promo.terms || "",
+          };
+        });
 
         setAvailablePromotions(formattedPromotions);
         console.log(
