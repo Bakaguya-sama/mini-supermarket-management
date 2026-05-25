@@ -5,7 +5,7 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "dev": "nodemon server.js",
+    "dev": "nodemon --ignore generated-openapi/ --ignore generated-tests/ --ignore openapi.yaml --ignore .openapi-task-state.json server.js",
     "seed": "node scripts/seed.js",
     "seed:clear": "node scripts/seed.js --clear",
     "backfill:expiry": "node scripts/backfill-expiry-dates.js",
@@ -22,6 +22,10 @@
     "testTimeout": 30000,
     "setupFiles": [
       "<rootDir>/tests/jestSetup.js"
+    ],
+    "reporters": [
+      "default",
+      "<rootDir>/test-generator/jestResultsReporter.js"
     ]
   },
   "keywords": [

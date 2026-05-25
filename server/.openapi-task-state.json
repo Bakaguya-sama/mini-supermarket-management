@@ -1,0 +1,53 @@
+{
+  "generation": {
+    "status": "success",
+    "logs": "--- BẮT ĐẦU TỰ ĐỘNG SINH CA KIỂM THỬ (Theo Thuật Toán Bài Báo) ---\n🚀 Starting OpenAPI test generation...\n\n🔍 Regenerating openapi.yaml...\n🧭 Found 19 controller YAML files\n\n🧩 Generating tests for authController...\n   → source YAML: generated-openapi\\authController.yaml\n✅ Spec hợp lệ! Tổng paths: \u001b[33m7\u001b[39m\n   → 7 operations from YAML\n   Nominal: 7 | Fault: 0\n\n✅ Generated test file: C:\\mini-supermarket-management\\server\\generated-tests\\openapi-generated\\authController.test.js\n   Nominal: 7 | Fault: 0 | Total: 7\n🧩 Generating tests for cartController...\n   → source YAML: generated-openapi\\cartController.yaml\n✅ Spec hợp lệ! Tổng paths: \u001b[33m11\u001b[39m\n   → 11 operations from YAML\n   Nominal: 11 | Fault: 0\n\n✅ Generated test file: C:\\mini-supermarket-management\\server\\generated-tests\\openapi-generated\\cartController.test.js\n   Nominal: 11 | Fault: 0 | Total: 11\n🧩 Generating tests for customerController...\n   → source YAML: generated-openapi\\customerController.yaml\n✅ Spec hợp lệ! Tổng paths: \u001b[33m7\u001b[39m\n   → 10 operations from YAML\n   Nominal: 10 | Fault: 13\n\n✅ Generated test file: C:\\mini-supermarket-management\\server\\generated-tests\\openapi-generated\\customerController.test.js\n   Nominal: 10 | Fault: 13 | Total: 23\n🧩 Generating tests for damagedProductController...\n   → source YAML: generated-openapi\\damagedProductController.yaml\n✅ Spec hợp lệ! Tổng paths: \u001b[33m5\u001b[39m\n   → 5 operations from YAML\n   Nominal: 5 | Fault: 0\n\n✅ Generated test file: C:\\mini-supermarket-management\\server\\generated-tests\\openapi-generated\\damagedProductController.test.js\n   Nominal: 5 | Fault: 0 | Total: 5\n🧩 Generating tests for deliveryOrderController...\n   → source YAML: generated-openapi\\deliveryOrderController.yaml\n✅ Spec hợp lệ! Tổng paths: \u001b[33m5\u001b[39m\n   → 8 operations from YAML\n   Nominal: 8 | Fault: 0\n\n✅ Generated test file: C:\\mini-supermarket-management\\server\\generated-tests\\openapi-generated\\deliveryOrderController.test.js\n   Nominal: 8 | Fault: 0 | Total: 8\n🧩 Generating tests for feedbackController...\n   → source YAML: generated-openapi\\feedbackController.yaml\n✅ Spec hợp lệ! Tổng paths: \u001b[33m4\u001b[39m\n   → 7 operations from YAML\n   Nominal: 7 | Fault: 9\n\n✅ Generated test file: C:\\mini-supermarket-management\\server\\generated-tests\\openapi-generated\\feedbackController.test.js\n   Nominal: 7 | Fault: 9 | Total: 16\n🧩 Generating tests for invoiceController...\n   → source YAML: generated-openapi\\invoiceController.yaml\n✅ Spec hợp lệ! Tổng paths: \u001b[33m6\u001b[39m\n   → 9 operations from YAML\n   Nominal: 9 | Fault: 0\n\n✅ Generated test file: C:\\mini-supermarket-management\\server\\generated-tests\\openapi-generated\\invoiceController.test.js\n   Nominal: 9 | Fault: 0 | Total: 9\n🧩 Generating tests for orderController...\n   → source YAML: generated-openapi\\orderController.yaml\n✅ Spec hợp lệ! Tổng paths: \u001b[33m6\u001b[39m\n   → 9 operations from YAML\n   Nominal: 9 | Fault: 0\n\n✅ Generated test file: C:\\mini-supermarket-management\\server\\generated-tests\\openapi-generated\\orderController.test.js\n   Nominal: 9 | Fault: 0 | Total: 9\n🧩 Generating tests for productBatchController...\n   → source YAML: generated-openapi\\productBatchController.yaml\n✅ Spec hợp lệ! Tổng paths: \u001b[33m2\u001b[39m\n   → 2 operations from YAML\n   Nominal: 2 | Fault: 0\n\n✅ Generated test file: C:\\mini-supermarket-management\\server\\generated-tests\\openapi-generated\\productBatchController.test.js\n   Nominal: 2 | Fault: 0 | Total: 2\n🧩 Generating tests for productController...\n   → source YAML: generated-openapi\\productController.yaml\n✅ Spec hợp lệ! Tổng paths: \u001b[33m11\u001b[39m\n   → 13 operations from YAML\n   Nominal: 13 | Fault: 0\n\n✅ Generated test file: C:\\mini-supermarket-management\\server\\generated-tests\\openapi-generated\\productController.test.js\n   Nominal: 13 | Fault: 0 | Total: 13\n🧩 Generating tests for productShelfController...\n   → source YAML: generated-openapi\\productShelfController.yaml\n✅ Spec hợp lệ! Tổng paths: \u001b[33m6\u001b[39m\n   → 6 operations from YAML\n   Nominal: 6 | Fault: 0\n\n✅ Generated test file: C:\\mini-supermarket-management\\server\\generated-tests\\openapi-generated\\productShelfController.test.js\n   Nominal: 6 | Fault: 0 | Total: 6\n🧩 Generating tests for productStockController...\n   → source YAML: generated-openapi\\productStockController.yaml\n✅ Spec hợp lệ! Tổng paths: \u001b[33m6\u001b[39m\n   → 6 operations from YAML\n   Nominal: 6 | Fault: 0\n\n✅ Generated test file: C:\\mini-supermarket-management\\server\\generated-tests\\openapi-generated\\productStockController.test.js\n   Nominal: 6 | Fault: 0 | Total: 6\n🧩 Generating tests for promotionController...\n   → source YAML: generated-openapi\\promotionController.yaml\n✅ Spec hợp lệ! Tổng paths: \u001b[33m4\u001b[39m\n   → 7 operations from YAML\n   Nominal: 7 | Fault: 0\n\n✅ Generated test file: C:\\mini-supermarket-management\\server\\generated-tests\\openapi-generated\\promotionController.test.js\n   Nominal: 7 | Fault: 0 | Total: 7\n🧩 Generating tests for sectionController...\n   → source YAML: generated-openapi\\sectionController.yaml\n✅ Spec hợp lệ! Tổng paths: \u001b[33m3\u001b[39m\n   → 6 operations from YAML\n   Nominal: 6 | Fault: 0\n\n✅ Generated test file: C:\\mini-supermarket-management\\server\\generated-tests\\openapi-generated\\sectionController.test.js\n   Nominal: 6 | Fault: 0 | Total: 6\n🧩 Generating tests for shelfController...\n   → source YAML: generated-openapi\\shelfController.yaml\n✅ Spec hợp lệ! Tổng paths: \u001b[33m5\u001b[39m\n   → 5 operations from YAML\n   Nominal: 5 | Fault: 0\n\n✅ Generated test file: C:\\mini-supermarket-management\\server\\generated-tests\\openapi-generated\\shelfController.test.js\n   Nominal: 5 | Fault: 0 | Total: 5\n🧩 Generating tests for staffController...\n   → source YAML: generated-openapi\\staffController.yaml\n✅ Spec hợp lệ! Tổng paths: \u001b[33m6\u001b[39m\n   → 9 operations from YAML\n   Nominal: 9 | Fault: 0\n\n✅ Generated test file: C:\\mini-supermarket-management\\server\\generated-tests\\openapi-generated\\staffController.test.js\n   Nominal: 9 | Fault: 0 | Total: 9\n🧩 Generating tests for supplierController...\n   → source YAML: generated-openapi\\supplierController.yaml\n✅ Spec hợp lệ! Tổng paths: \u001b[33m7\u001b[39m\n   → 10 operations from YAML\n   Nominal: 10 | Fault: 0\n\n✅ Generated test file: C:\\mini-supermarket-management\\server\\generated-tests\\openapi-generated\\supplierController.test.js\n   Nominal: 10 | Fault: 0 | Total: 10\n🧩 Generating tests for telemetryController...\n   → source YAML: generated-openapi\\telemetryController.yaml\n✅ Spec hợp lệ! Tổng paths: \u001b[33m1\u001b[39m\n   → 2 operations from YAML\n   Nominal: 2 | Fault: 0\n\n✅ Generated test file: C:\\mini-supermarket-management\\server\\generated-tests\\openapi-generated\\telemetryController.test.js\n   Nominal: 2 | Fault: 0 | Total: 2\n🧩 Generating tests for testGenerationMonitorController...\n   → source YAML: generated-openapi\\testGenerationMonitorController.yaml\n✅ Spec hợp lệ! Tổng paths: \u001b[33m0\u001b[39m\n   → 0 operations from YAML\n   Nominal: 0 | Fault: 0\n   ⚠️ Skipping test file generation (no tests found)\n\n\n▶ Run the generated controller suites with:\n   npx jest generated-tests/openapi-generated --verbose\n\n--- TẠO CA KIỂM THỬ THÀNH CÔNG ---",
+    "lastRun": "2026-05-25T11:38:32.883Z",
+    "error": null
+  },
+  "execution": {
+    "status": "failed",
+    "logs": "--- BẮT ĐẦU CHẠY KIỂM THỬ (JEST RUNNER) ---\n❌ FAIL - customerController (10/23 tests passed)\n❌ FAIL - deliveryOrderController (4/8 tests passed)\n❌ FAIL - cartController (3/11 tests passed)\n❌ FAIL - productShelfController (4/6 tests passed)\n❌ FAIL - productController (12/13 tests passed)\n❌ FAIL - invoiceController (8/9 tests passed)\n✅ PASS - productBatchController (2/2 tests passed)\n✅ PASS - staffController (9/9 tests passed)\n✅ PASS - telemetryController (2/2 tests passed)\n✅ PASS - damagedProductController (5/5 tests passed)\n✅ PASS - feedbackController (16/16 tests passed)\n✅ PASS - productStockController (6/6 tests passed)\n✅ PASS - supplierController (10/10 tests passed)\n✅ PASS - shelfController (5/5 tests passed)\n✅ PASS - promotionController (7/7 tests passed)\n✅ PASS - orderController (9/9 tests passed)\n✅ PASS - sectionController (6/6 tests passed)\n✅ PASS - authController (7/7 tests passed)\n\n--- KẾT QUẢ KIỂM THỬ ---\nTổng số test suites: 51\nSuites thành công: 45\nSuites thất bại: 6\nTổng số ca kiểm thử: 336\nCa kiểm thử thành công: 307\nCa kiểm thử thất bại: 29\nTỉ lệ thành công: 91.4%\nThời gian chạy: 73.95s\n\n--- CHẠY KIỂM THỬ THẤT BẠI ---",
+    "lastRun": "2026-05-25T12:22:42.314Z",
+    "error": "29 ca kiểm thử thất bại",
+    "runSource": "cli"
+  },
+  "executionHistory": [
+    {
+      "timestamp": "2026-05-25T12:22:42.314Z",
+      "totalSuites": 51,
+      "passedSuites": 45,
+      "failedSuites": 6,
+      "totalTests": 336,
+      "passedTests": 307,
+      "failedTests": 29,
+      "passRate": 91.4,
+      "success": false,
+      "durationMs": 73950
+    },
+    {
+      "timestamp": "2026-05-25T12:19:52.973Z",
+      "totalSuites": 51,
+      "passedSuites": 45,
+      "failedSuites": 6,
+      "totalTests": 336,
+      "passedTests": 307,
+      "failedTests": 29,
+      "passRate": 91.4,
+      "success": false,
+      "durationMs": 68184
+    },
+    {
+      "timestamp": "2026-05-25T12:14:45.344Z",
+      "totalSuites": 51,
+      "passedSuites": 45,
+      "failedSuites": 6,
+      "totalTests": 336,
+      "passedTests": 307,
+      "failedTests": 29,
+      "passRate": 91.4,
+      "success": false,
+      "durationMs": 202128
+    }
+  ]
+}

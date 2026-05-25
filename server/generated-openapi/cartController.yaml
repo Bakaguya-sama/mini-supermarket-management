@@ -4,12 +4,12 @@ info:
   version: 1.0.0
   description: API cho hệ thống quản lý siêu thị mini
 servers:
-  - url: 'http://localhost:5000'
+  - url: http://localhost:5000
 components:
   schemas:
     IdParam:
       type: string
-      pattern: '^[0-9a-fA-F]{24}$'
+      pattern: ^[0-9a-fA-F]{24}$
     PaginationQuery:
       type: object
       properties:
@@ -32,7 +32,7 @@ components:
           type: string
           example: Validation failed
 paths:
-  '/api/carts/customer/{customerId}':
+  /api/carts/customer/{customerId}:
     get:
       tags:
         - cart
@@ -44,7 +44,7 @@ paths:
           required: true
           schema:
             type: string
-            pattern: '^[0-9a-fA-F]{24}$'
+            pattern: ^[0-9a-fA-F]{24}$
       responses:
         '200':
           description: Thành công
@@ -61,7 +61,7 @@ paths:
           description: Thành công
         '400':
           description: Dữ liệu không hợp lệ
-  '/api/carts/{id}':
+  /api/carts/{id}:
     get:
       tags:
         - cart
@@ -73,13 +73,13 @@ paths:
           required: true
           schema:
             type: string
-            pattern: '^[0-9a-fA-F]{24}$'
+            pattern: ^[0-9a-fA-F]{24}$
       responses:
         '200':
           description: Thành công
         '400':
           description: Dữ liệu không hợp lệ
-  '/api/carts/{cartId}/items':
+  /api/carts/{cartId}/items:
     post:
       tags:
         - cart
@@ -91,7 +91,7 @@ paths:
           required: true
           schema:
             type: string
-            pattern: '^[0-9a-fA-F]{24}$'
+            pattern: ^[0-9a-fA-F]{24}$
       requestBody:
         required: true
         content:
@@ -103,7 +103,7 @@ paths:
           description: Tạo thành công
         '400':
           description: Dữ liệu không hợp lệ
-  '/api/carts/items/{itemId}/quantity':
+  /api/carts/items/{itemId}/quantity:
     put:
       tags:
         - cart
@@ -115,7 +115,7 @@ paths:
           required: true
           schema:
             type: string
-            pattern: '^[0-9a-fA-F]{24}$'
+            pattern: ^[0-9a-fA-F]{24}$
       requestBody:
         required: true
         content:
@@ -127,7 +127,7 @@ paths:
           description: Thành công
         '400':
           description: Dữ liệu không hợp lệ
-  '/api/carts/items/{itemId}':
+  /api/carts/items/{itemId}:
     delete:
       tags:
         - cart
@@ -139,7 +139,7 @@ paths:
           required: true
           schema:
             type: string
-            pattern: '^[0-9a-fA-F]{24}$'
+            pattern: ^[0-9a-fA-F]{24}$
       requestBody:
         required: true
         content:
@@ -151,7 +151,7 @@ paths:
           description: Thành công
         '400':
           description: Dữ liệu không hợp lệ
-  '/api/carts/{cartId}/apply-promo':
+  /api/carts/{cartId}/apply-promo:
     post:
       tags:
         - cart
@@ -163,7 +163,7 @@ paths:
           required: true
           schema:
             type: string
-            pattern: '^[0-9a-fA-F]{24}$'
+            pattern: ^[0-9a-fA-F]{24}$
       requestBody:
         required: true
         content:
@@ -175,7 +175,7 @@ paths:
           description: Tạo thành công
         '400':
           description: Dữ liệu không hợp lệ
-  '/api/carts/{cartId}/remove-promo':
+  /api/carts/{cartId}/remove-promo:
     delete:
       tags:
         - cart
@@ -187,7 +187,7 @@ paths:
           required: true
           schema:
             type: string
-            pattern: '^[0-9a-fA-F]{24}$'
+            pattern: ^[0-9a-fA-F]{24}$
       requestBody:
         required: true
         content:
@@ -199,7 +199,7 @@ paths:
           description: Thành công
         '400':
           description: Dữ liệu không hợp lệ
-  '/api/carts/{cartId}/clear':
+  /api/carts/{cartId}/clear:
     delete:
       tags:
         - cart
@@ -211,7 +211,7 @@ paths:
           required: true
           schema:
             type: string
-            pattern: '^[0-9a-fA-F]{24}$'
+            pattern: ^[0-9a-fA-F]{24}$
       requestBody:
         required: true
         content:
@@ -234,7 +234,7 @@ paths:
           description: Thành công
         '400':
           description: Dữ liệu không hợp lệ
-  '/api/carts/{cartId}/checkout':
+  /api/carts/{cartId}/checkout:
     patch:
       tags:
         - cart
@@ -246,7 +246,7 @@ paths:
           required: true
           schema:
             type: string
-            pattern: '^[0-9a-fA-F]{24}$'
+            pattern: ^[0-9a-fA-F]{24}$
       requestBody:
         required: true
         content:

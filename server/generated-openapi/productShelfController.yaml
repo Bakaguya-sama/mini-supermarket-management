@@ -4,12 +4,12 @@ info:
   version: 1.0.0
   description: API cho hệ thống quản lý siêu thị mini
 servers:
-  - url: 'http://localhost:5000'
+  - url: http://localhost:5000
 components:
   schemas:
     IdParam:
       type: string
-      pattern: '^[0-9a-fA-F]{24}$'
+      pattern: ^[0-9a-fA-F]{24}$
     PaginationQuery:
       type: object
       properties:
@@ -43,7 +43,7 @@ paths:
           description: Thành công
         '400':
           description: Dữ liệu không hợp lệ
-  '/api/product-shelves/product/{productId}/shelves':
+  /api/product-shelves/product/{productId}/shelves:
     get:
       tags:
         - productShelf
@@ -55,13 +55,13 @@ paths:
           required: true
           schema:
             type: string
-            pattern: '^[0-9a-fA-F]{24}$'
+            pattern: ^[0-9a-fA-F]{24}$
       responses:
         '200':
           description: Thành công
         '400':
           description: Dữ liệu không hợp lệ
-  '/api/product-shelves/shelf/{shelfId}/products':
+  /api/product-shelves/shelf/{shelfId}/products:
     get:
       tags:
         - productShelf
@@ -73,13 +73,13 @@ paths:
           required: true
           schema:
             type: string
-            pattern: '^[0-9a-fA-F]{24}$'
+            pattern: ^[0-9a-fA-F]{24}$
       responses:
         '200':
           description: Thành công
         '400':
           description: Dữ liệu không hợp lệ
-  '/api/product-shelves/{id}/move':
+  /api/product-shelves/{id}/move:
     put:
       tags:
         - productShelf
@@ -91,7 +91,7 @@ paths:
           required: true
           schema:
             type: string
-            pattern: '^[0-9a-fA-F]{24}$'
+            pattern: ^[0-9a-fA-F]{24}$
       requestBody:
         required: true
         content:

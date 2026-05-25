@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef, useMemo } from "react";
 import {
   FiRefreshCw,
   FiCheckCircle,
@@ -10,8 +10,21 @@ import {
   FiDatabase,
   FiPackage,
   FiChevronRight,
+  FiPlay,
+  FiTerminal,
+  FiSquare,
+  FiCheck,
+  FiXCircle,
+  FiEye,
+  FiEyeOff,
+  FiTrash2,
 } from "react-icons/fi";
-import { fetchGeneratedTestMonitorSummary } from "../../../services/generatedTestMonitorService";
+import {
+  fetchGeneratedTestMonitorSummary,
+  triggerTestGeneration,
+  triggerTestExecution,
+  cancelTestTask,
+} from "../../../services/generatedTestMonitorService";
 import "./OpenApiTestMonitor.css";
 
 const formatNumber = (value) => Number(value || 0).toLocaleString();
@@ -47,6 +60,31 @@ const OpenApiTestMonitor = () => {
   const [lastUpdated, setLastUpdated] = useState(null);
   const [selectedSuite, setSelectedSuite] = useState("");
 
+  const [generationStatus, setGenerationStatus] = useState({
+    status: "idle",
+    logs: "",
+    lastRun: null,
+    error: null,
+  });
+  const [executionStatus, setExecutionStatus] = useState({
+    status: "idle",
+    logs: "",
+    lastRun: null,
+    error: null,
+  });
+  const [consoleType, setConsoleType] = useState("generation");
+  const [showTerminal, setShowTerminal] = useState(true);
+  const [actionLoading, setActionLoading] = useState(false);
+  const [failuresList, setFailuresList] = useState([]);
+  const [hasRunInSession, setHasRunInSession] = useState(false);
+  const [displaySuites, setDisplaySuites] = useState([]);
+  const [displayHistory, setDisplayHistory] = useState([]);
+  const [isSuitesCleared, setIsSuitesCleared] = useState(false);
+  const [isHistoryCleared, setIsHistoryCleared] = useState(false);
+  const [isMetadataCleared, setIsMetadataCleared] = useState(false);
+
+  const terminalEndRef = useRef(null);
+
   const loadReport = async (showSpinner = false) => {
     try {
       if (showSpinner || !report) {
@@ -57,6 +95,8 @@ const OpenApiTestMonitor = () => {
 
       const data = await fetchGeneratedTestMonitorSummary();
       setReport(data);
+      if (data?.generationStatus) setGenerationStatus(data.generationStatus);
+      if (data?.executionStatus) setExecutionStatus(data.executionStatus);
       setError(null);
       setLastUpdated(new Date().toLocaleString());
 
@@ -66,7 +106,8 @@ const OpenApiTestMonitor = () => {
           return currentSuite;
         }
 
-        const preferredSuite = suites.find((suite) => suite.status === "failed") || suites[0];
+        const preferredSuite =
+          suites.find((suite) => suite.status === "failed") || suites[0];
         return preferredSuite?.controllerName || "";
       });
     } catch (fetchError) {
@@ -82,22 +123,225 @@ const OpenApiTestMonitor = () => {
 
   useEffect(() => {
     loadReport(true);
-    const intervalId = setInterval(() => {
-      loadReport(false);
-    }, 10000);
-
-    return () => clearInterval(intervalId);
   }, []);
 
-  const summary = report?.summary || {};
-  const artifacts = report?.artifacts || {};
-  const runMetadata = report?.runMetadata || {};
-  const suites = Array.isArray(report?.suites) ? report.suites : [];
-  const latestFailures = Array.isArray(report?.latestFailures) ? report.latestFailures : [];
-  const selectedSuiteData = suites.find((suite) => suite.controllerName === selectedSuite) || suites[0] || null;
+  useEffect(() => {
+    const isWorking =
+      generationStatus.status === "generating" ||
+      executionStatus.status === "running";
+    const delay = isWorking ? 1000 : 3000;
+    const intervalId = setInterval(() => {
+      loadReport(false);
+    }, delay);
+
+    return () => clearInterval(intervalId);
+  }, [generationStatus.status, executionStatus.status]);
+
+  useEffect(() => {
+    if (terminalEndRef.current) {
+      terminalEndRef.current.scrollTop = terminalEndRef.current.scrollHeight;
+    }
+  }, [generationStatus.logs, executionStatus.logs, consoleType, showTerminal]);
+
+  useEffect(() => {
+    if (executionStatus.status === "running") {
+      setHasRunInSession(true);
+      setFailuresList([]);
+      setIsSuitesCleared(false);
+      setIsHistoryCleared(false);
+      setIsMetadataCleared(false);
+      setConsoleType("execution");
+      setShowTerminal(true);
+    }
+  }, [executionStatus.status]);
+
+  useEffect(() => {
+    if (generationStatus.status === "generating") {
+      setIsSuitesCleared(false);
+      setIsMetadataCleared(false);
+      setConsoleType("generation");
+      setShowTerminal(true);
+    }
+  }, [generationStatus.status]);
+
+  useEffect(() => {
+    if (hasRunInSession && report?.latestFailures) {
+      setFailuresList(report.latestFailures);
+    } else {
+      setFailuresList([]);
+    }
+  }, [report, hasRunInSession]);
+
+  useEffect(() => {
+    if (report) {
+      if (!isSuitesCleared) {
+        setDisplaySuites(Array.isArray(report.suites) ? report.suites : []);
+      } else {
+        setDisplaySuites([]);
+      }
+      if (!isHistoryCleared) {
+        setDisplayHistory(
+          Array.isArray(report.executionHistory) ? report.executionHistory : [],
+        );
+      } else {
+        setDisplayHistory([]);
+      }
+    }
+  }, [report, isSuitesCleared, isHistoryCleared]);
+
+  const handleGenerate = async () => {
+    try {
+      setActionLoading(true);
+      setConsoleType("generation");
+      setShowTerminal(true);
+      await triggerTestGeneration();
+      loadReport(false);
+    } catch (err) {
+      setError(
+        err?.response?.data?.message ||
+          err?.message ||
+          "Lỗi khi bắt đầu sinh ca kiểm thử.",
+      );
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleRun = async () => {
+    try {
+      setActionLoading(true);
+      setConsoleType("execution");
+      setShowTerminal(true);
+      await triggerTestExecution();
+      loadReport(false);
+    } catch (err) {
+      setError(
+        err?.response?.data?.message ||
+          err?.message ||
+          "Lỗi khi bắt đầu chạy kiểm thử.",
+      );
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleCancel = async (type) => {
+    try {
+      setActionLoading(true);
+      await cancelTestTask(type);
+      loadReport(false);
+    } catch (err) {
+      setError(
+        err?.response?.data?.message || err?.message || "Lỗi khi hủy tác vụ.",
+      );
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleClearLogs = () => {
+    if (consoleType === "generation") {
+      setGenerationStatus((prev) => ({ ...prev, logs: "" }));
+    } else {
+      setExecutionStatus((prev) => ({ ...prev, logs: "" }));
+    }
+  };
+
+  const handleClearFailures = () => {
+    setFailuresList([]);
+    setHasRunInSession(false);
+  };
+
+  const getActiveGenerationStep = () => {
+    if (generationStatus.status === "success") return 5;
+    if (generationStatus.status !== "generating") return 0;
+
+    const logs = generationStatus.logs || "";
+    if (
+      logs.includes("generateJestFile") ||
+      logs.includes("Run the generated controller suites")
+    ) {
+      return 4; // Code Gen
+    }
+    if (
+      logs.includes("Generating tests for") ||
+      logs.includes("nominalTests") ||
+      logs.includes("faultTests")
+    ) {
+      return 3; // Model Transformation
+    }
+    if (logs.includes("Found") || logs.includes("YAML")) {
+      return 2; // Model Extension
+    }
+    if (
+      logs.includes("Regenerating openapi.yaml") ||
+      logs.includes("Starting OpenAPI test generation")
+    ) {
+      return 1; // Model Extraction
+    }
+    return 1;
+  };
+
+  const displaySummary = useMemo(() => {
+    if (isSuitesCleared || isMetadataCleared || !report?.summary) {
+      return {
+        totalSuites: 0,
+        passedSuites: 0,
+        failedSuites: 0,
+        totalTests: 0,
+        passedTests: 0,
+        failedTests: 0,
+        passRate: 0,
+        runtimeErrorSuites: 0,
+        pendingSuites: 0,
+      };
+    }
+    return report.summary;
+  }, [report, isSuitesCleared, isMetadataCleared]);
+
+  const displayRunMetadata = useMemo(() => {
+    if (isSuitesCleared || isMetadataCleared || !report?.runMetadata) {
+      return {
+        startTime: null,
+        endTime: null,
+        success: false,
+        openHandlesCount: 0,
+      };
+    }
+    return report.runMetadata;
+  }, [report, isSuitesCleared, isMetadataCleared]);
+
+  const displayArtifacts = useMemo(() => {
+    if (isSuitesCleared || isMetadataCleared || !report?.artifacts) {
+      return {
+        controllerYamlCount: 0,
+        generatedTestCount: 0,
+        resultsFile: "generated-tests/openapi-results.json",
+        generatedTestsPath: "generated-tests/openapi-generated",
+      };
+    }
+    return report.artifacts;
+  }, [report, isSuitesCleared, isMetadataCleared]);
+
+  const summary = displaySummary;
+  const artifacts = displayArtifacts;
+  const runMetadata = displayRunMetadata;
+  const suites = displaySuites;
+  const selectedSuiteData =
+    suites.find((suite) => suite.controllerName === selectedSuite) ||
+    suites[0] ||
+    null;
   const passRate = Number(summary.passRate || 0);
-  const buildStateLabel = report?.available ? (summary.failedTests > 0 ? "Has failures" : "All green") : "Waiting for snapshot";
-  const buildStateTone = report?.available ? (summary.failedTests > 0 ? "warning" : "success") : "neutral";
+  const buildStateLabel = report?.available
+    ? summary.failedTests > 0
+      ? "Has failures"
+      : "All green"
+    : "Waiting for snapshot";
+  const buildStateTone = report?.available
+    ? summary.failedTests > 0
+      ? "warning"
+      : "success"
+    : "neutral";
   const totalSuites = Number(summary.totalSuites || 0);
 
   const overviewCards = [
@@ -170,18 +414,24 @@ const OpenApiTestMonitor = () => {
             </div>
             <h1>OpenAPI Test Monitor</h1>
             <p>
-              Theo dõi kết quả tạo test case tự động từ comment <span>@openapi</span>,
-              số suite sinh ra và trạng thái pass/fail sau mỗi lần chạy Jest.
+              Theo dõi kết quả tạo test case tự động từ comment{" "}
+              <span>@openapi</span>, số suite sinh ra và trạng thái pass/fail
+              sau mỗi lần chạy Jest.
             </p>
             <div className="hero-meta-row">
               <span>
-                <FiClock /> Last updated: {lastUpdated || formatDateTime(runMetadata.endTime)}
+                <FiClock /> Last updated:{" "}
+                {lastUpdated || formatDateTime(runMetadata.endTime)}
               </span>
               <span>
-                <FiDatabase /> Snapshot: {report?.available ? "Available" : "Missing"}
+                <FiDatabase /> Snapshot:{" "}
+                {report?.available && !isSuitesCleared && !isMetadataCleared
+                  ? "Available"
+                  : "Missing"}
               </span>
               <span>
-                <FiFileText /> Command: <strong>npm run test:openapi-generated</strong>
+                <FiFileText /> Command:{" "}
+                <strong>npm run test:openapi-generated</strong>
               </span>
             </div>
           </div>
@@ -190,17 +440,50 @@ const OpenApiTestMonitor = () => {
             <div className="hero-panel__header">
               <div>
                 <span className="hero-panel__label">Current run</span>
-                <strong>{report?.available ? "Live snapshot from openapi-results.json" : "Awaiting first run"}</strong>
+                <strong>
+                  {report?.available && !isSuitesCleared && !isMetadataCleared
+                    ? "Live snapshot from openapi-results.json"
+                    : "Awaiting first run"}
+                </strong>
               </div>
-              <button
-                type="button"
-                className="test-monitor-refresh"
-                onClick={() => loadReport(false)}
-                disabled={refreshing}
-              >
-                <FiRefreshCw className={refreshing ? "spin" : ""} />
-                Refresh
-              </button>
+              <div style={{ display: "flex", gap: "8px" }}>
+                {report?.available &&
+                  (!isSuitesCleared ||
+                    !isHistoryCleared ||
+                    !isMetadataCleared ||
+                    failuresList.length > 0) && (
+                    <button
+                      type="button"
+                      className="btn btn--secondary"
+                      onClick={() => {
+                        setIsSuitesCleared(true);
+                        setIsHistoryCleared(true);
+                        setIsMetadataCleared(true);
+                        setFailuresList([]);
+                        setHasRunInSession(false);
+                      }}
+                      style={{
+                        borderRadius: "14px",
+                        padding: "12px 18px",
+                        fontWeight: 700,
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "6px",
+                      }}
+                    >
+                      <FiTrash2 /> Clear All
+                    </button>
+                  )}
+                <button
+                  type="button"
+                  className="test-monitor-refresh"
+                  onClick={() => loadReport(false)}
+                  disabled={refreshing}
+                >
+                  <FiRefreshCw className={refreshing ? "spin" : ""} />
+                  Refresh
+                </button>
+              </div>
             </div>
 
             <div className="hero-panel__stats">
@@ -231,9 +514,249 @@ const OpenApiTestMonitor = () => {
           </div>
         )}
 
+        {/* CONTROL, WORKFLOW & LOG CONSOLE */}
+        <section className="test-monitor-control-section">
+          {/* Action Cards */}
+          <div className="control-cards">
+            <div className="control-card">
+              <div className="control-card__info">
+                <h3>1. Sinh ca kiểm thử</h3>
+                <p>
+                  Quét các controller routes, phân tích comment @openapi và tạo
+                  các ca kiểm thử Nominal/Fault tự động theo thuật toán của bài
+                  báo.
+                </p>
+              </div>
+              <div className="control-card__actions">
+                {generationStatus.status === "generating" ? (
+                  <button
+                    type="button"
+                    className="btn btn--danger btn--loading"
+                    onClick={() => handleCancel("generation")}
+                    disabled={actionLoading}
+                  >
+                    <FiSquare /> Hủy sinh test
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    className="btn btn--primary"
+                    onClick={handleGenerate}
+                    disabled={
+                      actionLoading || executionStatus.status === "running"
+                    }
+                  >
+                    <FiPlay /> Sinh Test Case
+                  </button>
+                )}
+                <button
+                  type="button"
+                  className={`btn btn--secondary ${consoleType === "generation" && showTerminal ? "btn--active" : ""}`}
+                  onClick={() => {
+                    setConsoleType("generation");
+                    setShowTerminal(true);
+                  }}
+                >
+                  <FiTerminal /> Xem Logs
+                </button>
+              </div>
+            </div>
+
+            <div className="control-card">
+              <div className="control-card__info">
+                <h3>2. Thực thi kiểm thử</h3>
+                <p>
+                  Khởi chạy Jest test runner để thực hiện các ca kiểm thử đã
+                  được sinh, kiểm chứng HTTP status code và JSON schema
+                  compliance.
+                </p>
+              </div>
+              <div className="control-card__actions">
+                {executionStatus.status === "running" ? (
+                  <button
+                    type="button"
+                    className="btn btn--danger btn--loading"
+                    onClick={() => handleCancel("execution")}
+                    disabled={actionLoading}
+                  >
+                    <FiSquare /> Dừng Jest
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    className="btn btn--success"
+                    onClick={handleRun}
+                    disabled={
+                      actionLoading || generationStatus.status === "generating"
+                    }
+                  >
+                    <FiPlay /> Chạy Kiểm Thử
+                  </button>
+                )}
+                <button
+                  type="button"
+                  className={`btn btn--secondary ${consoleType === "execution" && showTerminal ? "btn--active" : ""}`}
+                  onClick={() => {
+                    setConsoleType("execution");
+                    setShowTerminal(true);
+                  }}
+                >
+                  <FiTerminal /> Xem Logs
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Workflow Steps Visualizer */}
+          <div className="workflow-panel">
+            <h3 className="workflow-title">
+              Quy Trình Sinh Test Theo Đặc Tả (Paper Algorithm)
+            </h3>
+            <div className="workflow-steps">
+              <div
+                className={`workflow-step ${getActiveGenerationStep() >= 1 ? "completed" : ""} ${getActiveGenerationStep() === 1 ? "active" : ""}`}
+              >
+                <div className="step-num">
+                  {getActiveGenerationStep() > 1 ? <FiCheck /> : "1"}
+                </div>
+                <div className="step-details">
+                  <strong>Model Extraction</strong>
+                  <span>Trích xuất OpenAPI metamodel</span>
+                </div>
+              </div>
+              <div
+                className={`workflow-step ${getActiveGenerationStep() >= 2 ? "completed" : ""} ${getActiveGenerationStep() === 2 ? "active" : ""}`}
+              >
+                <div className="step-num">
+                  {getActiveGenerationStep() > 2 ? <FiCheck /> : "2"}
+                </div>
+                <div className="step-details">
+                  <strong>Model Extension</strong>
+                  <span>Suy diễn Nominal/Fault params (PR1-3)</span>
+                </div>
+              </div>
+              <div
+                className={`workflow-step ${getActiveGenerationStep() >= 3 ? "completed" : ""} ${getActiveGenerationStep() === 3 ? "active" : ""}`}
+              >
+                <div className="step-num">
+                  {getActiveGenerationStep() > 3 ? <FiCheck /> : "3"}
+                </div>
+                <div className="step-details">
+                  <strong>Model Transformation</strong>
+                  <span>Thiết lập TestSuite & Assertions</span>
+                </div>
+              </div>
+              <div
+                className={`workflow-step ${getActiveGenerationStep() >= 4 ? "completed" : ""} ${getActiveGenerationStep() === 4 ? "active" : ""}`}
+              >
+                <div className="step-num">
+                  {getActiveGenerationStep() >= 5 ? <FiCheck /> : "4"}
+                </div>
+                <div className="step-details">
+                  <strong>Code Generation</strong>
+                  <span>Sinh mã Jest test suites</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Live Terminal Log Console */}
+          {showTerminal && (
+            <div className="terminal-console">
+              <div className="terminal-header">
+                <div className="terminal-title">
+                  <FiTerminal />
+                  <span>
+                    Terminal Console —{" "}
+                    {consoleType === "generation"
+                      ? "Tự động sinh test case"
+                      : "Thực thi Jest test suite"}
+                  </span>
+                  {(consoleType === "generation"
+                    ? generationStatus.status
+                    : executionStatus.status) === "generating" ||
+                  (consoleType === "generation"
+                    ? generationStatus.status
+                    : executionStatus.status) === "running" ? (
+                    <span className="terminal-live-badge">
+                      <span className="pulse-dot"></span> LIVE
+                    </span>
+                  ) : (
+                    <span className="terminal-idle-badge">IDLE</span>
+                  )}
+                </div>
+                <div className="terminal-controls">
+                  <button
+                    type="button"
+                    className={`terminal-tab ${consoleType === "generation" ? "active" : ""}`}
+                    onClick={() => setConsoleType("generation")}
+                  >
+                    Logs Sinh Test
+                  </button>
+                  <button
+                    type="button"
+                    className={`terminal-tab ${consoleType === "execution" ? "active" : ""}`}
+                    onClick={() => setConsoleType("execution")}
+                  >
+                    Logs Chạy Jest
+                  </button>
+                  <button
+                    type="button"
+                    className="terminal-action-btn"
+                    title="Xóa log hiện tại"
+                    onClick={handleClearLogs}
+                  >
+                    <FiTrash2 /> Clear
+                  </button>
+                  <button
+                    type="button"
+                    className="terminal-action-btn"
+                    title="Ẩn terminal"
+                    onClick={() => setShowTerminal(false)}
+                  >
+                    <FiEyeOff /> Ẩn log
+                  </button>
+                </div>
+              </div>
+              <div className="terminal-body" ref={terminalEndRef}>
+                <pre>
+                  {consoleType === "generation"
+                    ? generationStatus.logs ||
+                      "Chưa có log sinh test case. Bấm 'Sinh Test Case' ở trên để khởi chạy."
+                    : executionStatus.logs ||
+                      "Chưa có log chạy Jest. Bấm 'Chạy Kiểm Thử' ở trên để khởi chạy."}
+                  {((consoleType === "generation"
+                    ? generationStatus.status
+                    : executionStatus.status) === "generating" ||
+                    (consoleType === "generation"
+                      ? generationStatus.status
+                      : executionStatus.status) === "running") && (
+                    <span className="terminal-cursor">█</span>
+                  )}
+                </pre>
+              </div>
+            </div>
+          )}
+
+          {!showTerminal && (
+            <div className="terminal-toggle-bar">
+              <button
+                type="button"
+                className="btn btn--secondary btn--small"
+                onClick={() => setShowTerminal(true)}
+              >
+                <FiEye /> Hiện Terminal Logs
+              </button>
+            </div>
+          )}
+        </section>
+
         <section className="overview-grid">
           {overviewCards.map((card) => (
-            <article key={card.label} className={`overview-card overview-card--${card.tone}`}>
+            <article
+              key={card.label}
+              className={`overview-card overview-card--${card.tone}`}
+            >
               <div className="overview-card__icon">{card.icon}</div>
               <div className="overview-card__content">
                 <span>{card.label}</span>
@@ -251,13 +774,35 @@ const OpenApiTestMonitor = () => {
                 <span className="panel__eyebrow">Generated suites</span>
                 <h2>Pass rate theo controller</h2>
               </div>
-              <span className="panel__badge">{formatNumber(suites.length)} suites tracked</span>
+              <div
+                style={{ display: "flex", alignItems: "center", gap: "8px" }}
+              >
+                {suites.length > 0 && (
+                  <button
+                    type="button"
+                    className="btn btn--secondary btn--small"
+                    onClick={() => setIsSuitesCleared(true)}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "6px",
+                      padding: "6px 12px",
+                    }}
+                  >
+                    <FiTrash2 /> Clear
+                  </button>
+                )}
+                <span className="panel__badge">
+                  {formatNumber(suites.length)} suites tracked
+                </span>
+              </div>
             </div>
 
             <div className="suite-list">
               {suites.map((suite) => {
                 const isActive = suite.controllerName === selectedSuite;
-                const suiteTone = suite.status === "failed" ? "danger" : "success";
+                const suiteTone =
+                  suite.status === "failed" ? "danger" : "success";
 
                 return (
                   <button
@@ -271,13 +816,17 @@ const OpenApiTestMonitor = () => {
                         <strong>{suite.controllerName}</strong>
                         <span>{formatNumber(suite.totalTests)} tests</span>
                       </div>
-                      <div className={`suite-status suite-status--${suiteTone}`}>
+                      <div
+                        className={`suite-status suite-status--${suiteTone}`}
+                      >
                         {suite.status}
                       </div>
                     </div>
 
                     <div className="suite-card__bar">
-                      <span style={{ width: `${Math.max(suite.passRate, 2)}%` }} />
+                      <span
+                        style={{ width: `${Math.max(suite.passRate, 2)}%` }}
+                      />
                     </div>
 
                     <div className="suite-card__meta">
@@ -286,7 +835,8 @@ const OpenApiTestMonitor = () => {
                         <FiClock /> {formatDuration(suite.durationMs)}
                       </span>
                       <span>
-                        <FiAlertTriangle /> {formatNumber(suite.failedTests)} failed
+                        <FiAlertTriangle /> {formatNumber(suite.failedTests)}{" "}
+                        failed
                       </span>
                     </div>
                   </button>
@@ -295,7 +845,8 @@ const OpenApiTestMonitor = () => {
 
               {suites.length === 0 && (
                 <div className="empty-state">
-                  No generated suite snapshot yet. Run the autogenerated test command to populate this view.
+                  No generated suite snapshot yet. Run the autogenerated test
+                  command to populate this view.
                 </div>
               )}
             </div>
@@ -305,13 +856,36 @@ const OpenApiTestMonitor = () => {
             <div className="panel__header">
               <div>
                 <span className="panel__eyebrow">Selected suite</span>
-                <h2>{selectedSuiteData?.controllerName || "No suite selected"}</h2>
+                <h2>
+                  {selectedSuiteData?.controllerName || "No suite selected"}
+                </h2>
               </div>
-              {selectedSuiteData && (
-                <span className={`suite-status suite-status--${selectedSuiteData.status === "failed" ? "danger" : "success"}`}>
-                  {selectedSuiteData.status}
-                </span>
-              )}
+              <div
+                style={{ display: "flex", alignItems: "center", gap: "8px" }}
+              >
+                {selectedSuiteData && (
+                  <button
+                    type="button"
+                    className="btn btn--secondary btn--small"
+                    onClick={() => setSelectedSuite("")}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "6px",
+                      padding: "6px 12px",
+                    }}
+                  >
+                    <FiTrash2 /> Clear
+                  </button>
+                )}
+                {selectedSuiteData && (
+                  <span
+                    className={`suite-status suite-status--${selectedSuiteData.status === "failed" ? "danger" : "success"}`}
+                  >
+                    {selectedSuiteData.status}
+                  </span>
+                )}
+              </div>
             </div>
 
             {selectedSuiteData ? (
@@ -319,15 +893,21 @@ const OpenApiTestMonitor = () => {
                 <div className="detail-summary">
                   <div>
                     <span>Tests</span>
-                    <strong>{formatNumber(selectedSuiteData.totalTests)}</strong>
+                    <strong>
+                      {formatNumber(selectedSuiteData.totalTests)}
+                    </strong>
                   </div>
                   <div>
                     <span>Passed</span>
-                    <strong>{formatNumber(selectedSuiteData.passedTests)}</strong>
+                    <strong>
+                      {formatNumber(selectedSuiteData.passedTests)}
+                    </strong>
                   </div>
                   <div>
                     <span>Failed</span>
-                    <strong>{formatNumber(selectedSuiteData.failedTests)}</strong>
+                    <strong>
+                      {formatNumber(selectedSuiteData.failedTests)}
+                    </strong>
                   </div>
                   <div>
                     <span>Pass rate</span>
@@ -338,7 +918,9 @@ const OpenApiTestMonitor = () => {
                 <div className="detail-meta">
                   <div>
                     <span>Started</span>
-                    <strong>{formatDateTime(selectedSuiteData.startTime)}</strong>
+                    <strong>
+                      {formatDateTime(selectedSuiteData.startTime)}
+                    </strong>
                   </div>
                   <div>
                     <span>Ended</span>
@@ -346,26 +928,35 @@ const OpenApiTestMonitor = () => {
                   </div>
                   <div>
                     <span>Duration</span>
-                    <strong>{formatDuration(selectedSuiteData.durationMs)}</strong>
+                    <strong>
+                      {formatDuration(selectedSuiteData.durationMs)}
+                    </strong>
                   </div>
                 </div>
 
                 <div className="failure-stack">
                   <div className="failure-stack__header">
                     <h3>Failing assertions</h3>
-                    <span>{formatNumber(selectedSuiteData.failures?.length || 0)} items</span>
+                    <span>
+                      {formatNumber(selectedSuiteData.failures?.length || 0)}{" "}
+                      items
+                    </span>
                   </div>
 
                   {(selectedSuiteData.failures || []).length > 0 ? (
                     selectedSuiteData.failures.map((failure) => (
-                      <div key={`${selectedSuiteData.controllerName}-${failure.title}`} className="failure-item">
+                      <div
+                        key={`${selectedSuiteData.controllerName}-${failure.title}`}
+                        className="failure-item"
+                      >
                         <strong>{failure.title}</strong>
                         <pre>{failure.message}</pre>
                       </div>
                     ))
                   ) : (
                     <div className="success-message">
-                      Suite này đang xanh hoàn toàn. Không có assertion fail nào trong snapshot gần nhất.
+                      Suite này đang xanh hoàn toàn. Không có assertion fail nào
+                      trong snapshot gần nhất.
                     </div>
                   )}
                 </div>
@@ -382,16 +973,63 @@ const OpenApiTestMonitor = () => {
           <div className="panel">
             <div className="panel__header">
               <div>
-                <span className="panel__eyebrow">Latest failures</span>
-                <h2>Failures gần nhất trong toàn bộ run</h2>
+                <span
+                  className="panel__eyebrow"
+                  style={{
+                    color: "#f8f8f8ff",
+                  }}
+                >
+                  Latest failures
+                </span>
+                <h2
+                  style={{
+                    color: "#f8f8f8ff",
+                  }}
+                >
+                  Failures gần nhất trong toàn bộ run
+                </h2>
               </div>
-              <span className="panel__badge">{formatNumber(latestFailures.length)} recorded</span>
+              <div
+                style={{ display: "flex", alignItems: "center", gap: "8px" }}
+              >
+                {failuresList.length > 0 && (
+                  <button
+                    type="button"
+                    className="btn btn--secondary btn--small"
+                    onClick={handleClearFailures}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "6px",
+                      padding: "6px 12px",
+                    }}
+                  >
+                    <FiTrash2 /> Clear
+                  </button>
+                )}
+                <span className="panel__badge">
+                  {hasRunInSession
+                    ? `${formatNumber(failuresList.length)} recorded`
+                    : "0 recorded"}
+                </span>
+              </div>
             </div>
 
             <div className="latest-failure-list">
-              {latestFailures.length > 0 ? (
-                latestFailures.map((failure, index) => (
-                  <div key={`${failure.controllerName}-${index}`} className="latest-failure-item">
+              {!hasRunInSession ? (
+                <div
+                  className="success-message"
+                  style={{ borderStyle: "dashed" }}
+                >
+                  Chưa chạy kiểm thử trong phiên này. Nhấp nút "Chạy Kiểm Thử" ở
+                  trên để xem kết quả.
+                </div>
+              ) : failuresList.length > 0 ? (
+                failuresList.map((failure, index) => (
+                  <div
+                    key={`${failure.controllerName}-${index}`}
+                    className="latest-failure-item"
+                  >
                     <div className="latest-failure-item__title">
                       <strong>{failure.controllerName}</strong>
                       <FiChevronRight />
@@ -411,19 +1049,53 @@ const OpenApiTestMonitor = () => {
           <div className="panel">
             <div className="panel__header">
               <div>
-                <span className="panel__eyebrow">Snapshot data</span>
-                <h2>Artifacts & run metadata</h2>
+                <span
+                  className="panel__eyebrow"
+                  style={{
+                    color: "#f8f8f8ff",
+                  }}
+                >
+                  Snapshot data
+                </span>
+                <h2
+                  style={{
+                    color: "#f8f8f8ff",
+                  }}
+                >
+                  Artifacts & run metadata
+                </h2>
               </div>
+              {!isMetadataCleared && report?.available && (
+                <button
+                  type="button"
+                  className="btn btn--secondary btn--small"
+                  onClick={() => setIsMetadataCleared(true)}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "6px",
+                    padding: "6px 12px",
+                  }}
+                >
+                  <FiTrash2 /> Clear
+                </button>
+              )}
             </div>
 
             <div className="artifact-grid">
               <div className="artifact-card">
                 <span>Results file</span>
-                <strong>{artifacts.resultsFile || "generated-tests/openapi-results.json"}</strong>
+                <strong>
+                  {artifacts.resultsFile ||
+                    "generated-tests/openapi-results.json"}
+                </strong>
               </div>
               <div className="artifact-card">
                 <span>Generated tests path</span>
-                <strong>{artifacts.generatedTestsPath || "generated-tests/openapi-generated"}</strong>
+                <strong>
+                  {artifacts.generatedTestsPath ||
+                    "generated-tests/openapi-generated"}
+                </strong>
               </div>
               <div className="artifact-card">
                 <span>Run success</span>
@@ -435,9 +1107,86 @@ const OpenApiTestMonitor = () => {
               </div>
             </div>
 
+            <div className="history-section">
+              <div
+                className="panel__header"
+                style={{ padding: 0, marginBottom: "4px" }}
+              >
+                <div>
+                  <span className="panel__eyebrow">Execution history</span>
+                  <h2>Lịch sử các lần chạy</h2>
+                </div>
+                {displayHistory.length > 0 && (
+                  <button
+                    type="button"
+                    className="btn btn--secondary btn--small"
+                    onClick={() => setIsHistoryCleared(true)}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "6px",
+                      padding: "6px 12px",
+                    }}
+                  >
+                    <FiTrash2 /> Clear
+                  </button>
+                )}
+              </div>
+              <div className="history-list">
+                {displayHistory.length > 0 ? (
+                  displayHistory.map((item, idx) => (
+                    <div key={idx} className="history-item-row">
+                      <div className="history-item-row__info">
+                        {item.success ? (
+                          <FiCheckCircle
+                            style={{ color: "#34d399", fontSize: "18px" }}
+                          />
+                        ) : (
+                          <FiXCircle
+                            style={{ color: "#f87171", fontSize: "18px" }}
+                          />
+                        )}
+                        <div className="history-item-row__meta">
+                          <span>
+                            {item.success
+                              ? "All Passed"
+                              : `${item.failedTests} cases failed`}
+                          </span>
+                          <time>{formatDateTime(item.timestamp)}</time>
+                        </div>
+                      </div>
+                      <div className="history-item-row__stats">
+                        <span
+                          className={`history-item-row__rate ${item.success ? "history-item-row__rate--success" : "history-item-row__rate--fail"}`}
+                        >
+                          {formatPercent(item.passRate)}
+                        </span>
+                        <span className="history-item-row__details">
+                          {item.passedTests}/{item.totalTests} tests (
+                          {formatDuration(item.durationMs)})
+                        </span>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <div
+                    className="empty-state"
+                    style={{
+                      padding: "12px",
+                      textAlign: "center",
+                      fontSize: "0.82rem",
+                    }}
+                  >
+                    No test history has been recorded yet.
+                  </div>
+                )}
+              </div>
+            </div>
+
             <div className="note-card">
-              The page refreshes automatically every 10 seconds and always reads the latest
-              Jest JSON snapshot produced by <strong>npm run test:openapi-generated</strong>.
+              The page refreshes automatically every 10 seconds and always reads
+              the latest Jest JSON snapshot produced by{" "}
+              <strong>npm run test:openapi-generated</strong>.
             </div>
           </div>
         </section>

@@ -31,32 +31,5 @@ components:
         message:
           type: string
           example: Validation failed
-paths:
-  /api/telemetry/traces:
-    get:
-      tags:
-        - telemetry
-      summary: get Traces
-      operationId: getTraces
-      responses:
-        '200':
-          description: Thành công
-        '400':
-          description: Dữ liệu không hợp lệ
-    delete:
-      tags:
-        - telemetry
-      summary: clear Traces
-      operationId: clearTraces
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-      responses:
-        '200':
-          description: Thành công
-        '400':
-          description: Dữ liệu không hợp lệ
+paths: {}
 tags: []

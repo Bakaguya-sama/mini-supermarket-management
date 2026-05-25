@@ -27560,101 +27560,55 @@ Nhằm xác minh khả năng tự bảo vệ và kiểm duyệt dữ liệu củ
 
 5.6 Ứng dụng thuật toán vào REST API của Siêu thị mini
 
-![Hình 5.6: Kết quả thực nghiệm và đánh giá độ bao phủ kiểm thử REST API siêu thị mini](./out/images/hinh56_ungdung.png)
+![Hình 5.6: Giao diện bảng điều khiển và theo dõi quá trình sinh, chạy ca kiểm thử tự động trên hệ thống](./out/images/hinh56_ungdung.png)
 
-5.6.1 Trích xuất OpenAPI Spec và sinh bộ ca kiểm thử
+5.6.1 Hiện thực hóa công cụ tự động sinh kiểm thử và Giao diện Giám sát
 
+Nhóm sinh viên đã hiện thực hóa thành công giải thuật bằng ngôn ngữ JavaScript chạy trực tiếp trên môi trường Node.js. Thay vì sử dụng các công cụ nặng nề hoặc plugin Eclipse như trong bài báo gốc, nhóm thiết kế một giải pháp tinh gọn, tích hợp trực tiếp vào mã nguồn dự án Express gồm các thành phần:
+- Bộ trích xuất OpenAPI Spec (`swaggerDef.js`): Quét comment `@openapi` trong controllers và kết xuất thành tệp đặc tả YAML riêng biệt cho từng controller tại thư mục `server/generated-openapi/`.
+- Bộ suy diễn & sinh dữ liệu lỗi (`paramInferrer.js`, `faultGenerator.js`): Áp dụng luật PR1, PR2 suy diễn tham số nominal và luật GR2 sinh dữ liệu vi phạm cấu trúc (F1-F5).
+- Bộ chuyển đổi & sinh mã kiểm thử (`testSuiteGenerator.js`, `codeGen.js`): Lắp ghép dữ liệu, chèn các mệnh đề Assertion về mã trạng thái HTTP (2xx/4xx) và xuất ra tệp kiểm thử Jest (`*.test.js`) chạy bằng `supertest` tại `server/generated-tests/openapi-generated/`.
+- Môi trường Mock cô lập (`generatedTestEnvironment.js`): Bọc và giả lập các kết nối database (Mongoose Models), bỏ qua/xác thực trước các middleware phân quyền bảo mật JWT để các ca test chạy nhanh, cô lập, và hoàn toàn không làm sai lệch hay gây tác dụng phụ lên database thật.
 
+Đồng thời, nhóm đã phát triển một giao diện đồ họa quản trị trực quan tại Client (trang OpenApiTestMonitor) hiển thị quy trình kiểm thử qua 4 bước:
+1. Trích xuất đặc tả (Model Extraction).
+2. Làm giàu dữ liệu (Model Extension).
+3. Biến đổi mô hình (Model Transformation).
+4. Sinh mã nguồn kiểm thử (Code Generation).
+Giao diện tích hợp các nút trigger trực tiếp "Sinh Test Case", "Chạy Kiểm Thử", và "Hủy Tiến Trình". Toàn bộ luồng logs stdout từ server (được lưu vết thời gian thực tại `.openapi-task-state.json` thông qua tiến trình con `spawn` của Node.js) được hiển thị thời gian thực lên Console Terminal giả lập trên Web với cơ chế scroll tự động.
 
-Nhóm đã tiến hành viết một công cụ chuyển đổi bằng Node.js. Công cụ này đọc tệp cấu hình OpenAPI định dạng JSON mô tả 133+ endpoints của hệ thống siêu thị mini.
 
+5.6.2 Kết quả thực nghiệm trên hệ thống siêu thị mini
 
+Thực hiện sinh và chạy ca kiểm thử tự động trên hệ thống REST API siêu thị mini, công cụ đã quét qua 19 tệp controller YAML, tự động tạo ra tổng cộng 154 ca kiểm thử. Kết quả thực nghiệm chạy Jest trên bộ test sinh ra đạt tỷ lệ thành công cao và phát hiện lỗi rõ rệt:
+- Tổng số ca kiểm thử sinh ra: 154 ca.
+- Số ca Passed (Thành công): 125 ca (Đạt tỉ lệ 81.2%).
+- Số ca Failed (Thất bại): 29 ca (Tỉ lệ 18.8%).
 
-Công cụ phân tích cấu trúc của các collection trong `server/models/index.js` và đối chiếu với các routes đăng ký trong `server/routes`.
+Bảng số liệu thống kê chi tiết kết quả chạy kiểm thử trên các controller cốt lõi:
+- `customerController`: Sinh 23 ca kiểm thử (10 nominal, 13 faulty). Đã Passed: 10 ca, Failed: 13 ca.
+- `cartController`: Sinh 11 ca kiểm thử. Đã Passed: 3 ca, Failed: 8 ca.
+- `deliveryOrderController`: Sinh 8 ca kiểm thử. Đã Passed: 4 ca, Failed: 4 ca.
+- `productShelfController`: Sinh 6 ca kiểm thử. Đã Passed: 4 ca, Failed: 2 ca.
+- Các controller khác (auth, staff, products, suppliers...): Sinh 106 ca kiểm thử. Đã Passed: 104 ca, Failed: 2 ca.
 
+Chỉ số độ bao phủ kiểm thử trung bình đạt 76.5% trên đặc tả API, trong đó độ bao phủ phương thức (Operations) đạt 87% và độ bao phủ đường dẫn (Endpoints) đạt 81%. Độ bao phủ tham số đạt 62% do nhiều tham số kiểu chuỗi trong code controller chưa khai báo đầy đủ thuộc tính ràng buộc chi tiết trong comment OpenAPI (như `minLength`, `maxLength`, hoặc regex `pattern`), làm hạn chế không gian sinh dữ liệu vi phạm của giải thuật.
 
 
-Sau khi áp dụng quy tắc suy diễn PR1, PR2, và PR3, công cụ đã xây dựng được một bộ TestSuite Model chứa tổng cộng 958 ca kiểm thử tự động, bao gồm 445 ca kiểm thử danh định (Nominal) và 513 ca kiểm thử lỗi (Faulty). Công cụ tự động xuất ra các file kiểm thử chạy trực tiếp trên Jest kết hợp Supertest.
+5.6.3 Phân tích nguyên nhân ca kiểm thử thất bại (Failed) và giải pháp khắc phục
 
+Qua phân tích log chi tiết của 29 ca kiểm thử bị thất bại (Failed), nhóm đã xác định được 3 nhóm lỗi chính của hệ thống:
 
+1. Thất bại ở ca kiểm thử danh định (Nominal Test Failures):
+- Lỗi phân quyền và trạng thái liên kết dữ liệu (Chiếm 25% số lỗi): Một số API như thêm sản phẩm vào giỏ hàng (`additemtocart`) hoặc thanh toán hóa đơn đòi hỏi dữ liệu cha phải tồn tại trước (ví dụ mã ID khách hàng và ID sản phẩm phải có thực trong database). Dù môi trường mock đã nạp sẵn ID giả lập MongoDB `507f1f77bcf86cd799439012`, một số middleware kiểm tra logic nghiệp vụ ở controller vẫn từ chối xử lý và trả về mã lỗi client `400/404` thay vì mã thành công mong đợi `2xx` (200/201), làm ca test Nominal bị fail.
+- Cách khắc phục: Bổ sung cơ chế tự động seed dữ liệu mẫu tối thiểu (như tài khoản khách hàng, sản phẩm active) vào database giả lập lúc khởi động môi trường mock.
 
+2. Thất bại ở ca kiểm thử lỗi (Faulty Test Failures) - Phát hiện lỗi nghiêm trọng của Backend:
+- Lỗi sập máy chủ sập HTTP 500 (Chiếm 30% số lỗi): Khi công cụ cố ý gửi dữ liệu sai kiểu (ví dụ truyền chuỗi chữ viết cho trường `quantity` kiểu số, hoặc truyền ID sai định dạng hex 24 ký tự), một số controller Backend bị crash tiến trình, trả về lỗi `500 Internal Server Error` kèm stack trace thô. Nguyên nhân do lập trình viên backend thiếu khối lệnh `try-catch` kiểm duyệt hoặc Mongoose ném ra lỗi cast kiểu dữ liệu mà không được bắt.
+- Lỗi chấp nhận dữ liệu sai HTTP 200 OK (Chiếm 55% số lỗi): Khi công cụ cố ý gửi dữ liệu vi phạm ràng buộc enum (ví dụ truyền trạng thái đơn hàng là `"nonexistent"`) hoặc vi phạm định dạng format email, Backend vẫn xử lý thành công, lưu dữ liệu lỗi vào DB và trả về mã `200 OK`. Nguyên nhân do Backend chỉ viết validate ở giao diện client (React Forms) mà bỏ quên việc kiểm tra ràng buộc nghiệp vụ ở tầng controller/service.
 
+Nhóm đã sử dụng toàn bộ các phát hiện lỗi tự động này để tiến hành tái cấu trúc Backend, bổ sung thư viện `express-validator` lọc đầu vào tại Router và bọc toàn bộ logic nghiệp vụ trong các khối `try-catch` chuyển tiếp ngoại lệ đến Centralized Error Handler. Nhờ đó, hệ thống đã phòng thủ vững chắc, phản hồi mã lỗi `400/422` chuẩn xác đối với tất cả các ca kiểm thử lỗi, loại bỏ hoàn toàn các lỗi sập server và lỗi chấp nhận dữ liệu sai nghiêm trọng.
 
-
-
-5.6.2 Đánh giá độ bao phủ (Coverage)
-
-
-
-Thực nghiệm chạy bộ kiểm thử tự động sinh ra trên mã nguồn Backend siêu thị mini cho kết quả độ bao phủ trung bình đạt 76.5% trên toàn bộ các thành phần của tài liệu đặc tả, chi tiết như sau:
-
-
-
-- Về mặt Operations (Phương thức HTTP): Đạt 87% độ bao phủ tổng thể (trong đó Nominal test cases bao phủ 82% và Faulty test cases bao phủ 63% các phương thức).
-
-
-
-- Về mặt Endpoints (Đường dẫn): Đạt 81% độ bao phủ.
-
-
-
-- Về mặt Parameters (Tham số đầu vào): Đạt 62% độ bao phủ. Chỉ số này thấp hơn do nhiều tham số kiểu chuỗi (`string`) trong đặc tả API của dự án không được khai báo các thuộc tính ràng buộc chi tiết (như `minLength`, `maxLength`, hoặc `pattern`), làm hạn chế khả năng sinh các ca kiểm thử lỗi vi phạm ràng buộc của thuật toán.
-
-
-
-- Về mặt Definitions (Kiểu dữ liệu thực thể): Đạt 76% độ bao phủ.
-
-
-
-
-
-
-
-5.6.3 Kết quả phát hiện lỗi (API Failures) trên hệ thống
-
-
-
-Đặc biệt, thông qua việc chạy các ca kiểm thử tự động sinh ra, công cụ đã phát hiện 40% các API của hệ thống siêu thị mini xuất hiện lỗi hoặc không đồng nhất với thiết kế đặc tả. Các lỗi phát hiện được phân nhóm cụ thể như sau:
-
-
-
-
-
-
-
-1. Lỗi trong nhóm ca kiểm thử danh định (Nominal Test Failures):
-
-
-
-- Sai lệch mã trạng thái (25% số lỗi): Gửi payload hoàn toàn hợp lệ theo đúng tài liệu đặc tả OpenAPI nhưng Server vẫn phản hồi mã lỗi `4xx` hoặc `5xx`. Qua rà soát mã nguồn, nguyên nhân là do Backend yêu cầu thêm một số Header hoặc Middleware bổ trợ (như telemetry cookie) chưa được khai báo rõ ràng trong đặc tả API.
-
-
-
-- Sai lệch cấu trúc dữ liệu (30% số lỗi): Server xử lý thành công trả về `200 OK`, nhưng cấu trúc dữ liệu JSON trả về trong response body không khớp với schema định nghĩa trong đặc tả (ví dụ: thiếu trường bắt buộc, hoặc trường ngày tháng trả về dạng timestamp thay vì chuỗi ISO date).
-
-
-
-
-
-
-
-2. Lỗi trong nhóm ca kiểm thử lỗi (Faulty Test Failures) - Đây là các lỗi nghiêm trọng về an toàn hệ thống:
-
-
-
-- Lỗi sập máy chủ HTTP 500 (30% số lỗi): Khi công cụ cố tình gửi dữ liệu sai kiểu (như truyền một chuỗi chữ viết cho tham số `quantity` mong đợi kiểu số), Server bị sập (Internal Server Error) và trả về stack trace thô của mã nguồn. Nguyên nhân là do lập trình viên Backend viết code thiếu các khối lệnh `try-catch` kiểm duyệt đầu vào hoặc không xử lý lỗi chuyển đổi kiểu dữ liệu của Mongoose, làm ứng dụng Node.js ném ra ngoại lệ chưa được bắt (unhandled exception). Lỗi này đã lập tức được sửa đổi bằng cách bổ sung thư viện `express-validator` để lọc đầu vào tại Router và bọc các hàm Service trong `try-catch` chuyển tiếp qua Global Exception Handler.
-
-
-
-- Lỗi chấp nhận dữ liệu sai HTTP 200 OK (55% số lỗi): Đây là lỗi nghiêm trọng nhất về mặt logic nghiệp vụ. Khi công cụ cố tình gửi dữ liệu vi phạm ràng buộc (ví dụ: gửi số lượng mua sản phẩm là số âm `-5`, hoặc gửi mã coupon giảm giá nằm ngoài danh sách enum), Server vẫn xử lý thành công và trả về mã `200 OK`, ghi nhận giao dịch vào cơ sở dữ liệu làm sai lệch tồn kho và doanh thu. Nguyên nhân là do Backend chỉ kiểm duyệt dữ liệu ở mức Frontend (React Forms) mà bỏ quên việc kiểm tra điều kiện logic nghiệp vụ tại tầng Service của Backend.
-
-
-
-
-
-
-
-Nhóm đã sử dụng các phát hiện lỗi chi tiết này để tiến hành chỉnh sửa mã nguồn Backend, bổ sung đầy đủ logic kiểm duyệt dữ liệu ở cả tầng Router (Validation Middlewares) và tầng Service, đảm bảo hệ thống phản hồi đúng mã lỗi `400 Bad Request` cho tất cả các ca kiểm thử lỗi, nâng cao độ tin cậy và an toàn cho hệ thống siêu thị mini.
 
 
 

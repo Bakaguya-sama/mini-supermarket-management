@@ -1,4 +1,4 @@
-// server/server.js - UPDATED WITH NEW ROUTES
+// server/server.js - UPDATED WITH NEW ROUTES - NODEMON RECURSIVE RELOAD
 // IMPORTANT: In CI/test we skip heavy telemetry to avoid noisy failures
 if (process.env.NODE_ENV !== 'test') {
   try {

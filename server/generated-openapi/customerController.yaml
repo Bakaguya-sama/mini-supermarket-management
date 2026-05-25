@@ -4,12 +4,12 @@ info:
   version: 1.0.0
   description: API cho hệ thống quản lý siêu thị mini
 servers:
-  - url: 'http://localhost:5000'
+  - url: http://localhost:5000
 components:
   schemas:
     IdParam:
       type: string
-      pattern: '^[0-9a-fA-F]{24}$'
+      pattern: ^[0-9a-fA-F]{24}$
     PaginationQuery:
       type: object
       properties:
@@ -108,8 +108,8 @@ paths:
                   example: customer@example.com
                 phone:
                   type: string
-                  pattern: '^[0-9]{10}$'
-                  example: 0912345678
+                  pattern: ^[0-9]{10}$
+                  example: '0912345678'
                 address:
                   type: string
                   minLength: 5
@@ -145,7 +145,7 @@ paths:
           description: Invalid customer data
         '422':
           description: Validation error
-  '/api/customers/{id}':
+  /api/customers/{id}:
     get:
       tags:
         - customer
@@ -157,7 +157,7 @@ paths:
           required: true
           schema:
             type: string
-            pattern: '^[0-9a-fA-F]{24}$'
+            pattern: ^[0-9a-fA-F]{24}$
             example: 507f1f77bcf86cd799439011
           description: MongoDB customer ID
       responses:
@@ -178,7 +178,7 @@ paths:
           required: true
           schema:
             type: string
-            pattern: '^[0-9a-fA-F]{24}$'
+            pattern: ^[0-9a-fA-F]{24}$
             example: 507f1f77bcf86cd799439011
       requestBody:
         required: true
@@ -196,7 +196,7 @@ paths:
                   format: email
                 phone:
                   type: string
-                  pattern: '^[0-9]{10}$'
+                  pattern: ^[0-9]{10}$
                 address:
                   type: string
                   minLength: 5
@@ -237,7 +237,7 @@ paths:
           required: true
           schema:
             type: string
-            pattern: '^[0-9a-fA-F]{24}$'
+            pattern: ^[0-9a-fA-F]{24}$
             example: 507f1f77bcf86cd799439011
       requestBody:
         required: false
@@ -258,7 +258,7 @@ paths:
           description: Invalid customer ID
         '404':
           description: Customer not found
-  '/api/customers/account/{accountId}':
+  /api/customers/account/{accountId}:
     get:
       tags:
         - customer
@@ -270,7 +270,7 @@ paths:
           required: true
           schema:
             type: string
-            pattern: '^[0-9a-fA-F]{24}$'
+            pattern: ^[0-9a-fA-F]{24}$
             example: 507f1f77bcf86cd799439011
           description: MongoDB account ID
       responses:
@@ -310,7 +310,7 @@ paths:
                         minimum: 0
         '400':
           description: Error retrieving statistics
-  '/api/customers/{id}/points':
+  /api/customers/{id}/points:
     patch:
       tags:
         - customer
@@ -322,7 +322,7 @@ paths:
           required: true
           schema:
             type: string
-            pattern: '^[0-9a-fA-F]{24}$'
+            pattern: ^[0-9a-fA-F]{24}$
             example: 507f1f77bcf86cd799439011
       requestBody:
         required: true
@@ -347,7 +347,7 @@ paths:
           description: Customer not found
         '422':
           description: Validation error
-  '/api/customers/{id}/spent':
+  /api/customers/{id}/spent:
     patch:
       tags:
         - customer
@@ -359,7 +359,7 @@ paths:
           required: true
           schema:
             type: string
-            pattern: '^[0-9a-fA-F]{24}$'
+            pattern: ^[0-9a-fA-F]{24}$
             example: 507f1f77bcf86cd799439011
       requestBody:
         required: true
@@ -384,7 +384,7 @@ paths:
           description: Customer not found
         '422':
           description: Validation error
-  '/api/customers/{id}/orders':
+  /api/customers/{id}/orders:
     get:
       tags:
         - customer
@@ -396,7 +396,7 @@ paths:
           required: true
           schema:
             type: string
-            pattern: '^[0-9a-fA-F]{24}$'
+            pattern: ^[0-9a-fA-F]{24}$
             example: 507f1f77bcf86cd799439011
         - in: query
           name: page

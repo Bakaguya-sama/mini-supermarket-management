@@ -4,12 +4,12 @@ info:
   version: 1.0.0
   description: API cho hệ thống quản lý siêu thị mini
 servers:
-  - url: 'http://localhost:5000'
+  - url: http://localhost:5000
 components:
   schemas:
     IdParam:
       type: string
-      pattern: '^[0-9a-fA-F]{24}$'
+      pattern: ^[0-9a-fA-F]{24}$
     PaginationQuery:
       type: object
       properties:
@@ -59,7 +59,7 @@ paths:
           description: Tạo thành công
         '400':
           description: Dữ liệu không hợp lệ
-  '/api/orders/{id}':
+  /api/orders/{id}:
     get:
       tags:
         - order
@@ -71,7 +71,7 @@ paths:
           required: true
           schema:
             type: string
-            pattern: '^[0-9a-fA-F]{24}$'
+            pattern: ^[0-9a-fA-F]{24}$
       responses:
         '200':
           description: Thành công
@@ -88,7 +88,7 @@ paths:
           required: true
           schema:
             type: string
-            pattern: '^[0-9a-fA-F]{24}$'
+            pattern: ^[0-9a-fA-F]{24}$
       requestBody:
         required: true
         content:
@@ -111,7 +111,7 @@ paths:
           required: true
           schema:
             type: string
-            pattern: '^[0-9a-fA-F]{24}$'
+            pattern: ^[0-9a-fA-F]{24}$
       requestBody:
         required: true
         content:
@@ -123,7 +123,7 @@ paths:
           description: Thành công
         '400':
           description: Dữ liệu không hợp lệ
-  '/api/orders/customer/{customerId}':
+  /api/orders/customer/{customerId}:
     get:
       tags:
         - order
@@ -135,7 +135,7 @@ paths:
           required: true
           schema:
             type: string
-            pattern: '^[0-9a-fA-F]{24}$'
+            pattern: ^[0-9a-fA-F]{24}$
       responses:
         '200':
           description: Thành công
@@ -152,7 +152,7 @@ paths:
           description: Thành công
         '400':
           description: Dữ liệu không hợp lệ
-  '/api/orders/{id}/items/{itemId}/status':
+  /api/orders/{id}/items/{itemId}/status:
     patch:
       tags:
         - order
@@ -164,13 +164,13 @@ paths:
           required: true
           schema:
             type: string
-            pattern: '^[0-9a-fA-F]{24}$'
+            pattern: ^[0-9a-fA-F]{24}$
         - in: path
           name: itemId
           required: true
           schema:
             type: string
-            pattern: '^[0-9a-fA-F]{24}$'
+            pattern: ^[0-9a-fA-F]{24}$
       requestBody:
         required: true
         content:
@@ -182,7 +182,7 @@ paths:
           description: Thành công
         '400':
           description: Dữ liệu không hợp lệ
-  '/api/orders/{id}/cancel':
+  /api/orders/{id}/cancel:
     patch:
       tags:
         - order
@@ -194,7 +194,7 @@ paths:
           required: true
           schema:
             type: string
-            pattern: '^[0-9a-fA-F]{24}$'
+            pattern: ^[0-9a-fA-F]{24}$
       requestBody:
         required: true
         content:

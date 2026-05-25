@@ -4,12 +4,12 @@ info:
   version: 1.0.0
   description: API cho hệ thống quản lý siêu thị mini
 servers:
-  - url: 'http://localhost:5000'
+  - url: http://localhost:5000
 components:
   schemas:
     IdParam:
       type: string
-      pattern: '^[0-9a-fA-F]{24}$'
+      pattern: ^[0-9a-fA-F]{24}$
     PaginationQuery:
       type: object
       properties:
@@ -145,7 +145,7 @@ paths:
           description: Tạo thành công
         '400':
           description: Dữ liệu không hợp lệ
-  '/api/carts/customer/{customerId}':
+  /api/carts/customer/{customerId}:
     get:
       tags:
         - cart
@@ -157,7 +157,7 @@ paths:
           required: true
           schema:
             type: string
-            pattern: '^[0-9a-fA-F]{24}$'
+            pattern: ^[0-9a-fA-F]{24}$
       responses:
         '200':
           description: Thành công
@@ -174,7 +174,7 @@ paths:
           description: Thành công
         '400':
           description: Dữ liệu không hợp lệ
-  '/api/carts/{id}':
+  /api/carts/{id}:
     get:
       tags:
         - cart
@@ -186,13 +186,13 @@ paths:
           required: true
           schema:
             type: string
-            pattern: '^[0-9a-fA-F]{24}$'
+            pattern: ^[0-9a-fA-F]{24}$
       responses:
         '200':
           description: Thành công
         '400':
           description: Dữ liệu không hợp lệ
-  '/api/carts/{cartId}/items':
+  /api/carts/{cartId}/items:
     post:
       tags:
         - cart
@@ -204,7 +204,7 @@ paths:
           required: true
           schema:
             type: string
-            pattern: '^[0-9a-fA-F]{24}$'
+            pattern: ^[0-9a-fA-F]{24}$
       requestBody:
         required: true
         content:
@@ -216,7 +216,7 @@ paths:
           description: Tạo thành công
         '400':
           description: Dữ liệu không hợp lệ
-  '/api/carts/items/{itemId}/quantity':
+  /api/carts/items/{itemId}/quantity:
     put:
       tags:
         - cart
@@ -228,7 +228,7 @@ paths:
           required: true
           schema:
             type: string
-            pattern: '^[0-9a-fA-F]{24}$'
+            pattern: ^[0-9a-fA-F]{24}$
       requestBody:
         required: true
         content:
@@ -240,7 +240,7 @@ paths:
           description: Thành công
         '400':
           description: Dữ liệu không hợp lệ
-  '/api/carts/items/{itemId}':
+  /api/carts/items/{itemId}:
     delete:
       tags:
         - cart
@@ -252,7 +252,7 @@ paths:
           required: true
           schema:
             type: string
-            pattern: '^[0-9a-fA-F]{24}$'
+            pattern: ^[0-9a-fA-F]{24}$
       requestBody:
         required: true
         content:
@@ -264,7 +264,7 @@ paths:
           description: Thành công
         '400':
           description: Dữ liệu không hợp lệ
-  '/api/carts/{cartId}/apply-promo':
+  /api/carts/{cartId}/apply-promo:
     post:
       tags:
         - cart
@@ -276,7 +276,7 @@ paths:
           required: true
           schema:
             type: string
-            pattern: '^[0-9a-fA-F]{24}$'
+            pattern: ^[0-9a-fA-F]{24}$
       requestBody:
         required: true
         content:
@@ -288,7 +288,7 @@ paths:
           description: Tạo thành công
         '400':
           description: Dữ liệu không hợp lệ
-  '/api/carts/{cartId}/remove-promo':
+  /api/carts/{cartId}/remove-promo:
     delete:
       tags:
         - cart
@@ -300,7 +300,7 @@ paths:
           required: true
           schema:
             type: string
-            pattern: '^[0-9a-fA-F]{24}$'
+            pattern: ^[0-9a-fA-F]{24}$
       requestBody:
         required: true
         content:
@@ -312,7 +312,7 @@ paths:
           description: Thành công
         '400':
           description: Dữ liệu không hợp lệ
-  '/api/carts/{cartId}/clear':
+  /api/carts/{cartId}/clear:
     delete:
       tags:
         - cart
@@ -324,7 +324,7 @@ paths:
           required: true
           schema:
             type: string
-            pattern: '^[0-9a-fA-F]{24}$'
+            pattern: ^[0-9a-fA-F]{24}$
       requestBody:
         required: true
         content:
@@ -347,7 +347,7 @@ paths:
           description: Thành công
         '400':
           description: Dữ liệu không hợp lệ
-  '/api/carts/{cartId}/checkout':
+  /api/carts/{cartId}/checkout:
     patch:
       tags:
         - cart
@@ -359,7 +359,7 @@ paths:
           required: true
           schema:
             type: string
-            pattern: '^[0-9a-fA-F]{24}$'
+            pattern: ^[0-9a-fA-F]{24}$
       requestBody:
         required: true
         content:
@@ -447,8 +447,8 @@ paths:
                   example: customer@example.com
                 phone:
                   type: string
-                  pattern: '^[0-9]{10}$'
-                  example: 0912345678
+                  pattern: ^[0-9]{10}$
+                  example: '0912345678'
                 address:
                   type: string
                   minLength: 5
@@ -484,7 +484,7 @@ paths:
           description: Invalid customer data
         '422':
           description: Validation error
-  '/api/customers/{id}':
+  /api/customers/{id}:
     get:
       tags:
         - customer
@@ -496,7 +496,7 @@ paths:
           required: true
           schema:
             type: string
-            pattern: '^[0-9a-fA-F]{24}$'
+            pattern: ^[0-9a-fA-F]{24}$
             example: 507f1f77bcf86cd799439011
           description: MongoDB customer ID
       responses:
@@ -517,7 +517,7 @@ paths:
           required: true
           schema:
             type: string
-            pattern: '^[0-9a-fA-F]{24}$'
+            pattern: ^[0-9a-fA-F]{24}$
             example: 507f1f77bcf86cd799439011
       requestBody:
         required: true
@@ -535,7 +535,7 @@ paths:
                   format: email
                 phone:
                   type: string
-                  pattern: '^[0-9]{10}$'
+                  pattern: ^[0-9]{10}$
                 address:
                   type: string
                   minLength: 5
@@ -576,7 +576,7 @@ paths:
           required: true
           schema:
             type: string
-            pattern: '^[0-9a-fA-F]{24}$'
+            pattern: ^[0-9a-fA-F]{24}$
             example: 507f1f77bcf86cd799439011
       requestBody:
         required: false
@@ -597,7 +597,7 @@ paths:
           description: Invalid customer ID
         '404':
           description: Customer not found
-  '/api/customers/account/{accountId}':
+  /api/customers/account/{accountId}:
     get:
       tags:
         - customer
@@ -609,7 +609,7 @@ paths:
           required: true
           schema:
             type: string
-            pattern: '^[0-9a-fA-F]{24}$'
+            pattern: ^[0-9a-fA-F]{24}$
             example: 507f1f77bcf86cd799439011
           description: MongoDB account ID
       responses:
@@ -649,7 +649,7 @@ paths:
                         minimum: 0
         '400':
           description: Error retrieving statistics
-  '/api/customers/{id}/points':
+  /api/customers/{id}/points:
     patch:
       tags:
         - customer
@@ -661,7 +661,7 @@ paths:
           required: true
           schema:
             type: string
-            pattern: '^[0-9a-fA-F]{24}$'
+            pattern: ^[0-9a-fA-F]{24}$
             example: 507f1f77bcf86cd799439011
       requestBody:
         required: true
@@ -686,7 +686,7 @@ paths:
           description: Customer not found
         '422':
           description: Validation error
-  '/api/customers/{id}/spent':
+  /api/customers/{id}/spent:
     patch:
       tags:
         - customer
@@ -698,7 +698,7 @@ paths:
           required: true
           schema:
             type: string
-            pattern: '^[0-9a-fA-F]{24}$'
+            pattern: ^[0-9a-fA-F]{24}$
             example: 507f1f77bcf86cd799439011
       requestBody:
         required: true
@@ -723,7 +723,7 @@ paths:
           description: Customer not found
         '422':
           description: Validation error
-  '/api/customers/{id}/orders':
+  /api/customers/{id}/orders:
     get:
       tags:
         - customer
@@ -735,7 +735,7 @@ paths:
           required: true
           schema:
             type: string
-            pattern: '^[0-9a-fA-F]{24}$'
+            pattern: ^[0-9a-fA-F]{24}$
             example: 507f1f77bcf86cd799439011
         - in: query
           name: page
@@ -776,7 +776,7 @@ paths:
           description: Thành công
         '400':
           description: Dữ liệu không hợp lệ
-  '/api/damaged-products/product/{productId}':
+  /api/damaged-products/product/{productId}:
     get:
       tags:
         - damagedProduct
@@ -788,13 +788,13 @@ paths:
           required: true
           schema:
             type: string
-            pattern: '^[0-9a-fA-F]{24}$'
+            pattern: ^[0-9a-fA-F]{24}$
       responses:
         '200':
           description: Thành công
         '400':
           description: Dữ liệu không hợp lệ
-  '/api/damaged-products/{id}/adjust-inventory':
+  /api/damaged-products/{id}/adjust-inventory:
     put:
       tags:
         - damagedProduct
@@ -806,7 +806,7 @@ paths:
           required: true
           schema:
             type: string
-            pattern: '^[0-9a-fA-F]{24}$'
+            pattern: ^[0-9a-fA-F]{24}$
       requestBody:
         required: true
         content:
@@ -818,7 +818,7 @@ paths:
           description: Thành công
         '400':
           description: Dữ liệu không hợp lệ
-  '/api/damaged-products/{id}/shelves':
+  /api/damaged-products/{id}/shelves:
     get:
       tags:
         - damagedProduct
@@ -830,7 +830,7 @@ paths:
           required: true
           schema:
             type: string
-            pattern: '^[0-9a-fA-F]{24}$'
+            pattern: ^[0-9a-fA-F]{24}$
       responses:
         '200':
           description: Thành công
@@ -880,7 +880,7 @@ paths:
           description: Tạo thành công
         '400':
           description: Dữ liệu không hợp lệ
-  '/api/delivery-orders/{id}':
+  /api/delivery-orders/{id}:
     get:
       tags:
         - deliveryOrder
@@ -892,7 +892,7 @@ paths:
           required: true
           schema:
             type: string
-            pattern: '^[0-9a-fA-F]{24}$'
+            pattern: ^[0-9a-fA-F]{24}$
       responses:
         '200':
           description: Thành công
@@ -909,7 +909,7 @@ paths:
           required: true
           schema:
             type: string
-            pattern: '^[0-9a-fA-F]{24}$'
+            pattern: ^[0-9a-fA-F]{24}$
       requestBody:
         required: true
         content:
@@ -932,7 +932,7 @@ paths:
           required: true
           schema:
             type: string
-            pattern: '^[0-9a-fA-F]{24}$'
+            pattern: ^[0-9a-fA-F]{24}$
       requestBody:
         required: true
         content:
@@ -944,7 +944,7 @@ paths:
           description: Thành công
         '400':
           description: Dữ liệu không hợp lệ
-  '/api/delivery-orders/staff/{staffId}':
+  /api/delivery-orders/staff/{staffId}:
     get:
       tags:
         - deliveryOrder
@@ -956,7 +956,7 @@ paths:
           required: true
           schema:
             type: string
-            pattern: '^[0-9a-fA-F]{24}$'
+            pattern: ^[0-9a-fA-F]{24}$
       responses:
         '200':
           description: Thành công
@@ -973,7 +973,7 @@ paths:
           description: Thành công
         '400':
           description: Dữ liệu không hợp lệ
-  '/api/delivery-orders/{id}/reassign':
+  /api/delivery-orders/{id}/reassign:
     patch:
       tags:
         - deliveryOrder
@@ -985,7 +985,7 @@ paths:
           required: true
           schema:
             type: string
-            pattern: '^[0-9a-fA-F]{24}$'
+            pattern: ^[0-9a-fA-F]{24}$
       requestBody:
         required: true
         content:
@@ -1028,7 +1028,7 @@ paths:
                   example: The product arrived damaged and the packaging was open.
                 customer_id:
                   type: string
-                  pattern: '^[0-9a-fA-F]{24}$'
+                  pattern: ^[0-9a-fA-F]{24}$
                 rating:
                   type: integer
                   minimum: 1
@@ -1038,7 +1038,7 @@ paths:
                   example: negative
                 order_id:
                   type: string
-                  pattern: '^[0-9a-fA-F]{24}$'
+                  pattern: ^[0-9a-fA-F]{24}$
       responses:
         '201':
           description: Tạo thành công
@@ -1054,7 +1054,7 @@ paths:
           description: Thành công
         '400':
           description: Dữ liệu không hợp lệ
-  '/api/feedbacks/customer/{customerId}':
+  /api/feedbacks/customer/{customerId}:
     get:
       tags:
         - feedback
@@ -1066,13 +1066,13 @@ paths:
           required: true
           schema:
             type: string
-            pattern: '^[0-9a-fA-F]{24}$'
+            pattern: ^[0-9a-fA-F]{24}$
       responses:
         '200':
           description: Thành công
         '400':
           description: Dữ liệu không hợp lệ
-  '/api/feedbacks/{id}':
+  /api/feedbacks/{id}:
     get:
       tags:
         - feedback
@@ -1084,7 +1084,7 @@ paths:
           required: true
           schema:
             type: string
-            pattern: '^[0-9a-fA-F]{24}$'
+            pattern: ^[0-9a-fA-F]{24}$
       responses:
         '200':
           description: Thành công
@@ -1101,7 +1101,7 @@ paths:
           required: true
           schema:
             type: string
-            pattern: '^[0-9a-fA-F]{24}$'
+            pattern: ^[0-9a-fA-F]{24}$
       requestBody:
         required: true
         content:
@@ -1120,7 +1120,7 @@ paths:
                     - closed
                 assigned_to_staff_id:
                   type: string
-                  pattern: '^[0-9a-fA-F]{24}$'
+                  pattern: ^[0-9a-fA-F]{24}$
       responses:
         '200':
           description: Thành công
@@ -1137,7 +1137,7 @@ paths:
           required: true
           schema:
             type: string
-            pattern: '^[0-9a-fA-F]{24}$'
+            pattern: ^[0-9a-fA-F]{24}$
       requestBody:
         required: true
         content:
@@ -1187,7 +1187,7 @@ paths:
           description: Tạo thành công
         '400':
           description: Dữ liệu không hợp lệ
-  '/api/invoices/{id}':
+  /api/invoices/{id}:
     get:
       tags:
         - invoice
@@ -1199,7 +1199,7 @@ paths:
           required: true
           schema:
             type: string
-            pattern: '^[0-9a-fA-F]{24}$'
+            pattern: ^[0-9a-fA-F]{24}$
       responses:
         '200':
           description: Thành công
@@ -1216,7 +1216,7 @@ paths:
           required: true
           schema:
             type: string
-            pattern: '^[0-9a-fA-F]{24}$'
+            pattern: ^[0-9a-fA-F]{24}$
       requestBody:
         required: true
         content:
@@ -1239,7 +1239,7 @@ paths:
           required: true
           schema:
             type: string
-            pattern: '^[0-9a-fA-F]{24}$'
+            pattern: ^[0-9a-fA-F]{24}$
       requestBody:
         required: true
         content:
@@ -1251,7 +1251,7 @@ paths:
           description: Thành công
         '400':
           description: Dữ liệu không hợp lệ
-  '/api/invoices/customer/{customerId}':
+  /api/invoices/customer/{customerId}:
     get:
       tags:
         - invoice
@@ -1263,7 +1263,7 @@ paths:
           required: true
           schema:
             type: string
-            pattern: '^[0-9a-fA-F]{24}$'
+            pattern: ^[0-9a-fA-F]{24}$
       responses:
         '200':
           description: Thành công
@@ -1280,7 +1280,7 @@ paths:
           description: Thành công
         '400':
           description: Dữ liệu không hợp lệ
-  '/api/invoices/{id}/mark-paid':
+  /api/invoices/{id}/mark-paid:
     patch:
       tags:
         - invoice
@@ -1292,7 +1292,7 @@ paths:
           required: true
           schema:
             type: string
-            pattern: '^[0-9a-fA-F]{24}$'
+            pattern: ^[0-9a-fA-F]{24}$
       requestBody:
         required: true
         content:
@@ -1342,7 +1342,7 @@ paths:
           description: Tạo thành công
         '400':
           description: Dữ liệu không hợp lệ
-  '/api/orders/{id}':
+  /api/orders/{id}:
     get:
       tags:
         - order
@@ -1354,7 +1354,7 @@ paths:
           required: true
           schema:
             type: string
-            pattern: '^[0-9a-fA-F]{24}$'
+            pattern: ^[0-9a-fA-F]{24}$
       responses:
         '200':
           description: Thành công
@@ -1371,7 +1371,7 @@ paths:
           required: true
           schema:
             type: string
-            pattern: '^[0-9a-fA-F]{24}$'
+            pattern: ^[0-9a-fA-F]{24}$
       requestBody:
         required: true
         content:
@@ -1394,7 +1394,7 @@ paths:
           required: true
           schema:
             type: string
-            pattern: '^[0-9a-fA-F]{24}$'
+            pattern: ^[0-9a-fA-F]{24}$
       requestBody:
         required: true
         content:
@@ -1406,7 +1406,7 @@ paths:
           description: Thành công
         '400':
           description: Dữ liệu không hợp lệ
-  '/api/orders/customer/{customerId}':
+  /api/orders/customer/{customerId}:
     get:
       tags:
         - order
@@ -1418,7 +1418,7 @@ paths:
           required: true
           schema:
             type: string
-            pattern: '^[0-9a-fA-F]{24}$'
+            pattern: ^[0-9a-fA-F]{24}$
       responses:
         '200':
           description: Thành công
@@ -1435,7 +1435,7 @@ paths:
           description: Thành công
         '400':
           description: Dữ liệu không hợp lệ
-  '/api/orders/{id}/items/{itemId}/status':
+  /api/orders/{id}/items/{itemId}/status:
     patch:
       tags:
         - order
@@ -1447,13 +1447,13 @@ paths:
           required: true
           schema:
             type: string
-            pattern: '^[0-9a-fA-F]{24}$'
+            pattern: ^[0-9a-fA-F]{24}$
         - in: path
           name: itemId
           required: true
           schema:
             type: string
-            pattern: '^[0-9a-fA-F]{24}$'
+            pattern: ^[0-9a-fA-F]{24}$
       requestBody:
         required: true
         content:
@@ -1465,7 +1465,7 @@ paths:
           description: Thành công
         '400':
           description: Dữ liệu không hợp lệ
-  '/api/orders/{id}/cancel':
+  /api/orders/{id}/cancel:
     patch:
       tags:
         - order
@@ -1477,7 +1477,7 @@ paths:
           required: true
           schema:
             type: string
-            pattern: '^[0-9a-fA-F]{24}$'
+            pattern: ^[0-9a-fA-F]{24}$
       requestBody:
         required: true
         content:
@@ -1489,7 +1489,7 @@ paths:
           description: Thành công
         '400':
           description: Dữ liệu không hợp lệ
-  '/api/product-batches/product/{productId}':
+  /api/product-batches/product/{productId}:
     get:
       tags:
         - productBatch
@@ -1501,13 +1501,13 @@ paths:
           required: true
           schema:
             type: string
-            pattern: '^[0-9a-fA-F]{24}$'
+            pattern: ^[0-9a-fA-F]{24}$
       responses:
         '200':
           description: Thành công
         '400':
           description: Dữ liệu không hợp lệ
-  '/api/product-batches/{id}/adjust':
+  /api/product-batches/{id}/adjust:
     put:
       tags:
         - productBatch
@@ -1519,7 +1519,7 @@ paths:
           required: true
           schema:
             type: string
-            pattern: '^[0-9a-fA-F]{24}$'
+            pattern: ^[0-9a-fA-F]{24}$
       requestBody:
         required: true
         content:
@@ -1598,7 +1598,7 @@ paths:
           description: Thành công
         '400':
           description: Dữ liệu không hợp lệ
-  '/api/products/category/{category}':
+  /api/products/category/{category}:
     get:
       tags:
         - product
@@ -1615,7 +1615,7 @@ paths:
           description: Thành công
         '400':
           description: Dữ liệu không hợp lệ
-  '/api/products/supplier/{supplierId}':
+  /api/products/supplier/{supplierId}:
     get:
       tags:
         - product
@@ -1627,13 +1627,13 @@ paths:
           required: true
           schema:
             type: string
-            pattern: '^[0-9a-fA-F]{24}$'
+            pattern: ^[0-9a-fA-F]{24}$
       responses:
         '200':
           description: Thành công
         '400':
           description: Dữ liệu không hợp lệ
-  '/api/products/{id}':
+  /api/products/{id}:
     get:
       tags:
         - product
@@ -1645,7 +1645,7 @@ paths:
           required: true
           schema:
             type: string
-            pattern: '^[0-9a-fA-F]{24}$'
+            pattern: ^[0-9a-fA-F]{24}$
       responses:
         '200':
           description: Thành công
@@ -1662,7 +1662,7 @@ paths:
           required: true
           schema:
             type: string
-            pattern: '^[0-9a-fA-F]{24}$'
+            pattern: ^[0-9a-fA-F]{24}$
       requestBody:
         required: true
         content:
@@ -1685,7 +1685,7 @@ paths:
           required: true
           schema:
             type: string
-            pattern: '^[0-9a-fA-F]{24}$'
+            pattern: ^[0-9a-fA-F]{24}$
       requestBody:
         required: true
         content:
@@ -1714,7 +1714,7 @@ paths:
           description: Tạo thành công
         '400':
           description: Dữ liệu không hợp lệ
-  '/api/products/{id}/permanent':
+  /api/products/{id}/permanent:
     delete:
       tags:
         - product
@@ -1726,7 +1726,7 @@ paths:
           required: true
           schema:
             type: string
-            pattern: '^[0-9a-fA-F]{24}$'
+            pattern: ^[0-9a-fA-F]{24}$
       requestBody:
         required: true
         content:
@@ -1738,7 +1738,7 @@ paths:
           description: Thành công
         '400':
           description: Dữ liệu không hợp lệ
-  '/api/products/{id}/stock':
+  /api/products/{id}/stock:
     patch:
       tags:
         - product
@@ -1750,7 +1750,7 @@ paths:
           required: true
           schema:
             type: string
-            pattern: '^[0-9a-fA-F]{24}$'
+            pattern: ^[0-9a-fA-F]{24}$
       requestBody:
         required: true
         content:
@@ -1762,7 +1762,7 @@ paths:
           description: Thành công
         '400':
           description: Dữ liệu không hợp lệ
-  '/api/products/{id}/price':
+  /api/products/{id}/price:
     patch:
       tags:
         - product
@@ -1774,7 +1774,7 @@ paths:
           required: true
           schema:
             type: string
-            pattern: '^[0-9a-fA-F]{24}$'
+            pattern: ^[0-9a-fA-F]{24}$
       requestBody:
         required: true
         content:
@@ -1786,7 +1786,7 @@ paths:
           description: Thành công
         '400':
           description: Dữ liệu không hợp lệ
-  '/api/products/{id}/activate':
+  /api/products/{id}/activate:
     patch:
       tags:
         - product
@@ -1798,7 +1798,7 @@ paths:
           required: true
           schema:
             type: string
-            pattern: '^[0-9a-fA-F]{24}$'
+            pattern: ^[0-9a-fA-F]{24}$
       requestBody:
         required: true
         content:
@@ -1821,7 +1821,7 @@ paths:
           description: Thành công
         '400':
           description: Dữ liệu không hợp lệ
-  '/api/product-shelves/product/{productId}/shelves':
+  /api/product-shelves/product/{productId}/shelves:
     get:
       tags:
         - productShelf
@@ -1833,13 +1833,13 @@ paths:
           required: true
           schema:
             type: string
-            pattern: '^[0-9a-fA-F]{24}$'
+            pattern: ^[0-9a-fA-F]{24}$
       responses:
         '200':
           description: Thành công
         '400':
           description: Dữ liệu không hợp lệ
-  '/api/product-shelves/shelf/{shelfId}/products':
+  /api/product-shelves/shelf/{shelfId}/products:
     get:
       tags:
         - productShelf
@@ -1851,13 +1851,13 @@ paths:
           required: true
           schema:
             type: string
-            pattern: '^[0-9a-fA-F]{24}$'
+            pattern: ^[0-9a-fA-F]{24}$
       responses:
         '200':
           description: Thành công
         '400':
           description: Dữ liệu không hợp lệ
-  '/api/product-shelves/{id}/move':
+  /api/product-shelves/{id}/move:
     put:
       tags:
         - productShelf
@@ -1869,7 +1869,7 @@ paths:
           required: true
           schema:
             type: string
-            pattern: '^[0-9a-fA-F]{24}$'
+            pattern: ^[0-9a-fA-F]{24}$
       requestBody:
         required: true
         content:
@@ -1920,7 +1920,7 @@ paths:
           description: Thành công
         '400':
           description: Dữ liệu không hợp lệ
-  '/api/product-stocks/product/{productId}':
+  /api/product-stocks/product/{productId}:
     get:
       tags:
         - productStock
@@ -1932,13 +1932,13 @@ paths:
           required: true
           schema:
             type: string
-            pattern: '^[0-9a-fA-F]{24}$'
+            pattern: ^[0-9a-fA-F]{24}$
       responses:
         '200':
           description: Thành công
         '400':
           description: Dữ liệu không hợp lệ
-  '/api/product-stocks/shelf/{shelfId}':
+  /api/product-stocks/shelf/{shelfId}:
     get:
       tags:
         - productStock
@@ -1950,7 +1950,7 @@ paths:
           required: true
           schema:
             type: string
-            pattern: '^[0-9a-fA-F]{24}$'
+            pattern: ^[0-9a-fA-F]{24}$
       responses:
         '200':
           description: Thành công
@@ -1967,7 +1967,7 @@ paths:
           description: Thành công
         '400':
           description: Dữ liệu không hợp lệ
-  '/api/product-stocks/{id}/adjust':
+  /api/product-stocks/{id}/adjust:
     put:
       tags:
         - productStock
@@ -1979,7 +1979,7 @@ paths:
           required: true
           schema:
             type: string
-            pattern: '^[0-9a-fA-F]{24}$'
+            pattern: ^[0-9a-fA-F]{24}$
       requestBody:
         required: true
         content:
@@ -2035,7 +2035,7 @@ paths:
           description: Tạo thành công
         '400':
           description: Dữ liệu không hợp lệ
-  '/api/promotions/{id}':
+  /api/promotions/{id}:
     get:
       tags:
         - promotion
@@ -2047,7 +2047,7 @@ paths:
           required: true
           schema:
             type: string
-            pattern: '^[0-9a-fA-F]{24}$'
+            pattern: ^[0-9a-fA-F]{24}$
       responses:
         '200':
           description: Thành công
@@ -2064,7 +2064,7 @@ paths:
           required: true
           schema:
             type: string
-            pattern: '^[0-9a-fA-F]{24}$'
+            pattern: ^[0-9a-fA-F]{24}$
       requestBody:
         required: true
         content:
@@ -2087,7 +2087,7 @@ paths:
           required: true
           schema:
             type: string
-            pattern: '^[0-9a-fA-F]{24}$'
+            pattern: ^[0-9a-fA-F]{24}$
       requestBody:
         required: true
         content:
@@ -2154,7 +2154,7 @@ paths:
           description: Tạo thành công
         '400':
           description: Dữ liệu không hợp lệ
-  '/api/sections/{id}':
+  /api/sections/{id}:
     get:
       tags:
         - section
@@ -2166,7 +2166,7 @@ paths:
           required: true
           schema:
             type: string
-            pattern: '^[0-9a-fA-F]{24}$'
+            pattern: ^[0-9a-fA-F]{24}$
       responses:
         '200':
           description: Thành công
@@ -2183,7 +2183,7 @@ paths:
           required: true
           schema:
             type: string
-            pattern: '^[0-9a-fA-F]{24}$'
+            pattern: ^[0-9a-fA-F]{24}$
       requestBody:
         required: true
         content:
@@ -2206,7 +2206,7 @@ paths:
           required: true
           schema:
             type: string
-            pattern: '^[0-9a-fA-F]{24}$'
+            pattern: ^[0-9a-fA-F]{24}$
       requestBody:
         required: true
         content:
@@ -2218,7 +2218,7 @@ paths:
           description: Thành công
         '400':
           description: Dữ liệu không hợp lệ
-  '/api/sections/{id}/shelves':
+  /api/sections/{id}/shelves:
     get:
       tags:
         - section
@@ -2230,7 +2230,7 @@ paths:
           required: true
           schema:
             type: string
-            pattern: '^[0-9a-fA-F]{24}$'
+            pattern: ^[0-9a-fA-F]{24}$
       responses:
         '200':
           description: Thành công
@@ -2247,7 +2247,7 @@ paths:
           description: Thành công
         '400':
           description: Dữ liệu không hợp lệ
-  '/api/shelves/category/{category}':
+  /api/shelves/category/{category}:
     get:
       tags:
         - shelf
@@ -2275,7 +2275,7 @@ paths:
           description: Thành công
         '400':
           description: Dữ liệu không hợp lệ
-  '/api/shelves/{id}/toggle-full':
+  /api/shelves/{id}/toggle-full:
     put:
       tags:
         - shelf
@@ -2287,7 +2287,7 @@ paths:
           required: true
           schema:
             type: string
-            pattern: '^[0-9a-fA-F]{24}$'
+            pattern: ^[0-9a-fA-F]{24}$
       requestBody:
         required: true
         content:
@@ -2299,7 +2299,7 @@ paths:
           description: Thành công
         '400':
           description: Dữ liệu không hợp lệ
-  '/api/shelves/{id}/capacity':
+  /api/shelves/{id}/capacity:
     get:
       tags:
         - shelf
@@ -2311,7 +2311,7 @@ paths:
           required: true
           schema:
             type: string
-            pattern: '^[0-9a-fA-F]{24}$'
+            pattern: ^[0-9a-fA-F]{24}$
       responses:
         '200':
           description: Thành công
@@ -2355,7 +2355,7 @@ paths:
           description: Thành công
         '400':
           description: Dữ liệu không hợp lệ
-  '/api/staff/{id}':
+  /api/staff/{id}:
     get:
       tags:
         - staff
@@ -2367,7 +2367,7 @@ paths:
           required: true
           schema:
             type: string
-            pattern: '^[0-9a-fA-F]{24}$'
+            pattern: ^[0-9a-fA-F]{24}$
       responses:
         '200':
           description: Thành công
@@ -2384,7 +2384,7 @@ paths:
           required: true
           schema:
             type: string
-            pattern: '^[0-9a-fA-F]{24}$'
+            pattern: ^[0-9a-fA-F]{24}$
       requestBody:
         required: true
         content:
@@ -2407,7 +2407,7 @@ paths:
           required: true
           schema:
             type: string
-            pattern: '^[0-9a-fA-F]{24}$'
+            pattern: ^[0-9a-fA-F]{24}$
       requestBody:
         required: true
         content:
@@ -2419,7 +2419,7 @@ paths:
           description: Thành công
         '400':
           description: Dữ liệu không hợp lệ
-  '/api/staff/{id}/permanent':
+  /api/staff/{id}/permanent:
     delete:
       tags:
         - staff
@@ -2431,7 +2431,7 @@ paths:
           required: true
           schema:
             type: string
-            pattern: '^[0-9a-fA-F]{24}$'
+            pattern: ^[0-9a-fA-F]{24}$
       requestBody:
         required: true
         content:
@@ -2443,7 +2443,7 @@ paths:
           description: Thành công
         '400':
           description: Dữ liệu không hợp lệ
-  '/api/staff/{id}/activate':
+  /api/staff/{id}/activate:
     patch:
       tags:
         - staff
@@ -2455,7 +2455,7 @@ paths:
           required: true
           schema:
             type: string
-            pattern: '^[0-9a-fA-F]{24}$'
+            pattern: ^[0-9a-fA-F]{24}$
       requestBody:
         required: true
         content:
@@ -2467,7 +2467,7 @@ paths:
           description: Thành công
         '400':
           description: Dữ liệu không hợp lệ
-  '/api/staff/account/{accountId}':
+  /api/staff/account/{accountId}:
     get:
       tags:
         - staff
@@ -2479,7 +2479,7 @@ paths:
           required: true
           schema:
             type: string
-            pattern: '^[0-9a-fA-F]{24}$'
+            pattern: ^[0-9a-fA-F]{24}$
       responses:
         '200':
           description: Thành công
@@ -2534,7 +2534,7 @@ paths:
           description: Thành công
         '400':
           description: Dữ liệu không hợp lệ
-  '/api/suppliers/{id}':
+  /api/suppliers/{id}:
     get:
       tags:
         - supplier
@@ -2546,7 +2546,7 @@ paths:
           required: true
           schema:
             type: string
-            pattern: '^[0-9a-fA-F]{24}$'
+            pattern: ^[0-9a-fA-F]{24}$
       responses:
         '200':
           description: Thành công
@@ -2563,7 +2563,7 @@ paths:
           required: true
           schema:
             type: string
-            pattern: '^[0-9a-fA-F]{24}$'
+            pattern: ^[0-9a-fA-F]{24}$
       requestBody:
         required: true
         content:
@@ -2586,7 +2586,7 @@ paths:
           required: true
           schema:
             type: string
-            pattern: '^[0-9a-fA-F]{24}$'
+            pattern: ^[0-9a-fA-F]{24}$
       requestBody:
         required: true
         content:
@@ -2598,7 +2598,7 @@ paths:
           description: Thành công
         '400':
           description: Dữ liệu không hợp lệ
-  '/api/suppliers/{id}/products':
+  /api/suppliers/{id}/products:
     get:
       tags:
         - supplier
@@ -2610,13 +2610,13 @@ paths:
           required: true
           schema:
             type: string
-            pattern: '^[0-9a-fA-F]{24}$'
+            pattern: ^[0-9a-fA-F]{24}$
       responses:
         '200':
           description: Thành công
         '400':
           description: Dữ liệu không hợp lệ
-  '/api/suppliers/{id}/permanent':
+  /api/suppliers/{id}/permanent:
     delete:
       tags:
         - supplier
@@ -2628,7 +2628,7 @@ paths:
           required: true
           schema:
             type: string
-            pattern: '^[0-9a-fA-F]{24}$'
+            pattern: ^[0-9a-fA-F]{24}$
       requestBody:
         required: true
         content:
@@ -2640,7 +2640,7 @@ paths:
           description: Thành công
         '400':
           description: Dữ liệu không hợp lệ
-  '/api/suppliers/{id}/activate':
+  /api/suppliers/{id}/activate:
     patch:
       tags:
         - supplier
@@ -2652,7 +2652,7 @@ paths:
           required: true
           schema:
             type: string
-            pattern: '^[0-9a-fA-F]{24}$'
+            pattern: ^[0-9a-fA-F]{24}$
       requestBody:
         required: true
         content:

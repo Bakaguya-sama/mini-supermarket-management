@@ -4,12 +4,12 @@ info:
   version: 1.0.0
   description: API cho hệ thống quản lý siêu thị mini
 servers:
-  - url: 'http://localhost:5000'
+  - url: http://localhost:5000
 components:
   schemas:
     IdParam:
       type: string
-      pattern: '^[0-9a-fA-F]{24}$'
+      pattern: ^[0-9a-fA-F]{24}$
     PaginationQuery:
       type: object
       properties:
@@ -43,7 +43,7 @@ paths:
           description: Thành công
         '400':
           description: Dữ liệu không hợp lệ
-  '/api/shelves/category/{category}':
+  /api/shelves/category/{category}:
     get:
       tags:
         - shelf
@@ -71,7 +71,7 @@ paths:
           description: Thành công
         '400':
           description: Dữ liệu không hợp lệ
-  '/api/shelves/{id}/toggle-full':
+  /api/shelves/{id}/toggle-full:
     put:
       tags:
         - shelf
@@ -83,7 +83,7 @@ paths:
           required: true
           schema:
             type: string
-            pattern: '^[0-9a-fA-F]{24}$'
+            pattern: ^[0-9a-fA-F]{24}$
       requestBody:
         required: true
         content:
@@ -95,7 +95,7 @@ paths:
           description: Thành công
         '400':
           description: Dữ liệu không hợp lệ
-  '/api/shelves/{id}/capacity':
+  /api/shelves/{id}/capacity:
     get:
       tags:
         - shelf
@@ -107,7 +107,7 @@ paths:
           required: true
           schema:
             type: string
-            pattern: '^[0-9a-fA-F]{24}$'
+            pattern: ^[0-9a-fA-F]{24}$
       responses:
         '200':
           description: Thành công
