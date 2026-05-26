@@ -27,6 +27,19 @@ const canStaffAccess = (req, deliveryOrder) => {
  * @route   GET /api/delivery-orders
  * @access  Protected (Staff/Admin)
  */
+/**
+ * @openapi
+ * /api/delivery-orders/:
+ *   get:
+ *     tags: [deliveryOrder]
+ *     summary: get All Delivery Orders
+ *     operationId: getAllDeliveryOrders
+ *     responses:
+ *       200:
+ *         description: Thành công
+ *       400:
+ *         description: Dữ liệu không hợp lệ
+ */
 exports.getAllDeliveryOrders = async (req, res) => {
   try {
     const {
@@ -98,6 +111,26 @@ exports.getAllDeliveryOrders = async (req, res) => {
  * @desc    Get single delivery order by ID
  * @route   GET /api/delivery-orders/:id
  * @access  Public
+ */
+/**
+ * @openapi
+ * /api/delivery-orders/{id}:
+ *   get:
+ *     tags: [deliveryOrder]
+ *     summary: get Delivery Order By Id
+ *     operationId: getDeliveryOrderById
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           pattern: '^[0-9a-fA-F]{24}$'
+ *     responses:
+ *       200:
+ *         description: Thành công
+ *       400:
+ *         description: Dữ liệu không hợp lệ
  */
 exports.getDeliveryOrderById = async (req, res) => {
   try {
@@ -194,6 +227,26 @@ exports.getDeliveryOrderById = async (req, res) => {
  * @route   GET /api/delivery-orders/staff/:staffId
  * @access  Public
  */
+/**
+ * @openapi
+ * /api/delivery-orders/staff/{staffId}:
+ *   get:
+ *     tags: [deliveryOrder]
+ *     summary: get Deliveries By Staff
+ *     operationId: getDeliveriesByStaff
+ *     parameters:
+ *       - in: path
+ *         name: staffId
+ *         required: true
+ *         schema:
+ *           type: string
+ *           pattern: '^[0-9a-fA-F]{24}$'
+ *     responses:
+ *       200:
+ *         description: Thành công
+ *       400:
+ *         description: Dữ liệu không hợp lệ
+ */
 exports.getDeliveriesByStaff = async (req, res) => {
   try {
     const { page = 1, limit = 20, status } = req.query;
@@ -282,6 +335,19 @@ exports.getDeliveriesByStaff = async (req, res) => {
  * @route   GET /api/delivery-orders/stats
  * @access  Public
  */
+/**
+ * @openapi
+ * /api/delivery-orders/stats:
+ *   get:
+ *     tags: [deliveryOrder]
+ *     summary: get Delivery Stats
+ *     operationId: getDeliveryStats
+ *     responses:
+ *       200:
+ *         description: Thành công
+ *       400:
+ *         description: Dữ liệu không hợp lệ
+ */
 exports.getDeliveryStats = async (req, res) => {
   try {
     const totalDeliveries = await DeliveryOrder.countDocuments();
@@ -324,6 +390,25 @@ exports.getDeliveryStats = async (req, res) => {
  * @desc    Create new delivery order
  * @route   POST /api/delivery-orders
  * @access  Public
+ */
+/**
+ * @openapi
+ * /api/delivery-orders/:
+ *   post:
+ *     tags: [deliveryOrder]
+ *     summary: create Delivery Order
+ *     operationId: createDeliveryOrder
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *     responses:
+ *       201:
+ *         description: Tạo thành công
+ *       400:
+ *         description: Dữ liệu không hợp lệ
  */
 exports.createDeliveryOrder = async (req, res) => {
   try {
@@ -439,6 +524,32 @@ exports.createDeliveryOrder = async (req, res) => {
  * @desc    Update delivery order status
  * @route   PUT /api/delivery-orders/:id
  * @access  Public
+ */
+/**
+ * @openapi
+ * /api/delivery-orders/{id}:
+ *   put:
+ *     tags: [deliveryOrder]
+ *     summary: update Delivery Order
+ *     operationId: updateDeliveryOrder
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           pattern: '^[0-9a-fA-F]{24}$'
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *     responses:
+ *       200:
+ *         description: Thành công
+ *       400:
+ *         description: Dữ liệu không hợp lệ
  */
 exports.updateDeliveryOrder = async (req, res) => {
   try {
@@ -572,6 +683,32 @@ exports.updateDeliveryOrder = async (req, res) => {
  * @route   PATCH /api/delivery-orders/:id/reassign
  * @access  Public
  */
+/**
+ * @openapi
+ * /api/delivery-orders/{id}/reassign:
+ *   patch:
+ *     tags: [deliveryOrder]
+ *     summary: reassign Delivery
+ *     operationId: reassignDelivery
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           pattern: '^[0-9a-fA-F]{24}$'
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *     responses:
+ *       200:
+ *         description: Thành công
+ *       400:
+ *         description: Dữ liệu không hợp lệ
+ */
 exports.reassignDelivery = async (req, res) => {
   try {
     const { new_staff_id } = req.body;
@@ -671,6 +808,32 @@ exports.reassignDelivery = async (req, res) => {
  * @route   DELETE /api/delivery-orders/:id
  * @access  Public
  */
+/**
+ * @openapi
+ * /api/delivery-orders/{id}:
+ *   delete:
+ *     tags: [deliveryOrder]
+ *     summary: delete Delivery Order
+ *     operationId: deleteDeliveryOrder
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           pattern: '^[0-9a-fA-F]{24}$'
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *     responses:
+ *       200:
+ *         description: Thành công
+ *       400:
+ *         description: Dữ liệu không hợp lệ
+ */
 exports.deleteDeliveryOrder = async (req, res) => {
   try {
     const deliveryOrder = await DeliveryOrder.findById(req.params.id);
@@ -698,3 +861,4 @@ exports.deleteDeliveryOrder = async (req, res) => {
     });
   }
 };
+

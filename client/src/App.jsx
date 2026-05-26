@@ -53,6 +53,7 @@ import AddSectionView from "./views/merchandise-supervisor/section/AddSectionVie
 import EditSectionView from "./views/merchandise-supervisor/section/EditSectionView";
 import CustomerPortal from "./views/customer/CustomerPortal";
 import SystemMonitor from "./views/manager/system-monitor/SystemMonitor";
+import OpenApiTestMonitor from "./views/manager/openapi-test-monitor/OpenApiTestMonitor";
 
 function App() {
   return (
@@ -455,6 +456,15 @@ function App() {
             element={
               <Layout>
                 <SystemMonitor />
+              </Layout>
+            }
+          />
+
+          <Route
+            path="/openapi-test-monitor"
+            element={
+              <Layout>
+                <OpenApiTestMonitor />
               </Layout>
             }
           />

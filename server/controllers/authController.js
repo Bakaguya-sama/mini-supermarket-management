@@ -10,6 +10,27 @@ const { traceLogin } = require('../middleware/tracing');
  * @desc    Đăng ký tài khoản khách hàng mới
  * @access  Public
  */
+/**
+ * @openapi
+ * /api/auth/register/customer:
+ *   post:
+ *     tags: [auth]
+ *     summary: register Customer
+ *     operationId: registerCustomer
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *     responses:
+ *       201:
+ *         description: Tạo thành công
+ *       400:
+ *         description: Dữ liệu không hợp lệ
+ *       500:
+ *         description: Lỗi server
+ */
 exports.registerCustomer = async (req, res, next) => {
   try {
     const { token, account, customer } = await authService.registerCustomer(req.body);
@@ -38,11 +59,29 @@ exports.registerCustomer = async (req, res, next) => {
   }
 };
 
-
 /**
  * @route   POST /api/auth/register/staff
  * @desc    Đăng ký tài khoản nhân viên mới (chỉ admin/manager)
  * @access  Private (Admin/Manager only)
+ */
+/**
+ * @openapi
+ * /api/auth/register/staff:
+ *   post:
+ *     tags: [auth]
+ *     summary: register Staff
+ *     operationId: registerStaff
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *     responses:
+ *       201:
+ *         description: Tạo thành công
+ *       400:
+ *         description: Dữ liệu không hợp lệ
  */
 exports.registerStaff = async (req, res, next) => {
   try {
@@ -78,10 +117,29 @@ exports.registerStaff = async (req, res, next) => {
  * @desc    Đăng nhập cho tất cả loại user (customer, staff, admin)
  * @access  Public
  */
+/**
+ * @openapi
+ * /api/auth/login:
+ *   post:
+ *     tags: [auth]
+ *     summary: login
+ *     operationId: login
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *     responses:
+ *       201:
+ *         description: Tạo thành công
+ *       400:
+ *         description: Dữ liệu không hợp lệ
+ */
 exports.login = async (req, res, next) => {
   try {
     const { username, password } = req.body;
-    
+
     // Trace login operation
     const { token, account, profile } = await traceLogin(
       username,
@@ -129,13 +187,25 @@ exports.login = async (req, res, next) => {
   }
 };
 
-
 // ==================== PROFILE FUNCTIONS ====================
 
 /**
  * @route   GET /api/auth/me
  * @desc    Lấy thông tin user hiện tại
  * @access  Private
+ */
+/**
+ * @openapi
+ * /api/auth/me:
+ *   get:
+ *     tags: [auth]
+ *     summary: get Me
+ *     operationId: getMe
+ *     responses:
+ *       200:
+ *         description: Thành công
+ *       400:
+ *         description: Dữ liệu không hợp lệ
  */
 exports.getMe = async (req, res, next) => {
   try {
@@ -156,6 +226,25 @@ exports.getMe = async (req, res, next) => {
  * @route   PUT /api/auth/update-profile
  * @desc    Cập nhật thông tin profile
  * @access  Private
+ */
+/**
+ * @openapi
+ * /api/auth/update-profile:
+ *   put:
+ *     tags: [auth]
+ *     summary: update Profile
+ *     operationId: updateProfile
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *     responses:
+ *       200:
+ *         description: Thành công
+ *       400:
+ *         description: Dữ liệu không hợp lệ
  */
 exports.updateProfile = async (req, res, next) => {
   try {
@@ -179,6 +268,25 @@ exports.updateProfile = async (req, res, next) => {
  * @desc    Đổi mật khẩu
  * @access  Private
  */
+/**
+ * @openapi
+ * /api/auth/change-password:
+ *   put:
+ *     tags: [auth]
+ *     summary: change Password
+ *     operationId: changePassword
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *     responses:
+ *       200:
+ *         description: Thành công
+ *       400:
+ *         description: Dữ liệu không hợp lệ
+ */
 exports.changePassword = async (req, res, next) => {
   try {
     const { current_password, new_password } = req.body;
@@ -201,6 +309,25 @@ exports.changePassword = async (req, res, next) => {
  * @desc    Verify JWT token
  * @access  Public
  */
+/**
+ * @openapi
+ * /api/auth/verify-token:
+ *   post:
+ *     tags: [auth]
+ *     summary: verify Token
+ *     operationId: verifyToken
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *     responses:
+ *       201:
+ *         description: Tạo thành công
+ *       400:
+ *         description: Dữ liệu không hợp lệ
+ */
 exports.verifyToken = async (req, res, next) => {
   try {
     const { token } = req.body;
@@ -217,3 +344,4 @@ exports.verifyToken = async (req, res, next) => {
     next(error);
   }
 };
+

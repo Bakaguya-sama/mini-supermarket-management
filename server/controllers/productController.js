@@ -4,6 +4,42 @@ const logger = require('../config/logger');
 const { traceProductSearch } = require('../middleware/tracing');
 
 /** @route GET /api/products */
+/**
+ * @openapi
+ * /api/products:
+ *   get:
+ *     tags: [product]
+ *     summary: Get all products with pagination and filtering
+ *     operationId: getAllProducts
+ *     parameters:
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *           default: 1
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *           maximum: 100
+ *           default: 10
+ *       - in: query
+ *         name: status
+ *         schema:
+ *           type: string
+ *           enum: [active, inactive]
+ *       - in: query
+ *         name: category
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Products retrieved successfully
+ *       400:
+ *         description: Invalid query parameters
+ */
 exports.getAllProducts = async (req, res, next) => {
   try {
     const dataResponse = await traceProductSearch(req.query, async () => {
@@ -16,6 +52,28 @@ exports.getAllProducts = async (req, res, next) => {
 };
 
 /** @route GET /api/products/stats */
+/**
+ * @openapi
+ * /api/products/stats:
+ *   get:
+ *     tags: [product]
+ *     summary: Get product statistics and aggregates
+ *     operationId: getProductStats
+ *     responses:
+ *       200:
+ *         description: Statistics retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 data:
+ *                   type: object
+ *       400:
+ *         description: Error retrieving statistics
+ */
 exports.getProductStats = async (req, res, next) => {
   try {
     const data = await productService.getProductStats();
@@ -24,6 +82,19 @@ exports.getProductStats = async (req, res, next) => {
 };
 
 /** @route GET /api/products/low-stock */
+/**
+ * @openapi
+ * /api/products/low-stock:
+ *   get:
+ *     tags: [product]
+ *     summary: get Low Stock Products
+ *     operationId: getLowStockProducts
+ *     responses:
+ *       200:
+ *         description: Thành công
+ *       400:
+ *         description: Dữ liệu không hợp lệ
+ */
 exports.getLowStockProducts = async (req, res, next) => {
   try {
     const data = await productService.getLowStockProducts(req.query.limit);
@@ -32,6 +103,25 @@ exports.getLowStockProducts = async (req, res, next) => {
 };
 
 /** @route GET /api/products/category/:category */
+/**
+ * @openapi
+ * /api/products/category/{category}:
+ *   get:
+ *     tags: [product]
+ *     summary: get Products By Category
+ *     operationId: getProductsByCategory
+ *     parameters:
+ *       - in: path
+ *         name: category
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Thành công
+ *       400:
+ *         description: Dữ liệu không hợp lệ
+ */
 exports.getProductsByCategory = async (req, res, next) => {
   try {
     const { products, total, page, pages } = await productService.getProductsByCategory(req.params.category, req.query);
@@ -40,6 +130,26 @@ exports.getProductsByCategory = async (req, res, next) => {
 };
 
 /** @route GET /api/products/supplier/:supplierId */
+/**
+ * @openapi
+ * /api/products/supplier/{supplierId}:
+ *   get:
+ *     tags: [product]
+ *     summary: get Products By Supplier
+ *     operationId: getProductsBySupplier
+ *     parameters:
+ *       - in: path
+ *         name: supplierId
+ *         required: true
+ *         schema:
+ *           type: string
+ *           pattern: '^[0-9a-fA-F]{24}$'
+ *     responses:
+ *       200:
+ *         description: Thành công
+ *       400:
+ *         description: Dữ liệu không hợp lệ
+ */
 exports.getProductsBySupplier = async (req, res, next) => {
   try {
     const { products, total, page, pages } = await productService.getProductsBySupplier(req.params.supplierId, req.query);
@@ -48,6 +158,26 @@ exports.getProductsBySupplier = async (req, res, next) => {
 };
 
 /** @route GET /api/products/:id */
+/**
+ * @openapi
+ * /api/products/{id}:
+ *   get:
+ *     tags: [product]
+ *     summary: get Product By Id
+ *     operationId: getProductById
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           pattern: '^[0-9a-fA-F]{24}$'
+ *     responses:
+ *       200:
+ *         description: Thành công
+ *       400:
+ *         description: Dữ liệu không hợp lệ
+ */
 exports.getProductById = async (req, res, next) => {
   try {
     const data = await productService.getProductById(req.params.id);
@@ -56,6 +186,25 @@ exports.getProductById = async (req, res, next) => {
 };
 
 /** @route POST /api/products */
+/**
+ * @openapi
+ * /api/products/:
+ *   post:
+ *     tags: [product]
+ *     summary: create Product
+ *     operationId: createProduct
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *     responses:
+ *       201:
+ *         description: Tạo thành công
+ *       400:
+ *         description: Dữ liệu không hợp lệ
+ */
 exports.createProduct = async (req, res, next) => {
   try {
     const product = await productService.createProduct(req.body);
@@ -65,6 +214,32 @@ exports.createProduct = async (req, res, next) => {
 };
 
 /** @route PUT /api/products/:id */
+/**
+ * @openapi
+ * /api/products/{id}:
+ *   put:
+ *     tags: [product]
+ *     summary: update Product
+ *     operationId: updateProduct
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           pattern: '^[0-9a-fA-F]{24}$'
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *     responses:
+ *       200:
+ *         description: Thành công
+ *       400:
+ *         description: Dữ liệu không hợp lệ
+ */
 exports.updateProduct = async (req, res, next) => {
   try {
     const data = await productService.updateProduct(req.params.id, req.body);
@@ -74,6 +249,32 @@ exports.updateProduct = async (req, res, next) => {
 };
 
 /** @route DELETE /api/products/:id */
+/**
+ * @openapi
+ * /api/products/{id}:
+ *   delete:
+ *     tags: [product]
+ *     summary: delete Product
+ *     operationId: deleteProduct
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           pattern: '^[0-9a-fA-F]{24}$'
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *     responses:
+ *       200:
+ *         description: Thành công
+ *       400:
+ *         description: Dữ liệu không hợp lệ
+ */
 exports.deleteProduct = async (req, res, next) => {
   try {
     const product = await productService.deleteProduct(req.params.id);
@@ -83,6 +284,32 @@ exports.deleteProduct = async (req, res, next) => {
 };
 
 /** @route DELETE /api/products/:id/permanent */
+/**
+ * @openapi
+ * /api/products/{id}/permanent:
+ *   delete:
+ *     tags: [product]
+ *     summary: permanent Delete Product
+ *     operationId: permanentDeleteProduct
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           pattern: '^[0-9a-fA-F]{24}$'
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *     responses:
+ *       200:
+ *         description: Thành công
+ *       400:
+ *         description: Dữ liệu không hợp lệ
+ */
 exports.permanentDeleteProduct = async (req, res, next) => {
   try {
     await productService.permanentDeleteProduct(req.params.id);
@@ -92,6 +319,32 @@ exports.permanentDeleteProduct = async (req, res, next) => {
 };
 
 /** @route PUT /api/products/:id/stock */
+/**
+ * @openapi
+ * /api/products/{id}/stock:
+ *   patch:
+ *     tags: [product]
+ *     summary: update Product Stock
+ *     operationId: updateProductStock
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           pattern: '^[0-9a-fA-F]{24}$'
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *     responses:
+ *       200:
+ *         description: Thành công
+ *       400:
+ *         description: Dữ liệu không hợp lệ
+ */
 exports.updateProductStock = async (req, res, next) => {
   try {
     const product = await productService.updateProductStock(req.params.id, req.body);
@@ -101,6 +354,32 @@ exports.updateProductStock = async (req, res, next) => {
 };
 
 /** @route PUT /api/products/:id/price */
+/**
+ * @openapi
+ * /api/products/{id}/price:
+ *   patch:
+ *     tags: [product]
+ *     summary: update Product Price
+ *     operationId: updateProductPrice
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           pattern: '^[0-9a-fA-F]{24}$'
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *     responses:
+ *       200:
+ *         description: Thành công
+ *       400:
+ *         description: Dữ liệu không hợp lệ
+ */
 exports.updateProductPrice = async (req, res, next) => {
   try {
     const data = await productService.updateProductPrice(req.params.id, req.body.price);
@@ -110,6 +389,32 @@ exports.updateProductPrice = async (req, res, next) => {
 };
 
 /** @route PUT /api/products/:id/activate */
+/**
+ * @openapi
+ * /api/products/{id}/activate:
+ *   patch:
+ *     tags: [product]
+ *     summary: activate Product
+ *     operationId: activateProduct
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           pattern: '^[0-9a-fA-F]{24}$'
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *     responses:
+ *       200:
+ *         description: Thành công
+ *       400:
+ *         description: Dữ liệu không hợp lệ
+ */
 exports.activateProduct = async (req, res, next) => {
   try {
     const product = await productService.activateProduct(req.params.id);
@@ -117,3 +422,4 @@ exports.activateProduct = async (req, res, next) => {
     res.status(200).json({ success: true, message: 'Product activated successfully', data: product });
   } catch (error) { next(error); }
 };
+

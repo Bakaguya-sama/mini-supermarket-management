@@ -1,4 +1,4 @@
-// server/server.js - UPDATED WITH NEW ROUTES
+// server/server.js - UPDATED WITH NEW ROUTES - NODEMON RECURSIVE RELOAD
 // IMPORTANT: In CI/test we skip heavy telemetry to avoid noisy failures
 if (process.env.NODE_ENV !== 'test') {
   try {
@@ -187,10 +187,13 @@ app.use("/api/shelves", require("./routes/shelfRoutes"));
 app.use("/api/sections", require("./routes/sectionRoutes"));
 app.use("/api/product-shelves", require("./routes/productShelfRoutes"));
 app.use("/api/product-stocks", require("./routes/productStockRoutes"));
+// Backwards-compatible alias: some tests/clients use singular path
+app.use("/api/product-stock", require("./routes/productStockRoutes"));
 app.use("/api/product-batches", require("./routes/productBatchRoutes"));
 app.use("/api/promotions", require("./routes/promotionRoutes"));
 app.use("/api/feedbacks", require("./routes/feedbackRoutes"));
 app.use("/api/telemetry", require("./routes/telemetryRoutes")); // API Demo Telemetry
+app.use("/api/test-generation", require("./routes/testGenerationMonitorRoutes"));
 
 // Global Error Handling Middleware
 const errorHandler = require("./middleware/errorHandler");

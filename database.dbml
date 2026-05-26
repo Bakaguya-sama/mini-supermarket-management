@@ -1,0 +1,254 @@
+Table accounts {
+  _id ObjectId [pk]
+  username string
+  password_hash string
+  email string
+  full_name string
+  phone string
+  address string
+  date_of_birth string
+  avatar_link string
+  is_active boolean
+  role string // customer, staff, admin
+  isDelete boolean
+}
+
+Table staff {
+  _id ObjectId [pk]
+  account_id ObjectId [ref: - accounts._id]
+  position string
+  employment_type string
+  annual_salary number
+  hire_date date
+  current_assignments number
+  is_active boolean
+  isDelete boolean
+}
+
+Table managers {
+  _id ObjectId [pk]
+  staff_id ObjectId [ref: > staff._id]
+  account_id ObjectId [ref: - accounts._id]
+  access_level string // super, admin, manager
+  is_superuser boolean
+  permissions mixed
+  isDelete boolean
+}
+
+Table customers {
+  _id ObjectId [pk]
+  account_id ObjectId [ref: - accounts._id]
+  membership_type string // standard, silver, gold
+  points_balance number
+  total_spent number
+  registered_at date
+  isDelete boolean
+}
+
+Table suppliers {
+  _id ObjectId [pk]
+  name string
+  contact_person_name string
+  phone string
+  email string
+  address string
+  isDelete boolean
+}
+
+Table products {
+  _id ObjectId [pk]
+  supplier_id ObjectId [ref: > suppliers._id]
+  sku string
+  barcode string
+  name string
+  category string
+  retail_price number
+  cost_price number
+  total_stock number
+  status string
+  isDelete boolean
+}
+
+Table shelves {
+  _id ObjectId [pk]
+  section_id ObjectId [ref: > sections._id]
+  name string
+  capacity number
+  isDelete boolean
+}
+
+Table sections {
+  _id ObjectId [pk]
+  name string
+  description string
+  isDelete boolean
+}
+
+Table product_shelves {
+  _id ObjectId [pk]
+  product_id ObjectId [ref: > products._id]
+  shelf_id ObjectId [ref: > shelves._id]
+  quantity number
+  expiry_date date
+  isDelete boolean
+}
+
+Table promotions {
+  _id ObjectId [pk]
+  name string
+  description string
+  discount_type string // percentage, fixed_amount
+  discount_value number
+  min_order_value number
+  coupon_code string
+  start_date date
+  end_date date
+  isDelete boolean
+}
+
+Table promotion_products {
+  _id ObjectId [pk]
+  promotion_id ObjectId [ref: > promotions._id]
+  product_id ObjectId [ref: > products._id]
+  isDelete boolean
+}
+
+Table orders {
+  _id ObjectId [pk]
+  customer_id ObjectId [ref: > customers._id]
+  status string // pending, paid, confirmed, processing, shipping, completed, cancelled, refunded
+  total_amount number
+  discount_applied number
+  net_amount number
+  shipping_address string
+  shipping_fee number
+  isDelete boolean
+}
+
+Table order_items {
+  _id ObjectId [pk]
+  order_id ObjectId [ref: > orders._id]
+  product_id ObjectId [ref: > products._id]
+  quantity number
+  price number
+  isDelete boolean
+}
+
+Table delivery_orders {
+  _id ObjectId [pk]
+  order_id ObjectId [ref: - orders._id]
+  staff_id ObjectId [ref: > staff._id]
+  status string // assigned, in_transit, delivered, failed
+  assigned_at date
+  delivered_at date
+  failure_reason string
+  isDelete boolean
+}
+
+Table invoices {
+  _id ObjectId [pk]
+  order_id ObjectId [ref: - orders._id]
+  invoice_number string
+  cashier_id ObjectId [ref: > staff._id]
+  payment_status string // unpaid, completed, refunded
+  tax_amount number
+  isDelete boolean
+}
+
+Table invoice_items {
+  _id ObjectId [pk]
+  invoice_id ObjectId [ref: > invoices._id]
+  product_id ObjectId [ref: > products._id]
+  quantity number
+  unit_price number
+  total_price number
+  isDelete boolean
+}
+
+Table payments {
+  _id ObjectId [pk]
+  invoice_id ObjectId [ref: - invoices._id]
+  payment_method string // cash, card, digital_wallet
+  amount_paid number
+  transaction_id string
+  payment_date date
+  isDelete boolean
+}
+
+Table reports {
+  _id ObjectId [pk]
+  created_by ObjectId [ref: > staff._id]
+  type string // inventory_discrepancy, incident, damaged_summary
+  title string
+  content string
+  status string // pending, approved, rejected
+  approved_by ObjectId [ref: > managers._id]
+  isDelete boolean
+}
+
+Table instructions {
+  _id ObjectId [pk]
+  manager_id ObjectId [ref: > managers._id]
+  assigned_to ObjectId [ref: > staff._id]
+  title string
+  description string
+  due_date date
+  status string // pending, in_progress, completed
+  isDelete boolean
+}
+
+Table customer_feedbacks {
+  _id ObjectId [pk]
+  customer_id ObjectId [ref: > customers._id]
+  product_id ObjectId [ref: > products._id]
+  rating number
+  comment string
+  isDelete boolean
+}
+
+Table product_stocks {
+  _id ObjectId [pk]
+  product_id ObjectId [ref: > products._id]
+  previous_stock number
+  new_stock number
+  reason string
+  isDelete boolean
+}
+
+Table product_batches {
+  _id ObjectId [pk]
+  product_id ObjectId [ref: > products._id]
+  batch_number string
+  import_quantity number
+  current_quantity number
+  purchase_price number
+  expiry_date date
+  isDelete boolean
+}
+
+Table carts {
+  _id ObjectId [pk]
+  customer_id ObjectId [ref: - customers._id]
+  temp_total number
+  applied_promo_id ObjectId [ref: > promotions._id]
+  isDelete boolean
+}
+
+Table cart_items {
+  _id ObjectId [pk]
+  cart_id ObjectId [ref: > carts._id]
+  product_id ObjectId [ref: > products._id]
+  quantity number
+  isDelete boolean
+}
+
+Table damaged_products {
+  _id ObjectId [pk]
+  product_shelf_id ObjectId [ref: > product_shelves._id]
+  reported_by ObjectId [ref: > staff._id]
+  quantity number
+  reason string
+  image_url string
+  status string // pending, approved, rejected
+  isDelete boolean
+}

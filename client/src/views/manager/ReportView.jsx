@@ -38,7 +38,7 @@ const ReportView = () => {
         <h2 style={{ color: "#1e293b", marginBottom: "30px", fontSize: "1.5rem" }}>Biểu đồ Doanh thu (6 tháng gần nhất)</h2>
         
         {/* CSS Bar Chart */}
-        <div style={{ display: "flex", alignItems: "flex-end", height: "300px", gap: "2rem", paddingBottom: "20px", borderBottom: "2px solid #e2e8f0" }}>
+        <div style={{ display: "flex", alignItems: "flex-end", height: "320px", gap: "2.5rem", paddingBottom: "20px", borderBottom: "2px solid #e2e8f0" }}>
           {[
             { month: "T1", value: 45, label: "45M" },
             { month: "T2", value: 65, label: "65M" },
@@ -49,17 +49,24 @@ const ReportView = () => {
           ].map((bar, idx) => {
             const heightPercent = (bar.value / 150) * 100; // max value 150M
             return (
-              <div key={idx} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center" }}>
-                <div style={{ color: "#64748b", marginBottom: "10px", fontWeight: "bold" }}>{bar.label}</div>
-                <div style={{
-                  width: "100%",
-                  height: `${heightPercent}%`,
-                  background: "linear-gradient(to top, #3b82f6, #60a5fa)",
-                  borderRadius: "8px 8px 0 0",
-                  transition: "height 1s ease-out",
-                  boxShadow: "0 4px 10px rgba(59, 130, 246, 0.3)"
-                }}></div>
-                <div style={{ marginTop: "15px", fontWeight: "bold", color: "#475569" }}>{bar.month}</div>
+              <div key={idx} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "flex-end", height: "100%" }}>
+                {/* Value Label */}
+                <div style={{ color: "#64748b", marginBottom: "8px", fontWeight: "bold", fontSize: "0.9rem" }}>{bar.label}</div>
+                
+                {/* Bar Container (gives a defined height context for the percentage calculation) */}
+                <div style={{ width: "100%", height: "200px", display: "flex", alignItems: "flex-end" }}>
+                  <div style={{
+                    width: "100%",
+                    height: `${heightPercent}%`,
+                    background: "linear-gradient(to top, #10b981, #34d399)",
+                    borderRadius: "6px 6px 0 0",
+                    transition: "height 1s ease-out",
+                    boxShadow: "0 4px 12px rgba(16, 185, 129, 0.2)"
+                  }}></div>
+                </div>
+                
+                {/* Month Label */}
+                <div style={{ marginTop: "12px", fontWeight: "bold", color: "#475569" }}>{bar.month}</div>
               </div>
             );
           })}

@@ -8,6 +8,9 @@
     "server": "cd server && npm run dev",
     "build": "cd client && npm run build",
     "build:client": "cd client && npm run build",
+    "generate:openapi": "cd server && npm run generate:openapi",
+    "generate:openapi-tests": "cd server && npm run generate:openapi-tests",
+    "test:openapi-generated": "cd server && npm run test:openapi-generated",
     "install:client": "cd client && npm install",
     "install:server": "cd server && npm install",
     "install:all": "npm run install:client && npm run install:server"
@@ -21,6 +24,8 @@
   "author": "Your Name",
   "license": "MIT",
   "devDependencies": {
-    "concurrently": "^8.2.2"
+    "concurrently": "^8.2.2",
+    "js-yaml": "^4.1.1",
+    "swagger-jsdoc": "^6.2.8"
   }
 }

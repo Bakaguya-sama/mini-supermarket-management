@@ -15,6 +15,19 @@ exports.getAllProductShelves = async (req, res, next) => {
 };
 
 /** @route GET /api/product-shelves/stats */
+/**
+ * @openapi
+ * /api/product-shelves/stats:
+ *   get:
+ *     tags: [productShelf]
+ *     summary: get Product Shelf Stats
+ *     operationId: getProductShelfStats
+ *     responses:
+ *       200:
+ *         description: Thành công
+ *       400:
+ *         description: Dữ liệu không hợp lệ
+ */
 exports.getProductShelfStats = async (req, res, next) => {
   try {
     const data = await productShelfService.getProductShelfStats();
@@ -31,6 +44,26 @@ exports.getProductShelfById = async (req, res, next) => {
 };
 
 /** @route GET /api/product-shelves/product/:productId/shelves */
+/**
+ * @openapi
+ * /api/product-shelves/product/{productId}/shelves:
+ *   get:
+ *     tags: [productShelf]
+ *     summary: get Shelves By Product
+ *     operationId: getShelvesByProduct
+ *     parameters:
+ *       - in: path
+ *         name: productId
+ *         required: true
+ *         schema:
+ *           type: string
+ *           pattern: '^[0-9a-fA-F]{24}$'
+ *     responses:
+ *       200:
+ *         description: Thành công
+ *       400:
+ *         description: Dữ liệu không hợp lệ
+ */
 exports.getShelvesByProduct = async (req, res, next) => {
   try {
     const data = await productShelfService.getShelvesByProduct(req.params.productId);
@@ -39,6 +72,26 @@ exports.getShelvesByProduct = async (req, res, next) => {
 };
 
 /** @route GET /api/product-shelves/shelf/:shelfId/products */
+/**
+ * @openapi
+ * /api/product-shelves/shelf/{shelfId}/products:
+ *   get:
+ *     tags: [productShelf]
+ *     summary: get Products By Shelf
+ *     operationId: getProductsByShelf
+ *     parameters:
+ *       - in: path
+ *         name: shelfId
+ *         required: true
+ *         schema:
+ *           type: string
+ *           pattern: '^[0-9a-fA-F]{24}$'
+ *     responses:
+ *       200:
+ *         description: Thành công
+ *       400:
+ *         description: Dữ liệu không hợp lệ
+ */
 exports.getProductsByShelf = async (req, res, next) => {
   try {
     const { productShelves, total, page, pages, shelf } = await productShelfService.getProductsByShelf(req.params.shelfId, req.query);
@@ -74,9 +127,39 @@ exports.updateProductShelf = async (req, res, next) => {
 };
 
 /** @route PUT /api/product-shelves/:id/move */
+/**
+ * @openapi
+ * /api/product-shelves/{id}/move:
+ *   put:
+ *     tags: [productShelf]
+ *     summary: move Product To Shelf
+ *     operationId: moveProductToShelf
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           pattern: '^[0-9a-fA-F]{24}$'
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *     responses:
+ *       200:
+ *         description: Thành công
+ *       400:
+ *         description: Dữ liệu không hợp lệ
+ */
 exports.moveProductToShelf = async (req, res, next) => {
   try {
-    const { mapping, fromShelf, toShelf, quantity } = await productShelfService.moveProductToShelf(req.params.id, req.body.new_shelf_id);
+    // Accept either `to_shelf_id` or `new_shelf_id` from clients/tests
+    const newShelfId = req.body.to_shelf_id ?? req.body.new_shelf_id;
+    const fromShelfId = req.body.from_shelf_id;
+    const moveQuantity = req.body.quantity ?? req.body.qty ?? req.body.amount;
+    const { mapping, fromShelf, toShelf, quantity } = await productShelfService.moveProductToShelf(req.params.id, newShelfId, fromShelfId, moveQuantity);
     logger.info(`Product shelf moved successfully in controller: ${req.params.id}`);
     res.status(200).json({ success: true, message: `Successfully moved ${quantity} units from ${fromShelf} to ${toShelf}`, data: mapping });
   } catch (error) { next(error); }
@@ -92,12 +175,37 @@ exports.deleteProductShelf = async (req, res, next) => {
 };
 
 /** @route POST /api/product-shelves/bulk/assign */
+/**
+ * @openapi
+ * /api/product-shelves/bulk/assign:
+ *   post:
+ *     tags: [productShelf]
+ *     summary: bulk Assign To Shelf
+ *     operationId: bulkAssignToShelf
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *     responses:
+ *       201:
+ *         description: Tạo thành công
+ *       400:
+ *         description: Dữ liệu không hợp lệ
+ */
 exports.bulkAssignToShelf = async (req, res, next) => {
   try {
-    const { shelf_id, products } = req.body;
+    // Accept legacy shape: { product_ids: [...], quantity_per_product }
+    let { shelf_id, products } = req.body;
+    if ((!products || !products.length) && Array.isArray(req.body.product_ids)) {
+      const qty = req.body.quantity_per_product ?? req.body.quantity ?? 0;
+      products = req.body.product_ids.map(pid => ({ product_id: pid, quantity: qty }));
+      shelf_id = shelf_id ?? req.body.shelf_id;
+    }
     const results = await productShelfService.bulkAssignToShelf(shelf_id, products);
     logger.info(`Bulk assigned successfully in controller. Success: ${results.success.length}, Errors: ${results.errors.length}`);
-    res.status(results.errors.length > 0 ? 207 : 201).json({
+    res.status(results.errors.length > 0 ? 207 : 200).json({
       success: results.errors.length === 0,
       message: `Successfully assigned ${results.success.length} product(s). ${results.errors.length} error(s).`,
       data: results
@@ -106,9 +214,23 @@ exports.bulkAssignToShelf = async (req, res, next) => {
 };
 
 /** @route GET /api/product-shelves/for-damaged-record */
+/**
+ * @openapi
+ * /api/product-shelves/for-damaged-record:
+ *   get:
+ *     tags: [productShelf]
+ *     summary: get Products For Damaged Record
+ *     operationId: getProductsForDamagedRecord
+ *     responses:
+ *       200:
+ *         description: Thành công
+ *       400:
+ *         description: Dữ liệu không hợp lệ
+ */
 exports.getProductsForDamagedRecord = async (req, res, next) => {
   try {
     const { data, total, page, pages } = await productShelfService.getProductsForDamagedRecord(req.query);
     res.status(200).json({ success: true, count: data.length, total, page, pages, data });
   } catch (error) { next(error); }
 };
+

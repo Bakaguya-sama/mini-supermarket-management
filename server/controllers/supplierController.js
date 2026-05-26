@@ -7,6 +7,19 @@ const logger = require('../config/logger');
  * @desc    Get all suppliers with filters and pagination
  * @access  Public
  */
+/**
+ * @openapi
+ * /api/suppliers/:
+ *   get:
+ *     tags: [supplier]
+ *     summary: get All Suppliers
+ *     operationId: getAllSuppliers
+ *     responses:
+ *       200:
+ *         description: Thành công
+ *       400:
+ *         description: Dữ liệu không hợp lệ
+ */
 exports.getAllSuppliers = async (req, res, next) => {
   try {
     const { suppliers, total, page, pages } = await supplierService.getAllSuppliers(req.query);
@@ -28,6 +41,19 @@ exports.getAllSuppliers = async (req, res, next) => {
  * @desc    Get supplier statistics
  * @access  Public
  */
+/**
+ * @openapi
+ * /api/suppliers/stats:
+ *   get:
+ *     tags: [supplier]
+ *     summary: get Supplier Stats
+ *     operationId: getSupplierStats
+ *     responses:
+ *       200:
+ *         description: Thành công
+ *       400:
+ *         description: Dữ liệu không hợp lệ
+ */
 exports.getSupplierStats = async (req, res, next) => {
   try {
     const stats = await supplierService.getSupplierStats();
@@ -44,6 +70,19 @@ exports.getSupplierStats = async (req, res, next) => {
  * @route   GET /api/suppliers/active
  * @desc    Get all active suppliers
  * @access  Public
+ */
+/**
+ * @openapi
+ * /api/suppliers/active:
+ *   get:
+ *     tags: [supplier]
+ *     summary: get Active Suppliers
+ *     operationId: getActiveSuppliers
+ *     responses:
+ *       200:
+ *         description: Thành công
+ *       400:
+ *         description: Dữ liệu không hợp lệ
  */
 exports.getActiveSuppliers = async (req, res, next) => {
   try {
@@ -63,6 +102,26 @@ exports.getActiveSuppliers = async (req, res, next) => {
  * @desc    Get single supplier by ID
  * @access  Public
  */
+/**
+ * @openapi
+ * /api/suppliers/{id}:
+ *   get:
+ *     tags: [supplier]
+ *     summary: get Supplier By Id
+ *     operationId: getSupplierById
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           pattern: '^[0-9a-fA-F]{24}$'
+ *     responses:
+ *       200:
+ *         description: Thành công
+ *       400:
+ *         description: Dữ liệu không hợp lệ
+ */
 exports.getSupplierById = async (req, res, next) => {
   try {
     const supplier = await supplierService.getSupplierById(req.params.id);
@@ -79,6 +138,26 @@ exports.getSupplierById = async (req, res, next) => {
  * @route   GET /api/suppliers/:id/products
  * @desc    Get all products from a supplier
  * @access  Public
+ */
+/**
+ * @openapi
+ * /api/suppliers/{id}/products:
+ *   get:
+ *     tags: [supplier]
+ *     summary: get Supplier Products
+ *     operationId: getSupplierProducts
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           pattern: '^[0-9a-fA-F]{24}$'
+ *     responses:
+ *       200:
+ *         description: Thành công
+ *       400:
+ *         description: Dữ liệu không hợp lệ
  */
 exports.getSupplierProducts = async (req, res, next) => {
   try {
@@ -102,6 +181,25 @@ exports.getSupplierProducts = async (req, res, next) => {
  * @desc    Create new supplier
  * @access  Public
  */
+/**
+ * @openapi
+ * /api/suppliers/:
+ *   post:
+ *     tags: [supplier]
+ *     summary: create Supplier
+ *     operationId: createSupplier
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *     responses:
+ *       201:
+ *         description: Tạo thành công
+ *       400:
+ *         description: Dữ liệu không hợp lệ
+ */
 exports.createSupplier = async (req, res, next) => {
   try {
     const supplier = await supplierService.createSupplier(req.body);
@@ -119,6 +217,32 @@ exports.createSupplier = async (req, res, next) => {
  * @route   PUT /api/suppliers/:id
  * @desc    Update supplier
  * @access  Public
+ */
+/**
+ * @openapi
+ * /api/suppliers/{id}:
+ *   put:
+ *     tags: [supplier]
+ *     summary: update Supplier
+ *     operationId: updateSupplier
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           pattern: '^[0-9a-fA-F]{24}$'
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *     responses:
+ *       200:
+ *         description: Thành công
+ *       400:
+ *         description: Dữ liệu không hợp lệ
  */
 exports.updateSupplier = async (req, res, next) => {
   try {
@@ -138,6 +262,32 @@ exports.updateSupplier = async (req, res, next) => {
  * @desc    Soft delete supplier
  * @access  Public
  */
+/**
+ * @openapi
+ * /api/suppliers/{id}:
+ *   delete:
+ *     tags: [supplier]
+ *     summary: delete Supplier
+ *     operationId: deleteSupplier
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           pattern: '^[0-9a-fA-F]{24}$'
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *     responses:
+ *       200:
+ *         description: Thành công
+ *       400:
+ *         description: Dữ liệu không hợp lệ
+ */
 exports.deleteSupplier = async (req, res, next) => {
   try {
     const supplier = await supplierService.deleteSupplier(req.params.id);
@@ -156,6 +306,32 @@ exports.deleteSupplier = async (req, res, next) => {
  * @desc    Permanently delete supplier
  * @access  Public
  */
+/**
+ * @openapi
+ * /api/suppliers/{id}/permanent:
+ *   delete:
+ *     tags: [supplier]
+ *     summary: permanent Delete Supplier
+ *     operationId: permanentDeleteSupplier
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           pattern: '^[0-9a-fA-F]{24}$'
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *     responses:
+ *       200:
+ *         description: Thành công
+ *       400:
+ *         description: Dữ liệu không hợp lệ
+ */
 exports.permanentDeleteSupplier = async (req, res, next) => {
   try {
     const result = await supplierService.permanentDeleteSupplier(req.params.id);
@@ -173,6 +349,32 @@ exports.permanentDeleteSupplier = async (req, res, next) => {
  * @desc    Activate supplier
  * @access  Public
  */
+/**
+ * @openapi
+ * /api/suppliers/{id}/activate:
+ *   patch:
+ *     tags: [supplier]
+ *     summary: activate Supplier
+ *     operationId: activateSupplier
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           pattern: '^[0-9a-fA-F]{24}$'
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *     responses:
+ *       200:
+ *         description: Thành công
+ *       400:
+ *         description: Dữ liệu không hợp lệ
+ */
 exports.activateSupplier = async (req, res, next) => {
   try {
     const supplier = await supplierService.activateSupplier(req.params.id);
@@ -185,3 +387,4 @@ exports.activateSupplier = async (req, res, next) => {
     next(error);
   }
 };
+

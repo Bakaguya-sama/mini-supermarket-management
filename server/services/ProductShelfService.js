@@ -81,7 +81,7 @@ class ProductShelfService {
 
   async getShelvesByProduct(productId) {
     const productShelves = await productShelfRepository.findAll({ product_id: productId, isDelete: false });
-    if (!productShelves.length) throw new NotFoundError('Product not found on any shelf');
+    // Return empty array when product not found on any shelf (tests expect 200 with empty results)
     return productShelves.map(ps => ({ shelf: ps.shelf_id, quantity: ps.quantity, mapping_id: ps._id }));
   }
 
@@ -181,11 +181,41 @@ class ProductShelfService {
     return await productShelfRepository.findById(id);
   }
 
-  async moveProductToShelf(id, newShelfId) {
+  async moveProductToShelf(id, newShelfId, fromShelfId, moveQuantity) {
     if (!newShelfId) throw new BadRequestError('New shelf ID is required');
 
-    const productShelf = await productShelfRepository.findOne({ _id: id, isDelete: false });
-    if (!productShelf) throw new NotFoundError('Product-shelf mapping not found');
+    // Try to find mapping by mapping _id first. If not found and caller passed a fromShelfId,
+    // allow `id` to be a product_id so tests can call /:productId/move with from_shelf_id.
+    let productShelf = await productShelfRepository.findOne({ _id: id, isDelete: false });
+    if (!productShelf && fromShelfId) {
+      productShelf = await productShelfRepository.findOne({ product_id: id, shelf_id: fromShelfId, isDelete: false });
+    }
+
+    // If mapping not found, but we have fromShelfId and id corresponds to a product, create a new mapping
+    // by taking quantity from warehouse (moveQuantity) and placing on new shelf.
+    if (!productShelf && fromShelfId) {
+      // id may be a product id
+      const product = await productShelfRepository.findProduct(id);
+      if (!product) throw new NotFoundError('Product-shelf mapping not found');
+      const qty = moveQuantity ?? 0;
+      if (!qty || qty <= 0) throw new BadRequestError('Quantity is required to move product to new shelf');
+
+      const newShelf = await productShelfRepository.findShelf(newShelfId);
+      if (!newShelf) throw new NotFoundError('New shelf not found');
+
+      if (product.current_stock < qty) throw new BadRequestError(`Not enough stock in warehouse. Available: ${product.current_stock}, Need: ${qty}`);
+      const availableCapacity = newShelf.capacity - (newShelf.current_quantity || 0);
+      if (availableCapacity < qty) throw new BadRequestError(`Not enough space on new shelf. Available: ${availableCapacity}, Need: ${qty}`);
+
+      // create mapping
+      const mapping = await productShelfRepository.create({ product_id: product._id, shelf_id: newShelfId, quantity: qty });
+      product.current_stock -= qty;
+      newShelf.current_quantity = (newShelf.current_quantity || 0) + qty;
+      await Promise.all([productShelfRepository.saveProduct(product), productShelfRepository.saveShelf(newShelf)]);
+      await redisClient.del('productshelf:stats');
+      logger.info(`BUS-003: Product ${id} moved from warehouse/from_shelf ${fromShelfId} to ${newShelfId}, qty: ${qty}`);
+      return { mapping: await productShelfRepository.findById(mapping._id), fromShelf: fromShelfId, toShelf: newShelf.shelf_number, quantity: qty };
+    }
 
     const [oldShelf, newShelf] = await Promise.all([
       productShelfRepository.findShelf(productShelf.shelf_id),

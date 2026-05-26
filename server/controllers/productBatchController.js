@@ -50,6 +50,26 @@ exports.getBatchById = async (req, res, next) => {
  * @desc    Lấy tất cả lô hàng của một sản phẩm
  * @access  Private
  */
+/**
+ * @openapi
+ * /api/product-batches/product/{productId}:
+ *   get:
+ *     tags: [productBatch]
+ *     summary: get Batches By Product
+ *     operationId: getBatchesByProduct
+ *     parameters:
+ *       - in: path
+ *         name: productId
+ *         required: true
+ *         schema:
+ *           type: string
+ *           pattern: '^[0-9a-fA-F]{24}$'
+ *     responses:
+ *       200:
+ *         description: Thành công
+ *       400:
+ *         description: Dữ liệu không hợp lệ
+ */
 exports.getBatchesByProduct = async (req, res, next) => {
   try {
     const result = await productBatchService.getBatchesByProduct(req.params.productId, req.query);
@@ -79,6 +99,32 @@ exports.updateBatch = async (req, res, next) => {
  * @desc    Điều chỉnh số lượng lô hàng theo delta
  * @access  Private
  */
+/**
+ * @openapi
+ * /api/product-batches/{id}/adjust:
+ *   put:
+ *     tags: [productBatch]
+ *     summary: adjust Batch Quantity
+ *     operationId: adjustBatchQuantity
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           pattern: '^[0-9a-fA-F]{24}$'
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *     responses:
+ *       200:
+ *         description: Thành công
+ *       400:
+ *         description: Dữ liệu không hợp lệ
+ */
 exports.adjustBatchQuantity = async (req, res, next) => {
   try {
     const { delta } = req.body;
@@ -104,3 +150,4 @@ exports.deleteBatch = async (req, res, next) => {
     next(error);
   }
 };
+

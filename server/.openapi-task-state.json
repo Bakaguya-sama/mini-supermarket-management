@@ -1,0 +1,42 @@
+{
+  "generation": {
+    "status": "idle",
+    "logs": "",
+    "lastRun": null,
+    "error": null
+  },
+  "execution": {
+    "status": "failed",
+    "logs": " PASS  generated-tests/openapi-generated/orderController.test.js\n  orderController generated API suite\n    √ [NOMINAL] getAllOrders - happy path (41 ms)\n    √ [NOMINAL] createOrder - happy path (23 ms)\n    √ [NOMINAL] getOrderById - happy path (11 ms)\n    √ [NOMINAL] updateOrder - happy path (15 ms)\n    √ [NOMINAL] deleteOrder - happy path (11 ms)\n    √ [NOMINAL] getOrdersByCustomer - happy path (10 ms)\n    √ [NOMINAL] getOrderStats - happy path (9 ms)\n    √ [NOMINAL] updateOrderItemStatus - happy path (10 ms)\n    √ [NOMINAL] cancelOrder - happy path (10 ms)\n\n PASS  generated-tests/openapi-generated/supplierController.test.js\n  supplierController generated API suite\n    √ [NOMINAL] getAllSuppliers - happy path (17 ms)\n    √ [NOMINAL] createSupplier - happy path (24 ms)\n    √ [NOMINAL] getSupplierStats - happy path (9 ms)\n    √ [NOMINAL] getActiveSuppliers - happy path (10 ms)\n    √ [NOMINAL] getSupplierById - happy path (9 ms)\n    √ [NOMINAL] updateSupplier - happy path (11 ms)\n    √ [NOMINAL] deleteSupplier - happy path (8 ms)\n    √ [NOMINAL] getSupplierProducts - happy path (9 ms)\n    √ [NOMINAL] permanentDeleteSupplier - happy path (9 ms)\n    √ [NOMINAL] activateSupplier - happy path (9 ms)\n\n PASS  generated-tests/openapi-generated/staffController.test.js\n  staffController generated API suite\n    √ [NOMINAL] getAllStaff - happy path (18 ms)\n    √ [NOMINAL] createStaff - happy path (23 ms)\n    √ [NOMINAL] getStaffStats - happy path (11 ms)\n    √ [NOMINAL] getStaffById - happy path (12 ms)\n    √ [NOMINAL] updateStaff - happy path (13 ms)\n    √ [NOMINAL] deleteStaff - happy path (11 ms)\n    √ [NOMINAL] permanentDeleteStaff - happy path (10 ms)\n    √ [NOMINAL] activateStaff - happy path (10 ms)\n    √ [NOMINAL] getStaffByAccountId - happy path (10 ms)\n\n PASS  generated-tests/openapi-generated/damagedProductController.test.js\n  damagedProductController generated API suite\n    √ [NOMINAL] getDamagedProductStats - happy path (16 ms)\n    √ [NOMINAL] getDamagedProductsByProductId - happy path (15 ms)\n    √ [NOMINAL] adjustInventoryForDamaged - happy path (20 ms)\n    √ [NOMINAL] getDamagedProductShelves - happy path (14 ms)\n    √ [NOMINAL] bulkUpdateStatus - happy path (10 ms)\n\n PASS  generated-tests/openapi-generated/authController.test.js\n  authController generated API suite\n    √ [NOMINAL] registerCustomer - happy path (28 ms)\n    √ [NOMINAL] registerStaff - happy path (12 ms)\n    √ [NOMINAL] login - happy path (11 ms)\n    √ [NOMINAL] getMe - happy path (11 ms)\n    √ [NOMINAL] updateProfile - happy path (11 ms)\n    √ [NOMINAL] changePassword - happy path (11 ms)\n    √ [NOMINAL] verifyToken - happy path (11 ms)\n\n PASS  generated-tests/openapi-generated/sectionController.test.js\n  sectionController generated API suite\n    √ [NOMINAL] getAllSections - happy path (15 ms)\n    √ [NOMINAL] createSection - happy path (25 ms)\n    √ [NOMINAL] getSectionById - happy path (10 ms)\n    √ [NOMINAL] updateSection - happy path (9 ms)\n    √ [NOMINAL] deleteSection - happy path (10 ms)\n    √ [NOMINAL] getShelvesInSection - happy path (15 ms)\n\n PASS  generated-tests/openapi-generated/productBatchController.test.js\n  productBatchController generated API suite\n    √ [NOMINAL] getBatchesByProduct - happy path (19 ms)\n    √ [NOMINAL] adjustBatchQuantity - happy path (23 ms)\n\n PASS  generated-tests/openapi-generated/telemetryController.test.js\n  telemetryController generated API suite\n    √ [NOMINAL] getTraces - happy path (18 ms)\n    √ [NOMINAL] clearTraces - happy path (11 ms)\n\n PASS  generated-tests/openapi-generated/shelfController.test.js\n  shelfController generated API suite\n    √ [NOMINAL] getShelfStats - happy path (17 ms)\n    √ [NOMINAL] getShelvesByCategory - happy path (12 ms)\n    √ [NOMINAL] getAvailableShelves - happy path (9 ms)\n    √ [NOMINAL] toggleShelfFull - happy path (22 ms)\n    √ [NOMINAL] getShelfCapacity - happy path (15 ms)\n\n PASS  generated-tests/openapi-generated/promotionController.test.js\n  promotionController generated API suite\n    √ [NOMINAL] getAllPromotions - happy path (20 ms)\n    √ [NOMINAL] createPromotion - happy path (24 ms)\n    √ [NOMINAL] getPromotionById - happy path (10 ms)\n    √ [NOMINAL] updatePromotion - happy path (10 ms)\n    √ [NOMINAL] deletePromotion - happy path (11 ms)\n    √ [NOMINAL] validatePromoCode - happy path (11 ms)\n    √ [NOMINAL] getApplicablePromotions - happy path (12 ms)\n\n PASS  generated-tests/openapi-generated/productStockController.test.js\n  productStockController generated API suite\n    √ [NOMINAL] getProductStockStats - happy path (18 ms)\n    √ [NOMINAL] getStockByProduct - happy path (16 ms)\n    √ [NOMINAL] getStockByShelf - happy path (13 ms)\n    √ [NOMINAL] getLowStockProducts - happy path (15 ms)\n    √ [NOMINAL] adjustStockQuantity - happy path (22 ms)\n    √ [NOMINAL] bulkUpdateStatus - happy path (11 ms)\n\nTest Suites: 6 failed, 12 passed, 18 total\nTests:       29 failed, 125 passed, 154 total\nSnapshots:   0 total\nTime:        38.901 s\nTest results written to: generated-tests\\openapi-results.json\n\n--- CHẠY KIỂM THỬ KẾT THÚC (Mã: 1) ---",
+    "lastRun": null,
+    "error": "Quá trình kết thúc với mã 1",
+    "suites": [
+      {
+        "filePath": "C:\\Users\\PC\\Documents\\GitHub\\mini-supermarket-management\\server\\generated-tests\\openapi-generated\\feedbackController.test.js",
+        "controllerName": "feedbackController",
+        "status": "passed",
+        "totalTests": 16,
+        "passedTests": 16,
+        "failedTests": 0,
+        "passRate": 100,
+        "durationMs": 2232,
+        "startTime": "2026-05-26T01:10:23.647Z",
+        "endTime": "2026-05-26T01:10:25.879Z",
+        "failures": []
+      }
+    ],
+    "latestFailures": [],
+    "summary": {
+      "totalSuites": 1,
+      "passedSuites": 1,
+      "failedSuites": 0,
+      "totalTests": 16,
+      "passedTests": 16,
+      "failedTests": 0,
+      "passRate": 100,
+      "runtimeErrorSuites": 0,
+      "pendingSuites": 0
+    }
+  },
+  "executionHistory": []
+}

@@ -11,6 +11,19 @@ exports.getAllProductStocks = async (req, res, next) => {
 };
 
 /** @route GET /api/product-stocks/stats */
+/**
+ * @openapi
+ * /api/product-stocks/stats:
+ *   get:
+ *     tags: [productStock]
+ *     summary: get Product Stock Stats
+ *     operationId: getProductStockStats
+ *     responses:
+ *       200:
+ *         description: Thành công
+ *       400:
+ *         description: Dữ liệu không hợp lệ
+ */
 exports.getProductStockStats = async (req, res, next) => {
   try {
     const data = await productStockService.getProductStockStats();
@@ -27,6 +40,26 @@ exports.getProductStockById = async (req, res, next) => {
 };
 
 /** @route GET /api/product-stocks/product/:productId */
+/**
+ * @openapi
+ * /api/product-stocks/product/{productId}:
+ *   get:
+ *     tags: [productStock]
+ *     summary: get Stock By Product
+ *     operationId: getStockByProduct
+ *     parameters:
+ *       - in: path
+ *         name: productId
+ *         required: true
+ *         schema:
+ *           type: string
+ *           pattern: '^[0-9a-fA-F]{24}$'
+ *     responses:
+ *       200:
+ *         description: Thành công
+ *       400:
+ *         description: Dữ liệu không hợp lệ
+ */
 exports.getStockByProduct = async (req, res, next) => {
   try {
     const data = await productStockService.getStockByProduct(req.params.productId, req.query);
@@ -35,6 +68,26 @@ exports.getStockByProduct = async (req, res, next) => {
 };
 
 /** @route GET /api/product-stocks/shelf/:shelfId */
+/**
+ * @openapi
+ * /api/product-stocks/shelf/{shelfId}:
+ *   get:
+ *     tags: [productStock]
+ *     summary: get Stock By Shelf
+ *     operationId: getStockByShelf
+ *     parameters:
+ *       - in: path
+ *         name: shelfId
+ *         required: true
+ *         schema:
+ *           type: string
+ *           pattern: '^[0-9a-fA-F]{24}$'
+ *     responses:
+ *       200:
+ *         description: Thành công
+ *       400:
+ *         description: Dữ liệu không hợp lệ
+ */
 exports.getStockByShelf = async (req, res, next) => {
   try {
     const data = await productStockService.getStockByShelf(req.params.shelfId, req.query);
@@ -43,6 +96,19 @@ exports.getStockByShelf = async (req, res, next) => {
 };
 
 /** @route GET /api/product-stocks/low-stock */
+/**
+ * @openapi
+ * /api/product-stocks/low-stock:
+ *   get:
+ *     tags: [productStock]
+ *     summary: get Low Stock Products
+ *     operationId: getLowStockProducts
+ *     responses:
+ *       200:
+ *         description: Thành công
+ *       400:
+ *         description: Dữ liệu không hợp lệ
+ */
 exports.getLowStockProducts = async (req, res, next) => {
   try {
     const data = await productStockService.getLowStockProducts(req.query.limit);
@@ -69,9 +135,37 @@ exports.updateProductStock = async (req, res, next) => {
 };
 
 /** @route PUT /api/product-stocks/:id/adjust */
+/**
+ * @openapi
+ * /api/product-stocks/{id}/adjust:
+ *   put:
+ *     tags: [productStock]
+ *     summary: adjust Stock Quantity
+ *     operationId: adjustStockQuantity
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           pattern: '^[0-9a-fA-F]{24}$'
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *     responses:
+ *       200:
+ *         description: Thành công
+ *       400:
+ *         description: Dữ liệu không hợp lệ
+ */
 exports.adjustStockQuantity = async (req, res, next) => {
   try {
-    const { adjustment, reason } = req.body;
+    // Accept either `adjustment` or legacy `quantity_adjustment` from tests/clients
+    const adjustment = req.body.adjustment ?? req.body.quantity_adjustment;
+    const reason = req.body.reason;
     const data = await productStockService.adjustStockQuantity(req.params.id, adjustment, reason);
     logger.info(`Product stock adjusted successfully in controller: ${req.params.id}`);
     res.status(200).json({ success: true, message: 'Stock quantity adjusted successfully', data });
@@ -88,11 +182,33 @@ exports.deleteProductStock = async (req, res, next) => {
 };
 
 /** @route PUT /api/product-stocks/bulk/update-status */
+/**
+ * @openapi
+ * /api/product-stocks/bulk/update-status:
+ *   put:
+ *     tags: [productStock]
+ *     summary: bulk Update Status
+ *     operationId: bulkUpdateStatus
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *     responses:
+ *       200:
+ *         description: Thành công
+ *       400:
+ *         description: Dữ liệu không hợp lệ
+ */
 exports.bulkUpdateStatus = async (req, res, next) => {
   try {
-    const { ids, status } = req.body;
+    // Accept either `ids` or legacy `stock_ids` from tests/clients
+    const ids = req.body.ids ?? req.body.stock_ids;
+    const status = req.body.status;
     const data = await productStockService.bulkUpdateStatus(ids, status);
     logger.info(`Product stocks bulk updated successfully in controller. Modified: ${data.modified}`);
     res.status(200).json({ success: true, message: `Updated ${data.modified} product stock record(s)`, data });
   } catch (error) { next(error); }
 };
+
