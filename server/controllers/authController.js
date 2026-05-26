@@ -28,6 +28,8 @@ const { traceLogin } = require('../middleware/tracing');
  *         description: Tạo thành công
  *       400:
  *         description: Dữ liệu không hợp lệ
+ *       500:
+ *         description: Lỗi server
  */
 exports.registerCustomer = async (req, res, next) => {
   try {
@@ -137,7 +139,7 @@ exports.registerStaff = async (req, res, next) => {
 exports.login = async (req, res, next) => {
   try {
     const { username, password } = req.body;
-    
+
     // Trace login operation
     const { token, account, profile } = await traceLogin(
       username,
