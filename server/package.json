@@ -10,7 +10,7 @@
     "seed:clear": "node scripts/seed.js --clear",
     "backfill:expiry": "node scripts/backfill-expiry-dates.js",
     "migrate:batches": "node scripts/convert-stocks-to-batches.js",
-    "test": "cross-env NODE_ENV=test jest --runInBand --detectOpenHandles --verbose",
+    "test": "cross-env NODE_ENV=test jest --runInBand --detectOpenHandles --verbose tests/",
     "generate:all-controller-tests": "node test-generator/all/index.js",
     "test:all-controller-generated": "cross-env NODE_ENV=test jest --runInBand --verbose test-generator/generated-tests-all",
     "generate:openapi": "node swaggerDef.js",
